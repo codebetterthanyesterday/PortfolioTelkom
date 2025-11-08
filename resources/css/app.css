@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+
+html, body {
+    @apply h-full;
+}
+
+#website-container {
+    @apply min-h-full relative;
+}
+
+* {
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+input[type="password"] {
+    padding-right: 48px !important;
+}
+
+#website-container.regular-layout header .nav-links a{
+    @apply px-4 py-2 relative text-[0.9rem];
+}
+
+#website-container.regular-layout header .nav-links a::after {
+    @apply content-[''] absolute left-0 bottom-0 right-0 h-0.5 bg-[#b01116] scale-x-0 origin-center transition-transform ease-in-out duration-300;
+}
+
+#website-container.regular-layout header .nav-links a:hover::after {
+    @apply scale-x-100;
+}
+
+header button.hamburger-menu {
+    @apply flex lg:hidden flex-col justify-center items-center w-7 h-7 gap-2 transition-all duration-300 ease-in-out;
+}
+
+header button.hamburger-menu span {
+    @apply w-full h-0.5 bg-gray-500 transition-all duration-300 ease-in-out;
+}
+
+header button.hamburger-menu.active span:nth-child(1) {
+    @apply rotate-45 translate-y-[10px];
+}
+header button.hamburger-menu.active span:nth-child(2) {
+    @apply opacity-0;
+}
+header button.hamburger-menu.active span:nth-child(3) {
+    @apply -rotate-45 -translate-y-[10px];
+}
+
+
+/* Hero Section Gradient */
+#hero {
+    background: linear-gradient(to bottom right, #ffd9d9 0%, #ffd9d9 20%, #fbfbfb 35%, #fbfbfb 70%, #ffd9d9 85%, #ffd9d9 100%);
+    position: relative;
+}
+
+#hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle, rgba(176, 17, 22, 0.08) 2px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+}
