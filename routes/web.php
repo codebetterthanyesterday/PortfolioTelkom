@@ -12,15 +12,15 @@ Route::get('/project', function () {
 })->name('project');
 
 Route::get('/about', function () {
-    return view('pages.about');
+    return view('pages.comming');
 })->name('about');
 
 Route::get('/blog', function () {
-    return view('pages.blog');
+    return view('pages.comming');
 })->name('blog');
 
 Route::get('/qa', function () {
-    return view('pages.qa');
+    return view('pages.comming');
 })->name('qa');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

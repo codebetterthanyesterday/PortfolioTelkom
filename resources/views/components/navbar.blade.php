@@ -18,7 +18,77 @@
             </div>
 
             <!-- Desktop Auth Buttons -->
-            <div class="hidden lg:flex gap-3 text-[0.9rem]">
+            <div class="hidden lg:flex gap-3 text-[0.9rem] items-center">
+                <!-- Notification (Desktop Only) -->
+                <div x-data="{ notifOpen: false }" class="relative">
+                    <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
+                        <i class="ri-notification-3-line"></i>
+                        <!-- Notification badge -->
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+                    </button>
+                    <div x-show="notifOpen" 
+                         x-transition 
+                         @click.away="notifOpen = false"
+                         class="absolute z-50 right-0 top-full mt-2 w-80 bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
+                        <!-- Header -->
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                            <h3 class="font-semibold text-gray-900">Notifikasi</h3>
+                        </div>
+                        <!-- Notifications List -->
+                        <div class="max-h-96 overflow-y-auto">
+                            <!-- Notification Item 1 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i class="ri-message-3-line text-blue-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Komentar Baru</p>
+                                        <p class="text-xs text-gray-500 mt-1">Seseorang mengomentari proyek Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">5 menit yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <!-- Notification Item 2 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="ri-heart-line text-green-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Proyek Disukai</p>
+                                        <p class="text-xs text-gray-500 mt-1">10 orang menyukai proyek Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">2 jam yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <!-- Notification Item 3 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <i class="ri-user-add-line text-purple-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Pengikut Baru</p>
+                                        <p class="text-xs text-gray-500 mt-1">3 orang mulai mengikuti Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">1 hari yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <!-- Footer -->
+                        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                            <a href="#" class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Search (Desktop Only) -->
                 <div x-data="{ searchOpen: false }" class="relative hidden lg:block">
                     <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
@@ -47,6 +117,76 @@
 
             <!-- Desktop Search & Mobile Menu Button -->
             <div class="flex gap-3 items-center lg:hidden">
+                <!-- Mobile Notification Button -->
+                <div x-data="{ notifOpen: false }" class="relative">
+                    <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
+                        <i class="ri-notification-3-line"></i>
+                        <!-- Notification badge -->
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+                    </button>
+                    <div x-show="notifOpen" 
+                         x-transition 
+                         @click.away="notifOpen = false"
+                         class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
+                        <!-- Header -->
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                            <h3 class="font-semibold text-gray-900">Notifikasi</h3>
+                        </div>
+                        <!-- Notifications List -->
+                        <div class="max-h-96 overflow-y-auto">
+                            <!-- Notification Item 1 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i class="ri-message-3-line text-blue-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Komentar Baru</p>
+                                        <p class="text-xs text-gray-500 mt-1">Seseorang mengomentari proyek Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">5 menit yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <!-- Notification Item 2 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="ri-heart-line text-green-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Proyek Disukai</p>
+                                        <p class="text-xs text-gray-500 mt-1">10 orang menyukai proyek Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">2 jam yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                            <!-- Notification Item 3 -->
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="flex gap-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <i class="ri-user-add-line text-purple-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">Pengikut Baru</p>
+                                        <p class="text-xs text-gray-500 mt-1">3 orang mulai mengikuti Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">1 hari yang lalu</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <!-- Footer -->
+                        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                            <a href="#" class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Mobile Search Button -->
                 <div x-data="{ searchOpen: false }" class="relative">
                     <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
