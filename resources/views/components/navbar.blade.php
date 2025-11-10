@@ -94,23 +94,85 @@
                     <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
                         <i class="ri-search-line"></i>
                     </button>
-                    <form x-show="searchOpen" 
-                          x-transition 
-                          @click.away="searchOpen = false"
-                          action="" 
-                          method="GET" 
-                          autocomplete="off"
-                          class="absolute z-50 right-0 top-full mt-2 w-64 bg-white border border-gray-300 rounded-md shadow-lg p-2">
-                        <input type="text" 
-                               name="q" 
-                               placeholder="Cari Proyek di sini..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#b01116] focus:border-[#b01116]">
-                    </form>
+                    <div x-show="searchOpen" 
+                         x-transition
+                         @click.away="searchOpen = false"
+                         class="absolute z-50 right-0 top-full mt-2 w-96 bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden">
+                        <!-- Search Header -->
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                                    <i class="ri-search-line text-[#b01116]"></i>
+                                    Cari Proyek
+                                </h3>
+                                <button @click="searchOpen = false" class="text-gray-400 hover:text-gray-600">
+                                    <i class="ri-close-line text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Form -->
+                        <form action="" method="GET" autocomplete="off" class="p-4">
+                            <div class="relative">
+                                <input type="text" 
+                                       name="q" 
+                                       placeholder="Cari proyek, mahasiswa, atau kategori..." 
+                                       x-data="{ value: '' }"
+                                       x-model="value"
+                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
+                                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            
+                            <!-- Quick Filters -->
+                            <div class="mt-4">
+                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Filter Cepat</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        UI/UX Design
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Web Development
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Mobile App
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Data Science
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Recent Searches -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Pencarian Terkini</p>
+                                <div class="space-y-2">
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>Manajemen Proyek</span>
+                                    </a>
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>Aplikasi Kesehatan</span>
+                                    </a>
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>E-commerce Platform</span>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Button -->
+                            <button type="submit" class="w-full mt-4 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
+                                <i class="ri-search-line"></i>
+                                Cari Sekarang
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <a href="{{ route('login') }}" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <a href="{{ route('login') }}" class="flex gap-2 text-white bg-[#b01116] rounded-md font-medium px-3 py-1 hover:bg-[#8d0d11] transition-colors ease-in-out duration-300">
                     Login <i class="ri-arrow-right-double-fill"></i>
                 </a>
-                <a href="{{ route('register') }}" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <a href="{{ route('register') }}" class="flex gap-2 rounded-md font-medium bg-pink-50 hover:bg-pink-100 text-[#b01116] border border-pink-200 px-3 py-1 transition-colors ease-in-out duration-300">
                     Register <i class="ri-arrow-right-double-fill"></i>
                 </a>
             </div>
@@ -192,18 +254,80 @@
                     <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
                         <i class="ri-search-line"></i>
                     </button>
-                    <form x-show="searchOpen" 
-                          x-transition 
-                          @click.away="searchOpen = false"
-                          action="" 
-                          method="GET" 
-                          autocomplete="off"
-                          class="absolute z-50 right-0 top-full mt-2 w-64 bg-white border border-gray-300 rounded-md shadow-lg p-2">
-                        <input type="text" 
-                               name="q" 
-                               placeholder="Cari Proyek di sini..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#b01116] focus:border-[#b01116]">
-                    </form>
+                    <div x-show="searchOpen" 
+                         x-transition
+                         @click.away="searchOpen = false"
+                         class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden max-h-[calc(100vh-88px)] overflow-y-auto">
+                        <!-- Search Header -->
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 sticky top-0">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                                    <i class="ri-search-line text-[#b01116]"></i>
+                                    Cari Proyek
+                                </h3>
+                                <button @click="searchOpen = false" class="text-gray-400 hover:text-gray-600">
+                                    <i class="ri-close-line text-xl"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Form -->
+                        <form action="" method="GET" autocomplete="off" class="p-4">
+                            <div class="relative">
+                                <input type="text" 
+                                       name="q" 
+                                       placeholder="Cari proyek, mahasiswa..." 
+                                       x-data="{ value: '' }"
+                                       x-model="value"
+                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
+                                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            
+                            <!-- Quick Filters -->
+                            <div class="mt-4">
+                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Filter Cepat</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        UI/UX Design
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Web Dev
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Mobile App
+                                    </button>
+                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
+                                        Data Science
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Recent Searches -->
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Pencarian Terkini</p>
+                                <div class="space-y-2">
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>Manajemen Proyek</span>
+                                    </a>
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>Aplikasi Kesehatan</span>
+                                    </a>
+                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                                        <i class="ri-time-line text-gray-400"></i>
+                                        <span>E-commerce Platform</span>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Button -->
+                            <button type="submit" class="w-full mt-4 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
+                                <i class="ri-search-line"></i>
+                                Cari Sekarang
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <!-- Mobile Menu Button -->
@@ -228,10 +352,10 @@
 
             <!-- Mobile Auth Buttons -->
             <div class="px-4 py-3 border-t border-gray-300 flex gap-3 text-sm">
-                <a href="{{ route('login') }}" class="flex-1 text-center border-gray-300 flex gap-2 items-center justify-center text-gray-600 rounded-md border font-medium px-3 py-2 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <a href="{{ route('login') }}" class="flex-1 text-center text-white bg-[#b01116] hover:bg-[#8d0d11] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
                     Login <i class="ri-arrow-right-double-fill"></i>
                 </a>
-                <a href="{{ route('register') }}" class="flex-1 text-center border-gray-300 flex gap-2 items-center justify-center text-gray-600 rounded-md border font-medium px-3 py-2 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <a href="{{ route('register') }}" class="flex-1 text-center border-pink-200 bg-pink-50 hover:bg-pink-100 text-[#b01116] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
                     Register <i class="ri-arrow-right-double-fill"></i>
                 </a>
             </div>

@@ -22,10 +22,12 @@ Route::get('/blog', function () {
 Route::get('/qa', function () {
     return view('pages.comming');
 })->name('qa');
-
 Route::get('/project-detail', function () {
     return view('pages.project-detail');
 })->name('project.detail');
+Route::get('/detail-mahasiswa', function () {
+    return view('pages.detail-mahasiswa');
+})->name('detail.mahasiswa');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
