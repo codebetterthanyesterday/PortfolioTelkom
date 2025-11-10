@@ -1,4 +1,4 @@
-<header class="absolute top-0 bg-gray-50 left-0 right-0 border-b border-gray-300 z-50">
+<header class="fixed top-0 bg-gray-50 left-0 right-0 border-b border-gray-300 z-50">
     <nav class="max-w-7xl mx-auto">
         <div class="flex items-center justify-between px-4 py-3">
             <!-- Logo -->
@@ -385,18 +385,5 @@
             });
         }
 
-        
-        if (navbar) {
-            // Show/hide button based on scroll position
-            window.addEventListener('scroll', function() {
-                if (window.scrollY > 0) {
-                    navbar.classList.remove('absolute')
-                    navbar.classList.add('fixed')
-                } else {
-                    navbar.classList.remove('fixed')
-                    navbar.classList.add('absolute')
-                }
-            });
-        }
     });
 </script>

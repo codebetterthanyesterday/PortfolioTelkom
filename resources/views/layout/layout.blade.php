@@ -27,13 +27,36 @@
         const footer = document.querySelector('footer');
 
         function adjustMainPadding() {
-            const navbarHeight = navbar.offsetHeight;
+            // Get the base navbar height (without expanded mobile menu)
+            const navbarFirstChild = navbar.querySelector('nav > div:first-child');
+            const navbarHeight = navbarFirstChild ? navbarFirstChild.offsetHeight : navbar.offsetHeight;
             const footerHeight = footer.offsetHeight;
             main.style.paddingTop = `${navbarHeight}px`;
             main.style.paddingBottom = `${footerHeight}px`;
         }
+        
+        // Initial adjustment
         window.addEventListener('load', adjustMainPadding);
+        
+        // Adjust on window resize
         window.addEventListener('resize', adjustMainPadding);
+        
+        // Observe navbar height changes (for mobile menu toggle) but don't adjust padding
+        if (navbar) {
+            const observer = new MutationObserver(function(mutations) {
+                // Only adjust if screen is desktop size
+                if (window.innerWidth >= 1024) {
+                    adjustMainPadding();
+                }
+            });
+            
+            observer.observe(navbar, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
     </script>
 </body>
 </html>
