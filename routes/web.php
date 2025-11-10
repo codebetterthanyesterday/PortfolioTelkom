@@ -23,6 +23,10 @@ Route::get('/qa', function () {
     return view('pages.comming');
 })->name('qa');
 
+Route::get('/project-detail', function () {
+    return view('pages.project-detail');
+})->name('project.detail');
+
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
