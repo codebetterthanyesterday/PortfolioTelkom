@@ -2,7 +2,6 @@
 	'href',
 	'active' => false,
 	'icon' => null,
-	'badge' => null,
 	'exact' => false,
 ])
 
@@ -24,7 +23,4 @@
 		<i class="{{ $icon }} text-xl"></i>
 	@endif
 	<span>{{ $slot }}</span>
-	@if($badge)
-		<span class="ml-auto bg-gray-200 group-hover:bg-white/20 text-gray-700 group-hover:text-white text-xs px-2 py-1 rounded-full {{ $isActive ? 'bg-white/20 !text-white' : '' }}">{{ $badge }}</span>
-	@endif
 </a>

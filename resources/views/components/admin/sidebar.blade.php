@@ -26,20 +26,20 @@
                 <div class="pt-4 pb-2">
                     <p class="px-4 text-xs font-semibold text-gray-500 uppercase">Manajemen</p>
                 </div>
-                
-                <x-admin.nav-link href="#" icon="ri-folder-line" badge="24">
+
+                <x-admin.nav-link href="{{ route('admin.projects') }}" icon="ri-folder-line">
                     Proyek
                 </x-admin.nav-link>
 
-                <x-admin.nav-link href="#" icon="ri-user-line" badge="156">
-                    Mahasiswa
+                <x-admin.nav-link href="{{ route('admin.users') }}" icon="ri-user-line">
+                    Users
                 </x-admin.nav-link>
 
-                <x-admin.nav-link href="#" icon="ri-message-3-line" badge="8">
+                <x-admin.nav-link href="{{ route('admin.comments') }}" icon="ri-message-3-line">
                     Komentar
                 </x-admin.nav-link>
 
-                <x-admin.nav-link href="#" icon="ri-bookmark-line">
+                <x-admin.nav-link href="{{ route('admin.wishlist') }}" icon="ri-bookmark-line">
                     Wishlist
                 </x-admin.nav-link>
 

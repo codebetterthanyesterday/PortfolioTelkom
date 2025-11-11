@@ -33,6 +33,22 @@ Route::get('/adm/dashboard', function () {
     return view('pages.admin.dashboard');
 })->name('admin.dashboard');
 
+Route::get('/adm/projects', function () {
+    return view('pages.admin.projects');
+})->name('admin.projects');
+
+Route::get('/adm/users', function () {
+    return view('pages.admin.users');
+})->name('admin.users');
+
+Route::get('/adm/comments', function () {
+    return view('pages.admin.comments');
+})->name('admin.comments');
+
+Route::get('/adm/wishlist', function () {
+    return view('pages.admin.wishlist');
+})->name('admin.wishlist');
+
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
