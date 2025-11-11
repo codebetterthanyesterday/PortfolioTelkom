@@ -25,9 +25,13 @@ Route::get('/qa', function () {
 Route::get('/project-detail', function () {
     return view('pages.project-detail');
 })->name('project.detail');
-Route::get('/detail-mahasiswa', function () {
-    return view('pages.detail-mahasiswa');
-})->name('detail.mahasiswa');
+Route::get('/student-detail', function () {
+    return view('pages.detail-student');
+})->name('detail.student');
+
+Route::get('/adm/dashboard', function () {
+    return view('pages.admin.dashboard');
+})->name('admin.dashboard');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
