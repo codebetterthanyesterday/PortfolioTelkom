@@ -87,6 +87,12 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     Route::get('/profile', [StudentController::class, 'showProfile'])->name('profile');
     Route::put('/profile', [StudentController::class, 'update'])->name('update');
     
+    // Dynamic data creation for projects
+    Route::post('/categories', [StudentController::class, 'storeCategory'])->name('categories.store');
+    Route::post('/subjects', [StudentController::class, 'storeSubject'])->name('subjects.store');
+    Route::post('/teachers', [StudentController::class, 'storeTeacher'])->name('teachers.store');
+    Route::post('/expertises', [StudentController::class, 'storeExpertise'])->name('expertises.store');
+    
     // Project Management
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');

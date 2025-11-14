@@ -80,7 +80,7 @@ class StudentController extends Controller
             'education.*.end_date' => 'nullable|date',
             'education.*.is_current' => 'nullable|boolean',
             'education.*.description' => 'nullable|string',
-            'education.*.id' => 'nullable|exists:education_info,id',
+            'education.*.id' => 'nullable', // Remove exists validation since IDs can be "new_xxx"
         ]);
 
         // Update user data
@@ -116,17 +116,24 @@ class StudentController extends Controller
 
         // Handle education data
         if (isset($validated['education'])) {
-            // Get current education IDs that should be kept
+            // Get current education IDs that should be kept (only numeric IDs, not "new_xxx")
             $keepEducationIds = collect($validated['education'])
                 ->filter(function ($edu) {
-                    return isset($edu['id']) && !empty($edu['institution_name']);
+                    return isset($edu['id']) 
+                        && !empty($edu['institution_name'])
+                        && is_numeric($edu['id']); // Only keep numeric IDs
                 })
                 ->pluck('id')
                 ->filter()
                 ->toArray();
 
             // Delete education records that are not in the new data
-            $student->educationInfo()->whereNotIn('id', $keepEducationIds)->delete();
+            if (!empty($keepEducationIds)) {
+                $student->educationInfo()->whereNotIn('id', $keepEducationIds)->delete();
+            } else {
+                // If no existing records to keep, delete all
+                $student->educationInfo()->delete();
+            }
 
             // Process each education entry
             foreach ($validated['education'] as $eduData) {
@@ -146,11 +153,12 @@ class StudentController extends Controller
                     'description' => $eduData['description'] ?? null,
                 ];
 
-                if (isset($eduData['id']) && $eduData['id']) {
+                // Check if this is an existing record (numeric ID) or new record (starts with "new_")
+                if (isset($eduData['id']) && is_numeric($eduData['id'])) {
                     // Update existing record
                     $student->educationInfo()->where('id', $eduData['id'])->update($educationData);
                 } else {
-                    // Create new record
+                    // Create new record (ID is either missing or starts with "new_")
                     $student->educationInfo()->create($educationData);
                 }
             }
@@ -179,6 +187,73 @@ class StudentController extends Controller
         ];
 
         return view('students.dashboard', compact('student', 'stats'));
+    }
+
+    public function storeCategory(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:categories,name',
+            'description' => 'nullable|string',
+        ]);
+
+        $category = Category::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'category' => $category,
+            'message' => 'Kategori berhasil ditambahkan'
+        ]);
+    }
+
+    public function storeSubject(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50|unique:subjects,code',
+            'description' => 'nullable|string',
+        ]);
+
+        $subject = Subject::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'subject' => $subject,
+            'message' => 'Mata kuliah berhasil ditambahkan'
+        ]);
+    }
+
+    public function storeTeacher(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'nip' => 'nullable|string|max:50|unique:teachers,nip',
+            'email' => 'nullable|email|max:255',
+            'phone_number' => 'nullable|string|max:20',
+            'institution' => 'nullable|string|max:255',
+        ]);
+
+        $teacher = Teacher::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'teacher' => $teacher,
+            'message' => 'Dosen/Guru berhasil ditambahkan'
+        ]);
+    }
+
+    public function storeExpertise(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:expertises,name',
+        ]);
+
+        $expertise = Expertise::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'expertise' => $expertise,
+            'message' => 'Keahlian berhasil ditambahkan'
+        ]);
     }
 }
 
