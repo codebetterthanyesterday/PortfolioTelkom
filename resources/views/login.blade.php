@@ -28,24 +28,46 @@
                         <p class="text-sm sm:text-base text-gray-500">Jelajahi dan dapatkan inspirasi dari proyek siswa terkini.</p>
                     </div>
                     
-                    <form action="" class="space-y-4 sm:space-y-5">
+                    <form action="{{ route('login.post') }}" method="POST" class="space-y-4 sm:space-y-5">
+                        @csrf
                         <h3 class="font-semibold text-xl">Login</h3>
+                        
+                        @if($errors->any())
+                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(session('success'))
+                            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
                         <div>
                             <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                            <input type="email" id="email" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
+                            <input type="email" name="email" id="email" value="{{ old('email') }}" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
                         </div>
                         <div class="relative">
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Password</label>
-                            <input type="password" id="password" class="border pr-12 border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan password Anda">
+                            <input type="password" name="password" id="password" required class="border pr-12 border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan password Anda">
                             <i class="ri-eye-close-line absolute password-toggle right-3 top-1/2 bottom-1/2 -translate-y-1/2 text-gray-500 text-lg cursor-pointer"></i>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-[#b01116] bg-gray-100 border-gray-300 rounded focus:ring-[#b01116] focus:ring-2">
+                                <label for="remember" class="ml-2 text-sm text-gray-900 cursor-pointer">Ingat saya</label>
+                            </div>
+                            <a href="{{ route('password.forgot') }}" class="text-sm text-[#b01116] hover:underline">Lupa password?</a>
                         </div>
                         <button type="submit" disabled class="w-full cursor-not-allowed transition-all duration-200 ease-in-out submit-button-auth px-3 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium text-gray-800 bg-gray-300">Masuk</button>
                         <div class="space-y-2">
                             <p class="text-center text-xs sm:text-sm text-gray-600 pt-2">
                                 Belum punya akun? <a href="{{ route('register') }}" class="text-[#b01116] font-medium hover:underline">Daftar di sini</a>
-                            </p>
-                            <p class="text-center text-xs sm:text-sm text-gray-600">
-                                Lupa password? <a href="{{ route('password.forgot') }}" class="text-[#b01116] font-medium hover:underline">Reset di sini</a>
                             </p>
                         </div>
                     </form>

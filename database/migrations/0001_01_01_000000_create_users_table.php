@@ -12,24 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('name');
+            $table->id();
             $table->string('email')->unique();
+            $table->string('username')->unique();
+            $table->string('phone_number', 20)->nullable();
+            $table->string('full_name')->nullable();
             $table->string('password');
+            $table->enum('role', ['student', 'investor', 'admin']);
+            $table->string('avatar')->nullable();
+            $table->text('short_about')->nullable();
+            $table->text('about')->nullable();
             $table->timestamp('email_verified_at')->nullable();
-            $table->enum('role', ['student','investor','admin'])->default('student');
-            $table->string('phone')->nullable();
-            $table->boolean('is_approved')->default(false);
-            $table->timestamp('approved_at')->nullable();
-            $table->unsignedBigInteger('approved_by')->nullable();
-            $table->string('avatar_path')->nullable();
-            $table->string('school')->nullable();
-            $table->string('major')->nullable();
-            $table->text('profile_bio')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
+            $table->softDeletes();
+
             $table->index('role');
+            $table->index('email');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -40,7 +39,7 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');

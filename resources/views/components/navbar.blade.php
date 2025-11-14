@@ -169,12 +169,77 @@
                         </form>
                     </div>
                 </div>
-                <a href="{{ route('login') }}" class="flex gap-2 text-white bg-[#b01116] rounded-md font-medium px-3 py-1 hover:bg-[#8d0d11] transition-colors ease-in-out duration-300">
-                    Login <i class="ri-arrow-right-double-fill"></i>
-                </a>
-                <a href="{{ route('register') }}" class="flex gap-2 rounded-md font-medium bg-pink-50 hover:bg-pink-100 text-[#b01116] border border-pink-200 px-3 py-1 transition-colors ease-in-out duration-300">
-                    Register <i class="ri-arrow-right-double-fill"></i>
-                </a>
+                
+                @auth
+                    @if(auth()->user()->isStudent() || auth()->user()->isInvestor())
+                        <!-- Profile Dropdown -->
+                        <div x-data="{ profileOpen: false }" class="relative">
+                            <button @click="profileOpen = !profileOpen" class="flex items-center gap-2 border-gray-300 text-gray-700 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                                @if(auth()->user()->avatar)
+                                    <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->username }}" class="w-7 h-7 rounded-full object-cover">
+                                @else
+                                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-xs font-semibold">
+                                        {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                    </div>
+                                @endif
+                                <span class="hidden md:block">{{ auth()->user()->username }}</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                            <div x-show="profileOpen" 
+                                 x-transition 
+                                 @click.away="profileOpen = false"
+                                 class="absolute z-50 right-0 top-full mt-2 w-56 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                                <!-- User Info -->
+                                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                    <p class="font-semibold text-gray-900">{{ auth()->user()->username }}</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">{{ auth()->user()->email }}</p>
+                                    <span class="inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded-full {{ auth()->user()->isStudent() ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                        {{ auth()->user()->isStudent() ? 'Student' : 'Investor' }}
+                                    </span>
+                                </div>
+                                <!-- Menu Items -->
+                                <div class="py-2">
+                                    @if(auth()->user()->isStudent())
+                                        <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <i class="ri-dashboard-line text-gray-400"></i>
+                                            <span>Dashboard</span>
+                                        </a>
+                                        <a href="{{ route('student.profile') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <i class="ri-user-line text-gray-400"></i>
+                                            <span>Profil Saya</span>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('investor.dashboard') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <i class="ri-dashboard-line text-gray-400"></i>
+                                            <span>Dashboard</span>
+                                        </a>
+                                        <a href="{{ route('investor.profile') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                            <i class="ri-user-line text-gray-400"></i>
+                                            <span>Profil Saya</span>
+                                        </a>
+                                    @endif
+                                </div>
+                                <!-- Logout -->
+                                <div class="border-t border-gray-200">
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                            <i class="ri-logout-box-line"></i>
+                                            <span>Keluar</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @else
+                    <a href="{{ route('login') }}" class="flex gap-2 text-white bg-[#b01116] rounded-md font-medium px-3 py-1 hover:bg-[#8d0d11] transition-colors ease-in-out duration-300">
+                        Login <i class="ri-arrow-right-double-fill"></i>
+                    </a>
+                    <a href="{{ route('register') }}" class="flex gap-2 rounded-md font-medium bg-pink-50 hover:bg-pink-100 text-[#b01116] border border-pink-200 px-3 py-1 transition-colors ease-in-out duration-300">
+                        Register <i class="ri-arrow-right-double-fill"></i>
+                    </a>
+                @endauth
             </div>
 
             <!-- Desktop Search & Mobile Menu Button -->
@@ -350,15 +415,68 @@
                 <x-nav-link href="{{ route('qa') }}" :active="request()->routeIs('qa')" class="block w-full text-left">Q&A</x-nav-link>
             </div>
 
-            <!-- Mobile Auth Buttons -->
-            <div class="px-4 py-3 border-t border-gray-300 flex gap-3 text-sm">
-                <a href="{{ route('login') }}" class="flex-1 text-center text-white bg-[#b01116] hover:bg-[#8d0d11] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
-                    Login <i class="ri-arrow-right-double-fill"></i>
-                </a>
-                <a href="{{ route('register') }}" class="flex-1 text-center border-pink-200 bg-pink-50 hover:bg-pink-100 text-[#b01116] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
-                    Register <i class="ri-arrow-right-double-fill"></i>
-                </a>
-            </div>
+            <!-- Mobile Auth Buttons / Profile -->
+            @auth
+                @if(auth()->user()->isStudent() || auth()->user()->isInvestor())
+                    <div class="px-4 py-3 border-t border-gray-300">
+                        <!-- User Info -->
+                        <div class="flex items-center gap-3 mb-3 pb-3 border-b border-gray-200">
+                            @if(auth()->user()->avatar)
+                                <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->username }}" class="w-12 h-12 rounded-full object-cover">
+                            @else
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-lg font-semibold">
+                                    {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                </div>
+                            @endif
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900">{{ auth()->user()->username }}</p>
+                                <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
+                                <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full {{ auth()->user()->isStudent() ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                    {{ auth()->user()->isStudent() ? 'Student' : 'Investor' }}
+                                </span>
+                            </div>
+                        </div>
+                        <!-- Menu Items -->
+                        <div class="space-y-1">
+                            @if(auth()->user()->isStudent())
+                                <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                                    <i class="ri-dashboard-line text-gray-400"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                                <a href="{{ route('student.profile') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                                    <i class="ri-user-line text-gray-400"></i>
+                                    <span>Profil Saya</span>
+                                </a>
+                            @else
+                                <a href="{{ route('investor.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                                    <i class="ri-dashboard-line text-gray-400"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                                <a href="{{ route('investor.profile') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
+                                    <i class="ri-user-line text-gray-400"></i>
+                                    <span>Profil Saya</span>
+                                </a>
+                            @endif
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                    <i class="ri-logout-box-line"></i>
+                                    <span>Keluar</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+            @else
+                <div class="px-4 py-3 border-t border-gray-300 flex gap-3 text-sm">
+                    <a href="{{ route('login') }}" class="flex-1 text-center text-white bg-[#b01116] hover:bg-[#8d0d11] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
+                        Login <i class="ri-arrow-right-double-fill"></i>
+                    </a>
+                    <a href="{{ route('register') }}" class="flex-1 text-center border-pink-200 bg-pink-50 hover:bg-pink-100 text-[#b01116] flex gap-2 items-center justify-center rounded-md border font-medium px-3 py-2 transition-colors ease-in-out duration-300">
+                        Register <i class="ri-arrow-right-double-fill"></i>
+                    </a>
+                </div>
+            @endauth
         </div>
     </nav>
 </header>

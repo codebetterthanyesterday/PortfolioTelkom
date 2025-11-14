@@ -4,14 +4,14 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens; // opsional
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -19,14 +19,21 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name','email','password','role','phone',
-        'is_approved','approved_at','approved_by',
-        'avatar_path','school','major','profile_bio'
+        'email',
+        'username',
+        'phone_number',
+        'full_name',
+        'password',
+        'role',
+        'avatar',
+        'short_about',
+        'about',
+        'email_verified_at',
     ];
 
     protected $casts = [
-        'is_approved' => 'boolean',
-        'approved_at' => 'datetime'
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**
@@ -49,57 +56,66 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_approved' => 'boolean',
-            'approved_at' => 'datetime'
         ];
     }
 
-    // Student: projects they lead
-    public function leadingProjects()
+    // Relationships
+    public function student()
     {
-        return $this->hasMany(Project::class, 'leader_id');
+        return $this->hasOne(Student::class);
     }
 
-    // Project creator
-    public function createdProjects()
+    public function investor()
     {
-        return $this->hasMany(Project::class, 'created_by');
+        return $this->hasOne(Investor::class);
     }
 
-    // Member of group projects
-    public function projectMemberships()
-    {
-        return $this->belongsToMany(Project::class, 'project_members')
-            ->withPivot(['role_in_project', 'joined_at'])
-            ->withTimestamps();
-    }
-
-    // Investor wishlist
-    public function wishlists()
-    {
-        return $this->belongsToMany(Project::class, 'wishlists')->withTimestamps();
-    }
-
-    // Comments made by user
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
 
-    // Admin approval
-    public function approvedBy()
+    public function notifications()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->hasMany(Notification::class);
     }
 
-    // Admin logs
-    public function adminActions()
+    // Scopes
+    public function scopeStudents($query)
     {
-        return $this->hasMany(AdminAction::class, 'admin_id');
+        return $query->where('role', 'student');
     }
 
-    /** Helper: check roles */
-    public function isStudent() { return $this->role === 'student'; }
-    public function isInvestor() { return $this->role === 'investor'; }
-    public function isAdmin() { return $this->role === 'admin'; }
+    public function scopeInvestors($query)
+    {
+        return $query->where('role', 'investor');
+    }
+
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+
+    // Helper methods
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
+
+    public function isInvestor(): bool
+    {
+        return $this->role === 'investor';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function getAvatarUrlAttribute(): string
+    {
+        return $this->avatar 
+            ? asset('storage/' . $this->avatar) 
+            : asset('images/default-avatar.png');
+    }
 }

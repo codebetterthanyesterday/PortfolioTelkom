@@ -2,88 +2,168 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Project extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'title','slug','description','type',
-        'leader_id','created_by',
-        'status','visibility','published_at'
+        'student_id',
+        'title',
+        'slug',
+        'price',
+        'type',
+        'description',
+        'status',
+        'view_count',
     ];
 
     protected $casts = [
-        'published_at' => 'datetime'
+        'price' => 'decimal:2',
+        'view_count' => 'integer',
     ];
 
-    public function leader()
+    protected static function boot()
     {
-        return $this->belongsTo(User::class, 'leader_id');
+        parent::boot();
+
+        static::creating(function ($project) {
+            if (empty($project->slug)) {
+                $project->slug = Str::slug($project->title);
+            }
+        });
     }
 
-    public function creator()
+    // Relationships
+    public function student()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(Student::class);
     }
 
-    public function members()
+    public function owner()
     {
-        return $this->belongsToMany(User::class, 'project_members')
-            ->withPivot(['role_in_project', 'joined_at'])
-            ->withTimestamps();
+        return $this->student();
     }
 
     public function media()
     {
-        return $this->hasMany(ProjectMedia::class);
+        return $this->hasMany(ProjectMedia::class)->orderBy('order');
+    }
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'project_category')
+            ->withTimestamps();
+    }
+
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'project_subject')
+            ->withTimestamps();
+    }
+
+    public function teachers()
+    {
+        return $this->belongsToMany(Teacher::class, 'project_teacher')
+            ->withTimestamps();
+    }
+
+    public function members()
+    {
+        return $this->hasMany(ProjectMember::class);
+    }
+
+    public function teamMembers()
+    {
+        return $this->belongsToMany(Student::class, 'project_members')
+            ->withPivot('role', 'position', 'joined_at')
+            ->withTimestamps();
     }
 
     public function comments()
     {
-        return $this->hasMany(Comment::class)->where('parent_id', null);
+        return $this->hasMany(Comment::class);
     }
 
-    public function allComments()
+    public function wishlists()
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Wishlist::class);
     }
 
     public function wishlistedBy()
     {
-        return $this->belongsToMany(User::class, 'wishlists')->withTimestamps();
+        return $this->belongsToMany(Investor::class, 'wishlists')
+            ->withTimestamps();
     }
 
-    /** Helpers **/
-    public function isGroupProject()
+    // Scopes
+    public function scopePublished($query)
     {
-        return in_array($this->type, [
-            'school_group',
-            'team_outside_school'
-        ]);
+        return $query->where('status', 'published');
     }
 
-    public function isSchoolGroupProject()
+    public function scopeDraft($query)
     {
-        return $this->type === 'school_group';
+        return $query->where('status', 'draft');
     }
 
+    public function scopeIndividual($query)
+    {
+        return $query->where('type', 'individual');
+    }
 
-    public function isIndividualSchoolProject()
+    public function scopeTeam($query)
+    {
+        return $query->where('type', 'team');
+    }
+
+    public function scopePopular($query)
+    {
+        return $query->orderBy('view_count', 'desc');
+    }
+
+    public function scopeRecent($query)
+    {
+        return $query->orderBy('created_at', 'desc');
+    }
+
+    // Helper methods
+    public function isTeam(): bool
+    {
+        return $this->type === 'team';
+    }
+
+    public function isIndividual(): bool
     {
         return $this->type === 'individual';
     }
 
-    public function isPersonalOutsideSchoolProject()
+    public function isPublished(): bool
     {
-        return $this->type === 'personal_outside_school';
+        return $this->status === 'published';
     }
 
-    public function isTeamOutsideSchoolProject()
+    public function getLeader()
     {
-        return $this->type === 'team_outside_school';
+        return $this->members()->where('role', 'leader')->first();
+    }
+
+    public function incrementViewCount(): void
+    {
+        $this->increment('view_count');
+    }
+
+    public function getThumbnailAttribute()
+    {
+        return $this->media()->first();
+    }
+
+    public function getFormattedPriceAttribute(): string
+    {
+        return 'Rp ' . number_format($this->price, 0, ',', '.');
     }
 }

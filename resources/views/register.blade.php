@@ -28,32 +28,44 @@
                         <p class="text-sm sm:text-base text-gray-500">Jelajahi dan dapatkan inspirasi dari proyek siswa terkini.</p>
                     </div>
                     
-                    <form action="" class="space-y-3 sm:space-y-4">
+                    <form action="{{ route('register.post') }}" method="POST" class="space-y-3 sm:space-y-4">
+                        @csrf
                         <h3 class="font-semibold text-xl">Registrasi Akun</h3>
+                        
+                        @if($errors->any())
+                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div>
-                            <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                            <input type="email" id="email" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
+                            <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Email *</label>
+                            <input type="email" name="email" id="email" value="{{ old('email') }}" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
                         </div>
                         <div>
-                            <label for="name" class="block mb-2 text-sm font-medium text-gray-900">Name</label>
-                            <input type="text" id="name" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan nama Anda">
+                            <label for="username" class="block mb-2 text-sm font-medium text-gray-900">Username *</label>
+                            <input type="text" name="username" id="username" value="{{ old('username') }}" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan username Anda">
                         </div>
                         <div>
-                            <label for="role" class="block mb-2 text-sm font-medium text-gray-900">Role</label>
-                            <select id="role" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3">
-                                <option selected disabled>Pilih Role</option>
-                                <option value="student">Student</option>
-                                <option value="investor">Investor</option>
+                            <label for="role" class="block mb-2 text-sm font-medium text-gray-900">Daftar Sebagai *</label>
+                            <select name="role" id="role" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3">
+                                <option value="">Pilih role Anda</option>
+                                <option value="student" {{ old('role') === 'student' ? 'selected' : '' }}>Student</option>
+                                <option value="investor" {{ old('role') === 'investor' ? 'selected' : '' }}>Investor</option>
                             </select>
                         </div>
                         <div class="relative">
-                            <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Password</label>
-                            <input type="password" id="password" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3 pr-12" placeholder="Masukkan password Anda">
+                            <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Password *</label>
+                            <input type="password" name="password" id="password" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3 pr-12" placeholder="Masukkan password Anda">
                             <i class="ri-eye-close-line absolute password-toggle right-3 top-1/2 bottom-1/2 -translate-y-1/2 text-gray-500 text-lg cursor-pointer"></i>
                         </div>
                         <div class="relative">
-                            <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900">Konfirmasi Password</label>
-                            <input type="password" id="password_confirmation" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3 pr-12" placeholder="Konfirmasi password Anda">
+                            <label for="password_confirmation" class="block mb-2 text-sm font-medium text-gray-900">Konfirmasi Password *</label>
+                            <input type="password" name="password_confirmation" id="password_confirmation" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3 pr-12" placeholder="Konfirmasi password Anda">
                             <i class="ri-eye-close-line absolute password-toggle right-3 top-1/2 bottom-1/2 -translate-y-1/2 text-gray-500 text-lg cursor-pointer"></i>
                         </div>
                         <div class="password-requirements text-xs sm:text-sm space-y-1">

@@ -32,7 +32,7 @@
         const emailInput = document.querySelector('#email');
         const passwordInput = document.querySelector('#password');
         const passwordConfirmationInput = document.querySelector('#password_confirmation');
-        const nameInput = document.querySelector('#name');
+        const usernameInput = document.querySelector('#username');
         const roleInput = document.querySelector('#role');
 
         // Password requirements elements
@@ -94,9 +94,9 @@
             const emailValid = validateEmail(emailValue);
 
             // Register page (all registration fields present)
-            if (nameInput && passwordConfirmationInput && roleInput && passwordInput) {
+            if (usernameInput && passwordConfirmationInput && roleInput && passwordInput) {
                 const allFieldsFilled = emailValue !== '' &&
-                                       nameInput.value.trim() !== '' &&
+                                       usernameInput.value.trim() !== '' &&
                                        passwordInput.value.trim() !== '' &&
                                        passwordConfirmationInput.value.trim() !== '';
                 const roleValid = roleInput.value === 'student' || roleInput.value === 'investor';
@@ -132,8 +132,8 @@
             passwordConfirmationInput.addEventListener('input', toggleSubmitButton);
         }
         
-        if (nameInput) {
-            nameInput.addEventListener('input', toggleSubmitButton);
+        if (usernameInput) {
+            usernameInput.addEventListener('input', toggleSubmitButton);
         }
 
         if (roleInput) {
