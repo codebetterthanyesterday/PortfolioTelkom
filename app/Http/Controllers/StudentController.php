@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Expertise;
+use App\Models\Category;
+use App\Models\Subject;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,8 +39,14 @@ class StudentController extends Controller
         $student = auth()->user()->student;
         $student->load(['user', 'expertises', 'educationInfo']);
         $expertises = Expertise::all();
+        
+        // Data for project creation modals
+        $categories = Category::all();
+        $subjects = Subject::all();
+        $teachers = Teacher::all();
+        $students = Student::with('user')->where('id', '!=', $student->id)->get();
 
-        return view('pages.student.profile', compact('student', 'expertises'));
+        return view('pages.student.profile', compact('student', 'expertises', 'categories', 'subjects', 'teachers', 'students'));
     }
 
     public function edit(Student $student)

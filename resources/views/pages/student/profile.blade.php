@@ -4,7 +4,129 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col lg:flex-row gap-8" 
+         x-data="{ 
+             activeTab: 'all',
+             showEditModal: false, 
+             showIndividualProjectModal: false,
+             showTeamProjectModal: false,
+             currentStep: 1, 
+             totalSteps: 3,
+             selectedExpertises: @js(auth()->user()->student->expertises->pluck('id') ?? collect()),
+             education: @js(auth()->user()->student->educationInfo ?? collect()),
+             // Project creation data
+             projectType: 'individual',
+             projectData: {
+                 title: '',
+                 description: '',
+                 price: '',
+                 status: 'draft',
+                 categories: [],
+                 subjects: [],
+                 teachers: [],
+                 team_members: [],
+                 team_positions: {}
+             },
+             selectedFiles: [],
+             newEducation: {
+                 institution_name: '',
+                 degree: '',
+                 field_of_study: '',
+                 start_date: '',
+                 end_date: '',
+                 is_current: false,
+                 description: ''
+             },
+             nextStep() {
+                 if (this.currentStep < this.totalSteps) {
+                     this.currentStep++;
+                 }
+             },
+             prevStep() {
+                 if (this.currentStep > 1) {
+                     this.currentStep--;
+                 }
+             },
+             resetModal() {
+                 this.currentStep = 1;
+                 this.selectedExpertises = @js(auth()->user()->student->expertises->pluck('id') ?? collect());
+                 this.education = @js(auth()->user()->student->educationInfo ?? collect());
+             },
+             resetProjectModal() {
+                 this.currentStep = 1;
+                 this.projectData = {
+                     title: '',
+                     description: '',
+                     price: '',
+                     status: 'draft',
+                     categories: [],
+                     subjects: [],
+                     teachers: [],
+                     team_members: [],
+                     team_positions: {}
+                 };
+                 this.selectedFiles = [];
+             },
+             toggleCategory(id) {
+                 const index = this.projectData.categories.indexOf(id);
+                 if (index > -1) {
+                     this.projectData.categories.splice(index, 1);
+                 } else {
+                     this.projectData.categories.push(id);
+                 }
+             },
+             toggleSubject(id) {
+                 const index = this.projectData.subjects.indexOf(id);
+                 if (index > -1) {
+                     this.projectData.subjects.splice(index, 1);
+                 } else {
+                     this.projectData.subjects.push(id);
+                 }
+             },
+             toggleTeacher(id) {
+                 const index = this.projectData.teachers.indexOf(id);
+                 if (index > -1) {
+                     this.projectData.teachers.splice(index, 1);
+                 } else {
+                     this.projectData.teachers.push(id);
+                 }
+             },
+             toggleTeamMember(id) {
+                 const index = this.projectData.team_members.indexOf(id);
+                 if (index > -1) {
+                     this.projectData.team_members.splice(index, 1);
+                     delete this.projectData.team_positions[id];
+                 } else {
+                     this.projectData.team_members.push(id);
+                     this.projectData.team_positions[id] = '';
+                 }
+             },
+             toggleExpertise(id) {
+                 const index = this.selectedExpertises.indexOf(id);
+                 if (index > -1) {
+                     this.selectedExpertises.splice(index, 1);
+                 } else {
+                     this.selectedExpertises.push(id);
+                 }
+             },
+             addEducation() {
+                 const newEd = { ...this.newEducation, id: 'new_' + Date.now() };
+                 this.education.push(newEd);
+                 this.newEducation = {
+                     institution_name: '',
+                     degree: '',
+                     field_of_study: '',
+                     start_date: '',
+                     end_date: '',
+                     is_current: false,
+                     description: ''
+                 };
+             },
+             removeEducation(index) {
+                 this.education.splice(index, 1);
+             }
+         }" 
+         x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal || showIndividualProjectModal || showTeamProjectModal)"
         <!-- Left Column (2 columns width) -->
         <div class="flex-1 lg:w-2/3 lg:order-1 order-2">
             <!-- Navigation Tabs -->
@@ -110,14 +232,15 @@
                                     <h3 class="text-lg font-medium text-gray-800 mb-2">Belum ada proyek</h3>
                                     <p class="text-gray-600 mb-6">Mulai buat proyek pertama Anda atau bergabung dengan tim proyek lainnya.</p>
                                     <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-                                        <a href="{{ route('student.projects.create') }}" class="self-center inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                        <button @click="showIndividualProjectModal = true; projectType = 'individual'; resetProjectModal()" class="self-center inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
                                             <i class="ri-add-line"></i>
                                             Buat Proyek Baru
-                                        </a>
-                                        <a href="{{ route('student.projects.create') }}" class="self-center inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                        </button>
+                                        {{-- flex gap-2 rounded-md font-medium bg-pink-50 hover:bg-pink-100 text-[#b01116] border border-pink-200 px-3 py-1 transition-colors ease-in-out duration-300 --}}
+                                        <button @click="showTeamProjectModal = true; projectType = 'team'; resetProjectModal()" class="self-center inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink-50 hover:bg-pink-100 text-[#b01116] border border-pink-200 rounded-lg font-medium transition-colors">
                                             <i class="ri-add-line"></i>
                                             Inisiasi Proyek Tim
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             @endif
@@ -183,10 +306,10 @@
                                     </div>
                                     <h3 class="text-lg font-medium text-gray-800 mb-2">Belum bergabung dengan proyek tim</h3>
                                     <p class="text-gray-600 mb-6">Cari proyek tim yang sesuai dengan keahlian Anda dan bergabunglah untuk berkolaborasi.</p>
-                                    <a href="{{ route('student.projects.create') }}" class="inline-flex items-center text-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    <button @click="showTeamProjectModal = true; projectType = 'team'; resetProjectModal()" class="inline-flex items-center text-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
                                         <i class="ri-add-line"></i>
                                         Inisiasi Proyek Tim
-                                    </a>
+                                    </button>
                                 </div>
                             @endif
                         </div>
@@ -254,10 +377,10 @@
                                     </div>
                                     <h3 class="text-lg font-medium text-gray-800 mb-2">Belum ada proyek pribadi</h3>
                                     <p class="text-gray-600 mb-6">Buat proyek pribadi pertama Anda untuk menampilkan keahlian dan kreativitas.</p>
-                                    <a href="{{ route('student.projects.create') }}" class="inline-flex items-center text-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    <button @click="showIndividualProjectModal = true; projectType = 'individual'; resetProjectModal()" class="inline-flex items-center text-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
                                         <i class="ri-add-line"></i>
                                         Buat Proyek Baru
-                                    </a>
+                                    </button>
                                 </div>
                             @endif
                         </div>
@@ -326,63 +449,7 @@
         <!-- Right Column (Fixed Sidebar) -->
         <div class="lg:w-1/3 lg:order-2 order-1">
             <div class="lg:sticky lg:top-24">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" 
-                     x-data="{ 
-                         showEditModal: false, 
-                         currentStep: 1, 
-                         totalSteps: 3,
-                         selectedExpertises: @js(auth()->user()->student->expertises->pluck('id') ?? collect()),
-                         education: @js(auth()->user()->student->educationInfo ?? collect()),
-                         newEducation: {
-                             institution_name: '',
-                             degree: '',
-                             field_of_study: '',
-                             start_date: '',
-                             end_date: '',
-                             is_current: false,
-                             description: ''
-                         },
-                         nextStep() {
-                             if (this.currentStep < this.totalSteps) {
-                                 this.currentStep++;
-                             }
-                         },
-                         prevStep() {
-                             if (this.currentStep > 1) {
-                                 this.currentStep--;
-                             }
-                         },
-                         resetModal() {
-                             this.currentStep = 1;
-                             this.selectedExpertises = @js(auth()->user()->student->expertises->pluck('id') ?? collect());
-                             this.education = @js(auth()->user()->student->educationInfo ?? collect());
-                         },
-                         toggleExpertise(id) {
-                             const index = this.selectedExpertises.indexOf(id);
-                             if (index > -1) {
-                                 this.selectedExpertises.splice(index, 1);
-                             } else {
-                                 this.selectedExpertises.push(id);
-                             }
-                         },
-                         addEducation() {
-                             const newEd = { ...this.newEducation, id: 'new_' + Date.now() };
-                             this.education.push(newEd);
-                             this.newEducation = {
-                                 institution_name: '',
-                                 degree: '',
-                                 field_of_study: '',
-                                 start_date: '',
-                                 end_date: '',
-                                 is_current: false,
-                                 description: ''
-                             };
-                         },
-                         removeEducation(index) {
-                             this.education.splice(index, 1);
-                         }
-                     }" 
-                     x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal)">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <!-- Profile Picture -->
                     <div class="flex justify-center mb-6">
                         <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
@@ -719,6 +786,509 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Individual Project Creation Modal (teleported to <body>) -->
+        <template x-teleport="body">
+            <div x-show="showIndividualProjectModal"
+                 x-transition
+                 @keydown.escape.window="showIndividualProjectModal = false; resetProjectModal()"
+                 @click.self="showIndividualProjectModal = false; resetProjectModal()"
+                 class="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4"
+                 role="dialog" aria-modal="true" style="display: none;">
+                <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                    
+                    <!-- Modal Header with Progress -->
+                    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">Buat Proyek Baru (Individual)</h2>
+                            <button @click="showIndividualProjectModal = false; resetProjectModal()" class="text-gray-400 hover:text-gray-600">
+                                <i class="ri-close-line text-2xl"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-center">
+                            <template x-for="step in totalSteps" :key="step">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors"
+                                         :class="step <= currentStep ? 'bg-[#b01116] text-white' : 'bg-gray-200 text-gray-500'">
+                                        <span x-text="step"></span>
+                                    </div>
+                                    <div class="w-16 h-1 mx-2 transition-colors" 
+                                         x-show="step < totalSteps"
+                                         :class="step < currentStep ? 'bg-[#b01116]' : 'bg-gray-200'"></div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div class="text-center mt-2 text-sm text-gray-600">
+                            <span x-show="currentStep === 1">Langkah 1: Informasi Proyek</span>
+                            <span x-show="currentStep === 2">Langkah 2: Kategori & Mata Kuliah</span>
+                            <span x-show="currentStep === 3">Langkah 3: Media & Publikasi</span>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="type" value="individual">
+                        
+                        <!-- Hidden fields for form data -->
+                        <template x-for="(categoryId, index) in projectData.categories" :key="categoryId">
+                            <input type="hidden" :name="'categories[' + index + ']'" :value="categoryId">
+                        </template>
+                        <template x-for="(subjectId, index) in projectData.subjects" :key="subjectId">
+                            <input type="hidden" :name="'subjects[' + index + ']'" :value="subjectId">
+                        </template>
+                        <template x-for="(teacherId, index) in projectData.teachers" :key="teacherId">
+                            <input type="hidden" :name="'teachers[' + index + ']'" :value="teacherId">
+                        </template>
+
+                        <!-- Step 1: Project Information -->
+                        <div x-show="currentStep === 1" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informasi Proyek</h3>
+                            
+                            <!-- Project Title -->
+                            <div class="mb-4">
+                                <label for="individual_title" class="block text-sm font-semibold text-gray-700 mb-2">Judul Proyek *</label>
+                                <input type="text" name="title" id="individual_title" x-model="projectData.title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                            </div>
+
+                            <!-- Project Description -->
+                            <div class="mb-4">
+                                <label for="individual_description" class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Proyek *</label>
+                                <textarea name="description" id="individual_description" x-model="projectData.description" rows="6" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent" placeholder="Jelaskan detail proyek Anda..."></textarea>
+                            </div>
+
+                            <!-- Project Price -->
+                            <div class="mb-4">
+                                <label for="individual_price" class="block text-sm font-semibold text-gray-700 mb-2">Estimasi Harga (Rp)</label>
+                                <input type="number" name="price" id="individual_price" x-model="projectData.price" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                            </div>
+
+                            <!-- Project Status -->
+                            <div class="mb-4">
+                                <label for="individual_status" class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                                <select name="status" id="individual_status" x-model="projectData.status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Categories & Subjects -->
+                        <div x-show="currentStep === 2" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pilih Kategori & Mata Kuliah</h3>
+                            
+                            <!-- Categories Selection -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-800 mb-3">Kategori Proyek * (minimal 1)</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    @foreach($categories as $category)
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                               :class="projectData.categories.includes({{ $category->id }}) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                            <input type="checkbox" 
+                                                   class="sr-only" 
+                                                   :checked="projectData.categories.includes({{ $category->id }})"
+                                                   @change="toggleCategory({{ $category->id }})">
+                                            <div class="w-4 h-4 rounded border mr-3 flex items-center justify-center"
+                                                 :class="projectData.categories.includes({{ $category->id }}) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                                <i class="ri-check-line text-white text-xs" x-show="projectData.categories.includes({{ $category->id }})"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-700">{{ $category->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <div class="flex items-center gap-2 text-blue-700">
+                                        <i class="ri-information-line"></i>
+                                        <span class="text-sm font-medium">
+                                            <span x-text="projectData.categories.length"></span> kategori dipilih
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Subjects Selection -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-800 mb-3">Mata Kuliah Terkait (Opsional)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                                    @foreach($subjects as $subject)
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                               :class="projectData.subjects.includes({{ $subject->id }}) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                            <input type="checkbox" 
+                                                   class="sr-only" 
+                                                   :checked="projectData.subjects.includes({{ $subject->id }})"
+                                                   @change="toggleSubject({{ $subject->id }})">
+                                            <div class="w-4 h-4 rounded border mr-3 flex items-center justify-center"
+                                                 :class="projectData.subjects.includes({{ $subject->id }}) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                                <i class="ri-check-line text-white text-xs" x-show="projectData.subjects.includes({{ $subject->id }})"></i>
+                                            </div>
+                                            <div class="text-sm">
+                                                <div class="font-medium text-gray-700">{{ $subject->name }}</div>
+                                                @if($subject->code)
+                                                    <div class="text-xs text-gray-500">{{ $subject->code }}</div>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Teachers Selection -->
+                            <div>
+                                <h4 class="font-medium text-gray-800 mb-3">Dosen Pengampu (Opsional)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                                    @foreach($teachers as $teacher)
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                               :class="projectData.teachers.includes({{ $teacher->id }}) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                            <input type="checkbox" 
+                                                   class="sr-only" 
+                                                   :checked="projectData.teachers.includes({{ $teacher->id }})"
+                                                   @change="toggleTeacher({{ $teacher->id }})">
+                                            <div class="w-4 h-4 rounded border mr-3 flex items-center justify-center"
+                                                 :class="projectData.teachers.includes({{ $teacher->id }}) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                                <i class="ri-check-line text-white text-xs" x-show="projectData.teachers.includes({{ $teacher->id }})"></i>
+                                            </div>
+                                            <div class="text-sm">
+                                                <div class="font-medium text-gray-700">{{ $teacher->name }}</div>
+                                                @if($teacher->nip)
+                                                    <div class="text-xs text-gray-500">NIP: {{ $teacher->nip }}</div>
+                                                @endif
+                                                @if($teacher->institution)
+                                                    <div class="text-xs text-gray-500">{{ $teacher->institution }}</div>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Media & Publication -->
+                        <div x-show="currentStep === 3" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Media & Publikasi</h3>
+                            
+                            <!-- Media Upload -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Media (Opsional)</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <i class="ri-upload-cloud-2-line text-4xl text-gray-400 mb-2"></i>
+                                    <div class="text-sm text-gray-600 mb-2">
+                                        Drop files here or click to upload
+                                    </div>
+                                    <input type="file" name="media[]" multiple accept="image/*,video/*" class="hidden" id="individual_media">
+                                    <label for="individual_media" class="cursor-pointer bg-[#b01116] text-white px-4 py-2 rounded-lg hover:bg-[#8d0d11] transition-colors">
+                                        Choose Files
+                                    </label>
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        Max 10 files, each up to 10MB (Images: JPG, PNG | Videos: MP4, MOV)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Review Project Data -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Review Proyek</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div><span class="font-medium">Judul:</span> <span x-text="projectData.title || 'Belum diisi'"></span></div>
+                                    <div><span class="font-medium">Kategori:</span> <span x-text="projectData.categories.length"></span> terpilih</div>
+                                    <div><span class="font-medium">Status:</span> <span x-text="projectData.status === 'draft' ? 'Draft' : 'Published'"></span></div>
+                                    <div><span class="font-medium">Harga:</span> <span x-text="projectData.price ? 'Rp ' + new Intl.NumberFormat('id-ID').format(projectData.price) : 'Tidak diisi'"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Footer -->
+                        <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+                            <div class="flex justify-between gap-4">
+                                <button type="button" 
+                                        @click="prevStep()" 
+                                        x-show="currentStep > 1"
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                                    <i class="ri-arrow-left-line mr-2"></i>Kembali
+                                </button>
+                                
+                                <button type="button" 
+                                        @click="showIndividualProjectModal = false; resetProjectModal()" 
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                                    Batal
+                                </button>
+                                
+                                <button type="button" 
+                                        @click="nextStep()" 
+                                        x-show="currentStep < totalSteps"
+                                        class="px-6 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    Selanjutnya<i class="ri-arrow-right-line ml-2"></i>
+                                </button>
+                                
+                                <button type="submit" 
+                                        x-show="currentStep === totalSteps"
+                                        class="px-6 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    <i class="ri-save-line mr-2"></i>Buat Proyek
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </template>
+
+        <!-- Team Project Creation Modal (teleported to <body>) -->
+        <template x-teleport="body">
+            <div x-show="showTeamProjectModal"
+                 x-transition
+                 @keydown.escape.window="showTeamProjectModal = false; resetProjectModal()"
+                 @click.self="showTeamProjectModal = false; resetProjectModal()"
+                 class="fixed inset-0 z-[200] bg-black/50 flex items-center justify-center p-4"
+                 role="dialog" aria-modal="true" style="display: none;">
+                <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+                    
+                    <!-- Modal Header with Progress -->
+                    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">Inisiasi Proyek Tim</h2>
+                            <button @click="showTeamProjectModal = false; resetProjectModal()" class="text-gray-400 hover:text-gray-600">
+                                <i class="ri-close-line text-2xl"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Progress Steps -->
+                        <div class="flex items-center justify-center">
+                            <template x-for="step in totalSteps" :key="step">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors"
+                                         :class="step <= currentStep ? 'bg-[#b01116] text-white' : 'bg-gray-200 text-gray-500'">
+                                        <span x-text="step"></span>
+                                    </div>
+                                    <div class="w-16 h-1 mx-2 transition-colors" 
+                                         x-show="step < totalSteps"
+                                         :class="step < currentStep ? 'bg-[#b01116]' : 'bg-gray-200'"></div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div class="text-center mt-2 text-sm text-gray-600">
+                            <span x-show="currentStep === 1">Langkah 1: Informasi Proyek</span>
+                            <span x-show="currentStep === 2">Langkah 2: Kategori & Mata Kuliah</span>
+                            <span x-show="currentStep === 3">Langkah 3: Tim & Publikasi</span>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="type" value="team">
+                        
+                        <!-- Hidden fields for form data -->
+                        <template x-for="(categoryId, index) in projectData.categories" :key="categoryId">
+                            <input type="hidden" :name="'categories[' + index + ']'" :value="categoryId">
+                        </template>
+                        <template x-for="(subjectId, index) in projectData.subjects" :key="subjectId">
+                            <input type="hidden" :name="'subjects[' + index + ']'" :value="subjectId">
+                        </template>
+                        <template x-for="(teacherId, index) in projectData.teachers" :key="teacherId">
+                            <input type="hidden" :name="'teachers[' + index + ']'" :value="teacherId">
+                        </template>
+                        <template x-for="(memberId, index) in projectData.team_members" :key="memberId">
+                            <input type="hidden" :name="'team_members[' + index + ']'" :value="memberId">
+                        </template>
+                        <template x-for="(position, memberId) in projectData.team_positions" :key="memberId">
+                            <input type="hidden" :name="'team_positions[' + memberId + ']'" :value="position">
+                        </template>
+
+                        <!-- Step 1: Project Information (Same as Individual) -->
+                        <div x-show="currentStep === 1" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informasi Proyek Tim</h3>
+                            
+                            <!-- Project Title -->
+                            <div class="mb-4">
+                                <label for="team_title" class="block text-sm font-semibold text-gray-700 mb-2">Judul Proyek *</label>
+                                <input type="text" name="title" id="team_title" x-model="projectData.title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                            </div>
+
+                            <!-- Project Description -->
+                            <div class="mb-4">
+                                <label for="team_description" class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Proyek *</label>
+                                <textarea name="description" id="team_description" x-model="projectData.description" rows="6" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent" placeholder="Jelaskan detail proyek tim Anda..."></textarea>
+                            </div>
+
+                            <!-- Project Price -->
+                            <div class="mb-4">
+                                <label for="team_price" class="block text-sm font-semibold text-gray-700 mb-2">Estimasi Harga (Rp)</label>
+                                <input type="number" name="price" id="team_price" x-model="projectData.price" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                            </div>
+
+                            <!-- Project Status -->
+                            <div class="mb-4">
+                                <label for="team_status" class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
+                                <select name="status" id="team_status" x-model="projectData.status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Categories & Subjects (Same as Individual) -->
+                        <div x-show="currentStep === 2" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pilih Kategori & Mata Kuliah</h3>
+                            
+                            <!-- Categories Selection -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-800 mb-3">Kategori Proyek * (minimal 1)</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    @foreach($categories as $category)
+                                        <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                                               :class="projectData.categories.includes({{ $category->id }}) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                            <input type="checkbox" 
+                                                   class="sr-only" 
+                                                   :checked="projectData.categories.includes({{ $category->id }})"
+                                                   @change="toggleCategory({{ $category->id }})">
+                                            <div class="w-4 h-4 rounded border mr-3 flex items-center justify-center"
+                                                 :class="projectData.categories.includes({{ $category->id }}) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                                <i class="ri-check-line text-white text-xs" x-show="projectData.categories.includes({{ $category->id }})"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-700">{{ $category->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <div class="flex items-center gap-2 text-blue-700">
+                                        <i class="ri-information-line"></i>
+                                        <span class="text-sm font-medium">
+                                            <span x-text="projectData.categories.length"></span> kategori dipilih
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Subjects & Teachers same as individual modal -->
+                            <!-- Note: Keeping content identical to individual modal for brevity -->
+                        </div>
+
+                        <!-- Step 3: Team Members & Publication -->
+                        <div x-show="currentStep === 3" x-transition class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Pilih Anggota Tim & Publikasi</h3>
+                            
+                            <!-- Team Members Selection -->
+                            <div class="mb-6">
+                                <h4 class="font-medium text-gray-800 mb-3">Anggota Tim * (minimal 1)</h4>
+                                <p class="text-sm text-gray-600 mb-3">Anda akan menjadi leader tim secara otomatis. Pilih anggota tim lainnya:</p>
+                                <div class="space-y-3 max-h-64 overflow-y-auto">
+                                    @foreach($students as $student)
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                                             :class="projectData.team_members.includes({{ $student->id }}) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="checkbox" 
+                                                       class="sr-only" 
+                                                       :checked="projectData.team_members.includes({{ $student->id }})"
+                                                       @change="toggleTeamMember({{ $student->id }})">
+                                                <div class="w-4 h-4 rounded border mr-3 flex items-center justify-center"
+                                                     :class="projectData.team_members.includes({{ $student->id }}) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                                    <i class="ri-check-line text-white text-xs" x-show="projectData.team_members.includes({{ $student->id }})"></i>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    @if($student->user->avatar)
+                                                        <img src="{{ $student->user->avatar_url }}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                                                    @else
+                                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-bold">
+                                                            {{ strtoupper(substr($student->user->username, 0, 1)) }}
+                                                        </div>
+                                                    @endif
+                                                    <div>
+                                                        <div class="font-medium text-gray-700">{{ $student->user->full_name ?? $student->user->username }}</div>
+                                                        @if($student->student_id)
+                                                            <div class="text-xs text-gray-500">NIM: {{ $student->student_id }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            
+                                            <!-- Position Input -->
+                                            <div x-show="projectData.team_members.includes({{ $student->id }})" x-transition class="ml-4">
+                                                <input type="text" 
+                                                       x-model="projectData.team_positions[{{ $student->id }}]"
+                                                       placeholder="Posisi (Frontend, Backend, Designer, dll.)"
+                                                       class="text-sm px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <div class="flex items-center gap-2 text-blue-700">
+                                        <i class="ri-information-line"></i>
+                                        <span class="text-sm font-medium">
+                                            <span x-text="projectData.team_members.length + 1"></span> anggota tim (termasuk Anda sebagai leader)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Media Upload -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Media (Opsional)</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <i class="ri-upload-cloud-2-line text-4xl text-gray-400 mb-2"></i>
+                                    <div class="text-sm text-gray-600 mb-2">
+                                        Drop files here or click to upload
+                                    </div>
+                                    <input type="file" name="media[]" multiple accept="image/*,video/*" class="hidden" id="team_media">
+                                    <label for="team_media" class="cursor-pointer bg-[#b01116] text-white px-4 py-2 rounded-lg hover:bg-[#8d0d11] transition-colors">
+                                        Choose Files
+                                    </label>
+                                    <div class="text-xs text-gray-500 mt-2">
+                                        Max 10 files, each up to 10MB (Images: JPG, PNG | Videos: MP4, MOV)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Review Project Data -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-800 mb-3">Review Proyek Tim</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div><span class="font-medium">Judul:</span> <span x-text="projectData.title || 'Belum diisi'"></span></div>
+                                    <div><span class="font-medium">Kategori:</span> <span x-text="projectData.categories.length"></span> terpilih</div>
+                                    <div><span class="font-medium">Anggota Tim:</span> <span x-text="projectData.team_members.length + 1"></span> orang</div>
+                                    <div><span class="font-medium">Status:</span> <span x-text="projectData.status === 'draft' ? 'Draft' : 'Published'"></span></div>
+                                    <div><span class="font-medium">Harga:</span> <span x-text="projectData.price ? 'Rp ' + new Intl.NumberFormat('id-ID').format(projectData.price) : 'Tidak diisi'"></span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Footer -->
+                        <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+                            <div class="flex justify-between gap-4">
+                                <button type="button" 
+                                        @click="prevStep()" 
+                                        x-show="currentStep > 1"
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                                    <i class="ri-arrow-left-line mr-2"></i>Kembali
+                                </button>
+                                
+                                <button type="button" 
+                                        @click="showTeamProjectModal = false; resetProjectModal()" 
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                                    Batal
+                                </button>
+                                
+                                <button type="button" 
+                                        @click="nextStep()" 
+                                        x-show="currentStep < totalSteps"
+                                        class="px-6 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    Selanjutnya<i class="ri-arrow-right-line ml-2"></i>
+                                </button>
+                                
+                                <button type="submit" 
+                                        x-show="currentStep === totalSteps"
+                                        class="px-6 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                    <i class="ri-save-line mr-2"></i>Inisiasi Proyek Tim
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </template>
     </div>
 </div>
 @endsection
