@@ -200,6 +200,65 @@ class ProjectController extends Controller
         return view('projects.edit', compact('project', 'categories', 'subjects', 'teachers', 'students'));
     }
 
+    public function getEditData(Project $project)
+    {
+        try {
+            $this->authorize('update', $project);
+
+            $project->load([
+                'categories',
+                'subjects', 
+                'teachers',
+                'media',
+                'members.student.user'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'project' => [
+                    'id' => $project->id,
+                    'title' => $project->title,
+                    'description' => $project->description,
+                    'price' => $project->price,
+                    'status' => $project->status,
+                    'type' => $project->type,
+                    'categories' => $project->categories,
+                    'subjects' => $project->subjects,
+                    'teachers' => $project->teachers,
+                    'media' => $project->media,
+                    'team_members' => $project->members->map(function($member) {
+                        return [
+                            'id' => $member->id,
+                            'student_id' => $member->student_id,
+                            'role' => $member->role,
+                            'position' => $member->position,
+                            'student' => [
+                                'id' => $member->student->id,
+                                'user' => $member->student->user
+                            ]
+                        ];
+                    })
+                ]
+            ]);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengedit proyek ini'
+            ], 403);
+        } catch (\Exception $e) {
+            \Log::error('Error loading project for edit: ' . $e->getMessage(), [
+                'project_id' => $project->id,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memuat data proyek'
+            ], 500);
+        }
+    }
+
     public function update(Request $request, Project $project)
     {
         $this->authorize('update', $project);
@@ -215,6 +274,11 @@ class ProjectController extends Controller
             'subjects.*' => 'exists:subjects,id',
             'teachers' => 'nullable|array',
             'teachers.*' => 'exists:teachers,id',
+            'media' => 'nullable|array|max:10',
+            'media.*' => 'file|mimes:jpg,jpeg,png,mp4,mov|max:10240',
+            'team_members' => 'nullable|array',
+            'team_members.*' => 'exists:students,id',
+            'team_positions' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
@@ -232,30 +296,97 @@ class ProjectController extends Controller
             $project->subjects()->sync($validated['subjects'] ?? []);
             $project->teachers()->sync($validated['teachers'] ?? []);
 
+            // Handle media uploads (add new media)
+            if ($request->hasFile('media')) {
+                $existingMediaCount = $project->media()->count();
+                
+                foreach ($request->file('media') as $index => $file) {
+                    $path = $file->store('projects/' . $project->id, 'public');
+                    
+                    $project->media()->create([
+                        'type' => str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video',
+                        'file_path' => $path,
+                        'file_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                        'order' => $existingMediaCount + $index,
+                    ]);
+                }
+            }
+
+            // Update team members if team project
+            if ($project->type === 'team' && isset($validated['team_members'])) {
+                // Get current leader
+                $leader = $project->members()->where('role', 'leader')->first();
+                
+                // Delete old members (except leader)
+                $project->members()->where('role', 'member')->delete();
+                
+                // Add new team members
+                foreach ($validated['team_members'] as $index => $memberId) {
+                    // Don't add leader as member
+                    if ($leader && $leader->student_id != $memberId) {
+                        $project->members()->create([
+                            'student_id' => $memberId,
+                            'role' => 'member',
+                            'position' => $validated['team_positions'][$index] ?? 'Team Member',
+                            'joined_at' => now(),
+                        ]);
+                    }
+                }
+            }
+
             DB::commit();
 
-            return redirect()->route('projects.show', $project)
-                ->with('success', 'Project updated successfully!');
+            return response()->json([
+                'success' => true,
+                'message' => 'Project updated successfully!',
+                'project' => $project
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to update project: ' . $e->getMessage()])
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update project: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     public function destroy(Project $project)
     {
-        $this->authorize('delete', $project);
+        try {
+            $this->authorize('delete', $project);
 
-        // Delete media files
-        foreach ($project->media as $media) {
-            Storage::disk('public')->delete($media->file_path);
+            // Delete media files
+            foreach ($project->media as $media) {
+                Storage::disk('public')->delete($media->file_path);
+            }
+
+            $project->delete();
+
+            // Return JSON response for AJAX
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Proyek berhasil dihapus!'
+                ]);
+            }
+
+            return redirect()->route('student.dashboard')
+                ->with('success', 'Proyek berhasil dihapus!');
+        } catch (\Exception $e) {
+            \Log::error('Error deleting project: ' . $e->getMessage());
+            
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menghapus proyek: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Gagal menghapus proyek!');
         }
-
-        $project->delete();
-
-        return redirect()->route('student.dashboard')
-            ->with('success', 'Project deleted successfully!');
     }
 }

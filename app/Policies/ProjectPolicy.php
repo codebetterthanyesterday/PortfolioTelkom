@@ -45,7 +45,17 @@ class ProjectPolicy
      */
     public function delete(User $user, Project $project): bool
     {
-        // Only the project owner can delete
-        return $user->student && $user->student->id === $project->student_id;
+        // Project owner can always delete
+        if ($user->student && $user->student->id === $project->student_id) {
+            return true;
+        }
+        
+        // For team projects, leader can also delete
+        if ($project->isTeam()) {
+            $leader = $project->getLeader();
+            return $leader && $user->student && $leader->student_id === $user->student->id;
+        }
+        
+        return false;
     }
 }

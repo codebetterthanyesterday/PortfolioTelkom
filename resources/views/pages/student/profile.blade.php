@@ -10,6 +10,8 @@
             showEditModal: false,
             showIndividualProjectModal: false,
             showTeamProjectModal: false,
+            showEditProjectModal: false,
+            editingProject: null,
 
             // Shared step state (used by all modals)
             currentStep: 1,
@@ -265,6 +267,7 @@
                     team_positions: {}
                 };
                 this.selectedFiles = [];
+                this.editingProject = null;
                 this.searchCategory = '';
                 this.searchSubject = '';
                 this.searchTeacher = '';
@@ -276,6 +279,172 @@
                 this.newSubject = { name: '', code: '', description: '' };
                 this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
                 this.newExpertise = { name: '' };
+            },
+
+            // Load project data for editing
+            async loadProjectForEdit(projectId) {
+                try {
+                    console.log('Loading project data for ID:', projectId);
+                    
+                    const res = await fetch(`/student/projects/${projectId}/edit-data`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                        }
+                    });
+                    
+                    console.log('Response status:', res.status);
+                    
+                    const data = await res.json();
+                    console.log('Response data:', data);
+                    
+                    if (!res.ok) {
+                        const errorMsg = data.message || `HTTP Error ${res.status}`;
+                        console.error('Server error:', errorMsg);
+                        alert('Gagal memuat data proyek: ' + errorMsg);
+                        return;
+                    }
+                    
+                    if (!data.success || !data.project) {
+                        console.error('Invalid response format:', data);
+                        alert('Format response tidak valid');
+                        return;
+                    }
+                    
+                    this.editingProject = data.project;
+                    this.projectType = data.project.type;
+                    this.projectData = {
+                        title: data.project.title || '',
+                        description: data.project.description || '',
+                        price: data.project.price || '',
+                        status: data.project.status || 'draft',
+                        categories: data.project.categories?.map(c => c.id) || [],
+                        subjects: data.project.subjects?.map(s => s.id) || [],
+                        teachers: data.project.teachers?.map(t => t.id) || [],
+                        team_members: data.project.team_members?.filter(m => m.role !== 'leader').map(m => m.student_id) || [],
+                        team_positions: {}
+                    };
+                    
+                    // Populate team positions
+                    if (data.project.team_members) {
+                        data.project.team_members.forEach(member => {
+                            if (member.role !== 'leader') {
+                                this.projectData.team_positions[member.student_id] = member.position || '';
+                            }
+                        });
+                    }
+                    
+                    this.currentStep = 1;
+                    this.showEditProjectModal = true;
+                    console.log('Modal opened successfully');
+                } catch (e) {
+                    console.error('Error loading project:', e);
+                    alert('Gagal memuat data proyek: ' + e.message);
+                }
+            },
+
+            // Update project
+            async updateProject() {
+                if (!this.canCreateProject()) {
+                    alert('Mohon lengkapi semua data yang diperlukan');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('_method', 'PUT');
+                formData.append('title', this.projectData.title);
+                formData.append('description', this.projectData.description);
+                formData.append('price', this.projectData.price || '');
+                formData.append('status', this.projectData.status);
+                
+                this.projectData.categories.forEach(id => formData.append('categories[]', id));
+                this.projectData.subjects.forEach(id => formData.append('subjects[]', id));
+                this.projectData.teachers.forEach(id => formData.append('teachers[]', id));
+                
+                if (this.projectType === 'team') {
+                    this.projectData.team_members.forEach((id, idx) => {
+                        formData.append('team_members[]', id);
+                        formData.append(`team_positions[${idx}]`, this.projectData.team_positions[id] || '');
+                    });
+                }
+                
+                // Add new media files
+                this.selectedFiles.forEach((file, idx) => {
+                    formData.append(`media[${idx}]`, file);
+                });
+                
+                try {
+                    const res = await fetch(`/student/projects/${this.editingProject.id}`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                        },
+                        body: formData
+                    });
+                    
+                    if (!res.ok) throw new Error('Update failed');
+                    
+                    alert('Proyek berhasil diperbarui!');
+                    this.showEditProjectModal = false;
+                    this.resetProjectModal();
+                    window.location.reload();
+                } catch (e) {
+                    console.error(e);
+                    alert('Gagal memperbarui proyek');
+                }
+            },
+
+            // Delete project with SweetAlert confirmation
+            async deleteProject(projectId, projectTitle) {
+                const result = await Swal.fire({
+                    title: 'Hapus Proyek?',
+                    html: `Apakah Anda yakin ingin menghapus proyek <strong>${projectTitle}</strong>?<br><small class='text-gray-500'>Tindakan ini tidak dapat dibatalkan.</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#b01116',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                });
+
+                if (!result.isConfirmed) return;
+
+                try {
+                    const res = await fetch(`/student/projects/${projectId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                        },
+                        body: JSON.stringify({ _method: 'DELETE' })
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.message || 'Gagal menghapus proyek');
+                    }
+
+                    await Swal.fire({
+                        title: 'Berhasil!',
+                        text: data.message || 'Proyek berhasil dihapus',
+                        icon: 'success',
+                        confirmButtonColor: '#b01116',
+                        timer: 2000
+                    });
+
+                    window.location.reload();
+                } catch (e) {
+                    console.error('Error deleting project:', e);
+                    await Swal.fire({
+                        title: 'Gagal!',
+                        text: e.message || 'Terjadi kesalahan saat menghapus proyek',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
+                }
             },
 
             // Toggles
@@ -332,8 +501,8 @@
                 this.education.splice(i, 1);
             }
         }"
-         x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal || showIndividualProjectModal || showTeamProjectModal)"
-        <!-- Left Column (2 columns width) -->
+         x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal || showIndividualProjectModal || showTeamProjectModal || showEditProjectModal)">
+        {{-- <!-- Left Column (2 columns width) --> --}}
         <div class="flex-1 lg:w-2/3 lg:order-1 order-2">
             <!-- Quick Actions Bar -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
@@ -442,12 +611,29 @@
                                             <h3 class="font-semibold text-gray-800 mb-1">{{ $project->title }}</h3>
                                             <p class="text-xs text-gray-500 mb-2">{{ $project->created_at->format('d F Y') }}</p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
-                                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
                                                 <div class="flex items-center gap-1">
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
                                                 </div>
                                                 <a href="{{ route('project.detail') }}?id={{ $project->id }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
+                                            </div>
+                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                                <div class="flex items-center gap-2">
+                                                    @can('update', $project)
+                                                        <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                                                            <i class="ri-edit-line mr-1"></i>Edit
+                                                        </button>
+                                                    @endcan
+                                                    @can('delete', $project)
+                                                        <button @click="deleteProject({{ $project->id }}, '{{ $project->title }}')" class="flex-1 text-xs text-center px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                            <i class="ri-delete-bin-line mr-1"></i>Hapus
+                                                        </button>
+                                                    @endcan
+                                                    <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
+                                                        {{ ucfirst($project->status) }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -517,12 +703,29 @@
                                                 @endif
                                             </p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
-                                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
                                                 <div class="flex items-center gap-1">
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
                                                 </div>
                                                 <a href="{{ route('project.detail') }}?id={{ $project->id }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
+                                            </div>
+                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                                <div class="flex items-center gap-2">
+                                                    @can('update', $project)
+                                                        <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                                                            <i class="ri-edit-line mr-1"></i>Edit
+                                                        </button>
+                                                    @endcan
+                                                    @can('delete', $project)
+                                                        <button @click="deleteProject({{ $project->id }}, '{{ $project->title }}')" class="flex-1 text-xs text-center px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                            <i class="ri-delete-bin-line mr-1"></i>Hapus
+                                                        </button>
+                                                    @endcan
+                                                    <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
+                                                        {{ ucfirst($project->status) }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -578,7 +781,7 @@
                                             <h3 class="font-semibold text-gray-800 mb-1">{{ $project->title }}</h3>
                                             <p class="text-xs text-gray-500 mb-2">{{ $project->created_at->format('d F Y') }}</p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
-                                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
                                                 <div class="flex items-center gap-1">
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
@@ -587,9 +790,16 @@
                                             </div>
                                             <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex items-center gap-2">
-                                                    <a href="{{ route('student.projects.edit', $project) }}" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                                                        <i class="ri-edit-line mr-1"></i>Edit
-                                                    </a>
+                                                    @can('update', $project)
+                                                        <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                                                            <i class="ri-edit-line mr-1"></i>Edit
+                                                        </button>
+                                                    @endcan
+                                                    @can('delete', $project)
+                                                        <button @click="deleteProject({{ $project->id }}, '{{ $project->title }}')" class="flex-1 text-xs text-center px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                            <i class="ri-delete-bin-line mr-1"></i>Hapus
+                                                        </button>
+                                                    @endcan
                                                     <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
                                                         {{ ucfirst($project->status) }}
                                                     </span>
@@ -2373,6 +2583,366 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</template>
+
+<!-- Edit Project Modal (Works for both Individual and Team) -->
+<template x-teleport="body">
+    <div x-show="showEditProjectModal"
+         x-transition
+         @keydown.escape.window="showEditProjectModal = false; resetProjectModal()"
+         @click.self="showEditProjectModal = false; resetProjectModal()"
+         class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+         role="dialog" aria-modal="true" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+            
+            <!-- Modal Header -->
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-5 z-10">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="ri-edit-line text-[#b01116]"></i>
+                        <span>Edit Proyek <span x-text="projectType === 'team' ? 'Tim' : 'Individu'" class="text-[#b01116]"></span></span>
+                    </h2>
+                    <button @click="showEditProjectModal = false; resetProjectModal()" 
+                            class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center transition-all">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Progress Steps -->
+                <div class="flex items-center justify-center gap-2">
+                    <template x-for="step in totalSteps" :key="step">
+                        <div class="flex items-center gap-2">
+                            <div class="relative w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-sm"
+                                 :class="step < currentStep ? 'bg-[#8d0d11] text-white' : step === currentStep ? 'bg-[#b01116] text-white ring-4 ring-red-100 scale-110' : 'bg-gray-200 text-gray-500'">
+                                <span x-show="step < currentStep">
+                                    <i class="ri-check-line text-lg"></i>
+                                </span>
+                                <span x-show="step >= currentStep" x-text="step"></span>
+                            </div>
+                            <div x-show="step < totalSteps"
+                                 class="w-20 h-1.5 transition-all duration-300 rounded-full" 
+                                 :class="step < currentStep ? 'bg-[#8d0d11]' : 'bg-gray-200'"></div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div class="text-center mt-3 text-sm font-medium text-gray-700">
+                    <span x-show="currentStep === 1" class="flex items-center justify-center gap-2">
+                        <i class="ri-information-line"></i>
+                        Langkah 1: Informasi Proyek
+                    </span>
+                    <span x-show="currentStep === 2" class="flex items-center justify-center gap-2">
+                        <i class="ri-price-tag-3-line"></i>
+                        Langkah 2: Kategori, Mata Kuliah & Pembimbing
+                    </span>
+                    <span x-show="currentStep === 3" class="flex items-center justify-center gap-2">
+                        <i class="ri-upload-cloud-2-line"></i>
+                        <span x-text="projectType === 'team' ? 'Langkah 3: Anggota Tim & Review' : 'Langkah 3: Media & Review'"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div>
+                <!-- Step 1: Project Information -->
+                <div x-show="currentStep === 1" x-transition class="p-6 space-y-5">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
+                        <i class="ri-file-text-line text-[#b01116]"></i>
+                        Informasi Dasar Proyek
+                    </h3>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                            Judul Proyek <span class="text-[#b01116]">*</span>
+                        </label>
+                        <input type="text" x-model="projectData.title" required 
+                               :class="projectData.title.trim() === '' ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-[#b01116]'"
+                               class="w-full px-4 py-3 border-2 rounded-lg transition-all"
+                               placeholder="Masukkan judul proyek...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Deskripsi Proyek
+                        </label>
+                        <textarea x-model="projectData.description" rows="6" 
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] resize-none" 
+                                  placeholder="Jelaskan detail proyek Anda..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Estimasi Harga (Rp)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                                <input type="number" x-model="projectData.price" min="0" step="1000"
+                                       class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]"
+                                       placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                                Status Publikasi <span class="text-[#b01116]">*</span>
+                            </label>
+                            <select x-model="projectData.status" required 
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <option value="draft">💾 Draft - Hanya saya yang dapat melihat</option>
+                                <option value="published">🚀 Published - Terlihat oleh semua orang</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Categories, Subjects & Teachers (Reuse from create modal - same structure) -->
+                <div x-show="currentStep === 2" x-transition class="p-6 space-y-8">
+                    <!-- Categories Section -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
+                            <i class="ri-price-tag-3-line text-[#b01116]"></i>
+                            Kategori Proyek <span class="text-[#b01116]">*</span>
+                        </h4>
+                        
+                        <div class="relative mb-4">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" x-model="searchCategory" placeholder="Cari kategori..."
+                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto mb-4">
+                            <template x-for="category in filteredCategories" :key="category.id">
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
+                                       :class="projectData.categories.includes(category.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                    <input type="checkbox" class="sr-only" 
+                                           :checked="projectData.categories.includes(category.id)"
+                                           @change="toggleCategory(category.id)">
+                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
+                                         :class="projectData.categories.includes(category.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                        <i class="ri-check-line text-white text-sm" x-show="projectData.categories.includes(category.id)"></i>
+                                    </div>
+                                    <span class="text-sm font-medium" x-text="category.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center gap-2 text-blue-700">
+                                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                                    <span x-text="projectData.categories.length"></span>
+                                </div>
+                                <span class="text-sm font-medium">Kategori Dipilih</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subjects Section (Optional) -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="ri-book-open-line text-[#b01116]"></i>
+                            Mata Kuliah/Pelajaran (Opsional)
+                        </h4>
+                        
+                        <div class="relative mb-4">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" x-model="searchSubject" placeholder="Cari mata kuliah..."
+                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                            <template x-for="subject in filteredSubjects" :key="subject.id">
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
+                                       :class="projectData.subjects.includes(subject.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                    <input type="checkbox" class="sr-only" 
+                                           :checked="projectData.subjects.includes(subject.id)"
+                                           @change="toggleSubject(subject.id)">
+                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
+                                         :class="projectData.subjects.includes(subject.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                        <i class="ri-check-line text-white text-sm" x-show="projectData.subjects.includes(subject.id)"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium" x-text="subject.name"></div>
+                                        <div class="text-xs text-gray-500" x-text="subject.code" x-show="subject.code"></div>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Teachers Section (Optional) -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="ri-user-star-line text-[#b01116]"></i>
+                            Dosen/Guru Pembimbing (Opsional)
+                        </h4>
+                        
+                        <div class="relative mb-4">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" x-model="searchTeacher" placeholder="Cari dosen/guru..."
+                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                            <template x-for="teacher in filteredTeachers" :key="teacher.id">
+                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
+                                       :class="projectData.teachers.includes(teacher.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
+                                    <input type="checkbox" class="sr-only" 
+                                           :checked="projectData.teachers.includes(teacher.id)"
+                                           @change="toggleTeacher(teacher.id)">
+                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
+                                         :class="projectData.teachers.includes(teacher.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                        <i class="ri-check-line text-white text-sm" x-show="projectData.teachers.includes(teacher.id)"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium" x-text="teacher.name"></div>
+                                        <div class="text-xs text-gray-500" x-text="teacher.nip" x-show="teacher.nip"></div>
+                                    </div>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Team Members (for Team) or Media (for Individual) -->
+                <div x-show="currentStep === 3" x-transition class="p-6 space-y-6">
+                    <!-- Team Members Section (Only for Team Projects) -->
+                    <div x-show="projectType === 'team'">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
+                            <i class="ri-team-line text-[#b01116]"></i>
+                            Anggota Tim <span class="text-[#b01116]">*</span>
+                        </h4>
+                        <p class="text-sm text-gray-600 mb-4">Pilih minimal 1 anggota tim (selain Anda sebagai leader)</p>
+                        
+                        <div class="relative mb-4">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" x-model="searchStudent" placeholder="Cari mahasiswa..."
+                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                        </div>
+                        
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            <template x-for="student in filteredStudents" :key="student.id">
+                                <div class="p-4 border-2 rounded-lg transition-all"
+                                     :class="projectData.team_members.includes(student.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input type="checkbox" class="sr-only" 
+                                               :checked="projectData.team_members.includes(student.id)"
+                                               @change="toggleTeamMember(student.id)">
+                                        <div class="w-5 h-5 rounded border-2 flex-shrink-0 mt-1 flex items-center justify-center"
+                                             :class="projectData.team_members.includes(student.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
+                                            <i class="ri-check-line text-white text-sm" x-show="projectData.team_members.includes(student.id)"></i>
+                                        </div>
+                                        <div class="flex items-center gap-3 flex-1">
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-lg font-bold">
+                                                <span x-text="student.user.username.charAt(0).toUpperCase()"></span>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold text-gray-800" x-text="student.user.full_name || student.user.username"></div>
+                                                <div class="text-sm text-gray-600">@<span x-text="student.user.username"></span></div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <div x-show="projectData.team_members.includes(student.id)" x-transition class="mt-3 pl-8">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Posisi dalam Tim *</label>
+                                        <input type="text" x-model="projectData.team_positions[student.id]"
+                                               placeholder="Contoh: Frontend Developer, UI Designer"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] text-sm">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Media Upload Section -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="ri-image-add-line text-[#b01116]"></i>
+                            Upload Media Baru (Opsional)
+                        </h4>
+                        <p class="text-sm text-gray-600 mb-3">Upload foto/video baru jika ada perubahan</p>
+                        
+                        <input type="file" 
+                               @change="selectedFiles = Array.from($event.target.files)" 
+                               multiple 
+                               accept="image/*,video/*"
+                               class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#b01116] transition-all cursor-pointer">
+                        
+                        <div x-show="selectedFiles.length > 0" class="mt-3">
+                            <p class="text-sm font-medium text-gray-700"><span x-text="selectedFiles.length"></span> file dipilih</p>
+                        </div>
+                    </div>
+
+                    <!-- Review Section -->
+                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
+                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="ri-file-list-3-line text-[#b01116]"></i>
+                            Review Perubahan
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
+                                <i class="ri-file-text-line text-gray-400"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Judul:</span>
+                                    <p class="text-gray-600" x-text="projectData.title || 'Belum diisi'"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
+                                <i class="ri-price-tag-3-line text-gray-400"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Kategori:</span>
+                                    <p class="text-gray-600" x-text="projectData.categories.length + ' dipilih'"></p>
+                                </div>
+                            </div>
+                            <div x-show="projectType === 'team'" class="flex items-start gap-3 p-3 bg-white rounded-lg">
+                                <i class="ri-team-line text-gray-400"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Anggota Tim:</span>
+                                    <p class="text-gray-600" x-text="projectData.team_members.length + ' anggota (+ 1 leader)'"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer with Navigation -->
+                <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+                    <div class="flex justify-between items-center gap-4">
+                        <button type="button" 
+                                @click="prevStep()" 
+                                x-show="currentStep > 1"
+                                class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+                            <i class="ri-arrow-left-line"></i>Kembali
+                        </button>
+                        
+                        <button type="button" 
+                                @click="showEditProjectModal = false; resetProjectModal()" 
+                                class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                            Batal
+                        </button>
+                        
+                        <button type="button" 
+                                @click="nextStep()" 
+                                x-show="currentStep < totalSteps"
+                                :disabled="!canProceedToNext()"
+                                :class="!canProceedToNext() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
+                                class="px-6 py-2.5 bg-[#b01116] text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                            Selanjutnya<i class="ri-arrow-right-line"></i>
+                        </button>
+                        
+                        <button type="button" 
+                                @click="updateProject()"
+                                x-show="currentStep === totalSteps"
+                                :disabled="!canCreateProject()"
+                                :class="!canCreateProject() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
+                                class="px-6 py-2.5 bg-[#b01116] text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                            <i class="ri-save-line"></i>Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
