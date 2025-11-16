@@ -2,9 +2,9 @@
     <!-- Badges -->
     <div class="flex flex-wrap gap-2 mb-4">
         @foreach($project->categories as $category)
-        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">{{ $category->name }}</span>
+        <span class="px-3 py-1 flex items-center justify-center bg-[#b01116] hover:bg-[#8d0d11] text-white text-xs font-semibold rounded-full">{{ $category->name }}</span>
         @endforeach
-        <span class="px-3 py-1 {{ $project->type === 'team' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700' }} text-xs font-semibold rounded-full">
+        <span class="px-3 py-1 bg-pink-100 hover:bg-pink-100 flex items-center justify-center text-[#b01116] border border-pink-200 text-xs font-semibold rounded-full">
             {{ $project->type === 'team' ? 'Tim' : 'Individu' }}
         </span>
     </div>
@@ -23,7 +23,11 @@
         @endif
         <div>
             <p class="text-sm font-medium text-gray-700">{{ $project->student->user->full_name ?? $project->student->user->username }}</p>
-            <p class="text-xs text-gray-500">Project Owner</p>
+            @if($project->type === 'team')
+            <p class="text-xs text-gray-500">Team Project Initiator</p>
+            @else
+            <p class="text-xs text-gray-500">Project Creator</p>
+            @endif
         </div>
     </div>
 

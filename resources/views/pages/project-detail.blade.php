@@ -8,374 +8,410 @@
         <!-- Left Column (2 columns width) -->
         <div class="flex-1 lg:w-2/3">
             <!-- Product Preview with Carousel -->
-            <div class="relative mb-8" x-data="{ currentSlide: 0, slides: {{ $project->media->count() > 0 ? $project->media->count() : 1 }} }">
-                <!-- Blur Backdrop -->
-                @if($project->media->first())
-                <div class="absolute inset-0 -z-10 blur-3xl opacity-30">
-                    <img src="{{ $project->media->first()->url }}" alt="Backdrop" class="w-full h-full object-cover rounded-2xl">
+            <div class="relative mb-8" x-data="{ 
+            currentSlide: 0, 
+            slides: {{ $project->media->count() > 0 ? $project->media->count() : 1 }},
+            autoplayInterval: null,
+            isPaused: false,
+            startAutoplay() {
+            if (this.slides > 1) {
+            this.autoplayInterval = setInterval(() => {
+            if (!this.isPaused) {
+            this.currentSlide = this.currentSlide < this.slides - 1 ? this.currentSlide + 1 : 0;
+            }
+            }, 5000);
+            }
+            },
+            stopAutoplay() {
+            if (this.autoplayInterval) {
+            clearInterval(this.autoplayInterval);
+            }
+            }
+            }" 
+            x-init="startAutoplay()" 
+            @mouseenter="isPaused = true" 
+            @mouseleave="isPaused = false"
+            x-effect="if (currentSlide >= 0) $el.dispatchEvent(new CustomEvent('slide-changed'))">
+            
+            <!-- Main Carousel Container -->
+            <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="relative h-[400px] sm:h-[500px] md:h-[600px]">
+            @if($project->media->count() > 0)
+            @foreach($project->media as $index => $media)
+            <div x-show="currentSlide === {{ $index }}" x-transition class="absolute inset-0">
+                <!-- Backdrop Blur Background -->
+                <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute inset-0 scale-110 blur-2xl opacity-50">
+                    @if($media->isImage())
+                    <img src="{{ $media->url }}" alt="Backdrop" class="w-full h-full object-cover">
+                    @else
+                    <div class="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900"></div>
+                    @endif
                 </div>
+                </div>
+                
+                <!-- Media Content (Original Size) -->
+                <div class="relative h-full flex items-center justify-center p-4">
+                @if($media->isImage())
+                <img src="{{ $media->url }}" alt="{{ $project->title }}" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+                @else
+                <video controls class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+                    <source src="{{ $media->url }}" type="{{ $media->mime_type }}">
+                    Your browser does not support the video tag.
+                </video>
                 @endif
-
-                <!-- Main Carousel -->
-                <div class="relative bg-white rounded-2xl shadow-lg overflow-hidden">
-                    <div class="relative h-[400px] sm:h-[500px] md:h-[600px]">
-                        @if($project->media->count() > 0)
-                            @foreach($project->media as $index => $media)
-                                <div x-show="currentSlide === {{ $index }}" x-transition class="absolute inset-0">
-                                    @if($media->isImage())
-                                        <img src="{{ $media->url }}" alt="{{ $project->title }}" class="w-full h-full object-contain p-4">
-                                    @else
-                                        <video controls class="w-full h-full object-contain p-4">
-                                            <source src="{{ $media->url }}" type="{{ $media->mime_type }}">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                    @endif
-                        </div>
-                            @endforeach
-                        @else
-                            <!-- Placeholder if no media -->
-                            <div class="absolute inset-0 flex items-center justify-center bg-gray-100">
-                                <div class="text-center">
-                                    <i class="ri-image-line text-6xl text-gray-400"></i>
-                                    <p class="text-gray-500 mt-2">No media available</p>
-                        </div>
-                        </div>
-                        @endif
-
-                        @if($project->media->count() > 1)
-                        <!-- Navigation Arrows -->
-                        <button @click="currentSlide = currentSlide > 0 ? currentSlide - 1 : slides - 1" 
-                                class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all">
-                            <i class="ri-arrow-left-s-line text-xl"></i>
-                        </button>
-                        <button @click="currentSlide = currentSlide < slides - 1 ? currentSlide + 1 : 0" 
-                                class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all">
-                            <i class="ri-arrow-right-s-line text-xl"></i>
-                        </button>
-
-                    <!-- Dots Indicator -->
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                        <template x-for="i in slides" :key="i">
-                            <button @click="currentSlide = i - 1" 
-                                    :class="currentSlide === i - 1 ? 'bg-[#b01116] w-8' : 'bg-gray-300 w-2'"
-                                    class="h-2 rounded-full transition-all duration-300"></button>
-                        </template>
-                            </div>
-                        @endif
-                    </div>
                 </div>
+            </div>
+                @endforeach
+            @else
+                <!-- Placeholder if no media -->
+                <div class="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div class="text-center">
+                <i class="ri-image-line text-6xl text-gray-400"></i>
+                <p class="text-gray-500 mt-2">No media available</p>
+            </div>
+            </div>
+            @endif
+
+            @if($project->media->count() > 1)
+            <!-- Navigation Arrows -->
+            <button @click="currentSlide = currentSlide > 0 ? currentSlide - 1 : slides - 1" 
+                class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all z-10">
+                <i class="ri-arrow-left-s-line text-xl"></i>
+            </button>
+            <button @click="currentSlide = currentSlide < slides - 1 ? currentSlide + 1 : 0" 
+                class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all z-10">
+                <i class="ri-arrow-right-s-line text-xl"></i>
+            </button>
+
+            <!-- Dots Indicator -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            <template x-for="i in slides" :key="i">
+                <button @click="currentSlide = i - 1" 
+                :class="currentSlide === i - 1 ? 'bg-[#b01116] w-8' : 'bg-white/70 w-2'"
+                class="h-2 rounded-full transition-all duration-300 shadow-sm"></button>
+            </template>
+                </div>
+            @endif
+            </div>
+            </div>
             </div>
 
             <!-- Right Column (Mobile Only - appears after product preview) -->
             <div class="lg:hidden mb-8">
-                @include('pages.partials.project-sidebar')
+            @include('pages.partials.project-sidebar')
             </div>
 
             <!-- Project Description -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Deskripsi Proyek</h2>
-                <div class="prose prose-gray max-w-none">
-                    <p class="text-gray-600 leading-relaxed mb-4 whitespace-pre-line">{{ $project->description }}</p>
-                </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Deskripsi Proyek</h2>
+            <div class="prose prose-gray max-w-none">
+            <p class="text-gray-600 leading-relaxed mb-4 whitespace-pre-line">{{ $project->description }}</p>
+            </div>
 
-                <!-- Course Info -->
-                @if($project->subjects->count() > 0 || $project->teachers->count() > 0)
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        @if($project->subjects->count() > 0)
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">MATA KULIAH/PELAJARAN</p>
-                            @foreach($project->subjects as $subject)
-                            <p class="font-semibold text-gray-800">{{ $subject->name }} @if($subject->code)({{ $subject->code }})@endif</p>
-                            @endforeach
-                        </div>
-                        @endif
-                        @if($project->teachers->count() > 0)
-                        <div>
-                            <p class="text-sm text-gray-500 mb-1">DOSEN/GURU PEMBIMBING</p>
-                            @foreach($project->teachers as $teacher)
-                            <p class="font-semibold text-gray-800">{{ $teacher->name }} @if($teacher->nip)({{ $teacher->nip }})@endif</p>
-                            @endforeach
-                        </div>
-                        @endif
-                    </div>
-                </div>
-                @endif
+            <!-- Course Info -->
+            @if($project->subjects->count() > 0 || $project->teachers->count() > 0)
+            <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @if($project->subjects->count() > 0)
+            <div>
+                <p class="text-sm text-gray-500 mb-1">MATA KULIAH/PELAJARAN</p>
+                @foreach($project->subjects as $subject)
+                <p class="font-semibold text-gray-800">{{ $subject->name }} @if($subject->code)({{ $subject->code }})@endif</p>
+                @endforeach
+            </div>
+            @endif
+            @if($project->teachers->count() > 0)
+            <div>
+                <p class="text-sm text-gray-500 mb-1">DOSEN/GURU PEMBIMBING</p>
+                @foreach($project->teachers as $teacher)
+                <p class="font-semibold text-gray-800">{{ $teacher->name }} @if($teacher->nip)({{ $teacher->nip }})@endif</p>
+                @endforeach
+            </div>
+            @endif
+            </div>
+            </div>
+            @endif
 
-                <!-- Project Stats -->
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <div class="flex items-center gap-6 text-sm text-gray-600">
-                        <div class="flex items-center gap-2">
-                            <i class="ri-eye-line text-gray-400"></i>
-                            <span>{{ $project->view_count }} views</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <i class="ri-calendar-line text-gray-400"></i>
-                            <span>{{ $project->created_at->format('d M Y') }}</span>
-                        </div>
-                        @if($project->wishlists->count() > 0)
-                        <div class="flex items-center gap-2">
-                            <i class="ri-bookmark-line text-gray-400"></i>
-                            <span>{{ $project->wishlists->count() }} saves</span>
-                        </div>
-                        @endif
-                    </div>
-                </div>
+            <!-- Project Stats -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex items-center gap-6 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+                <i class="ri-eye-line text-gray-400"></i>
+                <span>{{ $project->view_count }} views</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="ri-calendar-line text-gray-400"></i>
+                <span>{{ $project->created_at->format('d M Y') }}</span>
+            </div>
+            @if($project->wishlists->count() > 0)
+            <div class="flex items-center gap-2">
+                <i class="ri-bookmark-line text-gray-400"></i>
+                <span>{{ $project->wishlists->count() }} saves</span>
+            </div>
+            @endif
+            </div>
+            </div>
             </div>
 
             <!-- Team Members (Only for Team Projects) -->
             @if($project->type === 'team' && $project->members->count() > 0)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Anggota Tim</h2>
-                <div class="space-y-4 sm:space-y-6">
-                    @foreach($project->members->sortByDesc('role') as $member)
-                    <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 pb-4 sm:pb-6 {{ !$loop->last ? 'border-b border-gray-200' : '' }}">
-                        @if($member->student->user->avatar)
-                        <img src="{{ $member->student->user->avatar_url }}" alt="{{ $member->student->user->full_name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover shrink-0">
-                        @else
-                        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
-                            {{ strtoupper(substr($member->student->user->username, 0, 1)) }}
-                        </div>
-                        @endif
-                        <div class="flex-1 w-full">
-                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="font-bold text-gray-800 text-base sm:text-lg">{{ $member->student->user->full_name ?? $member->student->user->username }}</h3>
-                                        @if($member->role === 'leader')
-                                        <span class="px-2 py-0.5 bg-[#b01116] text-white text-xs font-semibold rounded-full">Leader</span>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                                        @if($member->student->student_id)
-                                        NIM: {{ $member->student->student_id }}
-                                        @else
-                                        @{{ $member->student->user->username }}
-                                        @endif
-                                    </p>
-                                </div>
-                                <a href="{{ route('detail.student', $member->student->user->username) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
-                                    Lihat Profil <i class="ri-arrow-right-line"></i>
-                                </a>
-                            </div>
-                            <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3"><strong>Posisi:</strong> {{ $member->position ?? 'Team Member' }}</p>
-                        </div>
-                    </div>
-                    @endforeach
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Anggota Tim</h2>
+            <div class="space-y-4 sm:space-y-6">
+            @php
+            $leaders = $project->members->filter(fn($m) => $m->role === 'leader');
+            $nonLeaders = $project->members->filter(fn($m) => $m->role !== 'leader');
+            $sortedMembers = $leaders->concat($nonLeaders);
+            @endphp
+            @foreach($sortedMembers as $member)
+            <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 pb-4 sm:pb-6 {{ !$loop->last ? 'border-b border-gray-200' : '' }}">
+            @if($member->student->user->avatar)
+            <img src="{{ $member->student->user->avatar_url }}" alt="{{ $member->student->user->full_name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover shrink-0">
+            @else
+            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                {{ strtoupper(substr($member->student->user->username, 0, 1)) }}
+            </div>
+            @endif
+            <div class="flex-1 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                <div class="flex-1">
+                <div class="flex items-center gap-2">
+                <h3 class="font-bold text-gray-800 text-base sm:text-lg">{{ $member->student->user->full_name ?? $member->student->user->username }}</h3>
+                @if($member->role === 'leader')
+                <span class="px-2 py-0.5 bg-[#b01116] text-white text-xs font-semibold rounded-full">Leader</span>
+                @endif
                 </div>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">
+                @if($member->student->student_id)
+                NIM: {{ $member->student->student_id }}
+                @else
+                {{ "@" . $member->student->user->username }}
+                @endif
+                </p>
+                </div>
+                <a href="{{ route('detail.student', $member->student->user->username) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
+                Lihat Profil <i class="ri-arrow-right-line"></i>
+                </a>
+                </div>
+                <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3"><strong>Posisi:</strong> {{ $member->position ?? 'Team Member' }}</p>
+            </div>
+            </div>
+            @endforeach
+            </div>
             </div>
             @endif
 
             <!-- Tabbed Section: Overview & Comments -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <!-- Tab Navigation -->
-                <div class="border-b border-gray-200">
-                    <nav class="flex -mb-px">
-                        <button @click="activeTab = 'overview'" 
-                                :class="activeTab === 'overview' ? 'border-[#b01116] text-[#b01116]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
-                            <i class="ri-information-line mr-2"></i>Overview
-                        </button>
-                        <button @click="activeTab = 'comments'" 
-                                :class="activeTab === 'comments' ? 'border-[#b01116] text-[#b01116]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
-                            <i class="ri-chat-3-line mr-2"></i>Komentar ({{ $project->comments->count() }})
-                        </button>
-                    </nav>
-                    </div>
+            <!-- Tab Navigation -->
+            <div class="border-b border-gray-200">
+            <nav class="flex -mb-px">
+            <button @click="activeTab = 'overview'" 
+                :class="activeTab === 'overview' ? 'border-[#b01116] text-[#b01116]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                <i class="ri-information-line mr-2"></i>Overview
+            </button>
+            <button @click="activeTab = 'comments'" 
+                :class="activeTab === 'comments' ? 'border-[#b01116] text-[#b01116]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                <i class="ri-chat-3-line mr-2"></i>Komentar ({{ $project->comments->count() }})
+            </button>
+            </nav>
+            </div>
 
-                <!-- Tab Content -->
-                <div class="p-6">
-                    <!-- Overview Tab -->
-                    <div x-show="activeTab === 'overview'" x-transition>
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Ringkasan Proyek</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
-                                        <i class="ri-eye-line text-white text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-gray-700">{{ $project->view_count }}</p>
-                                        <p class="text-sm text-gray-600">Total Views</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-[#b01116] rounded-full flex items-center justify-center">
-                                        <i class="ri-bookmark-line text-white text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-[#b01116]">{{ $project->wishlists->count() }}</p>
-                                        <p class="text-sm text-red-600">Wishlists</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-pink-50 rounded-lg p-4 border border-pink-200">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
-                                        <i class="ri-chat-3-line text-white text-xl"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-pink-700">{{ $project->comments->count() }}</p>
-                                        <p class="text-sm text-pink-600">Comments</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Comments Tab -->
-                    <div x-show="activeTab === 'comments'" x-transition>
-                        @auth
-                            <!-- Comment Form -->
-                            <div class="mb-6">
-                                <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.store' : 'investor.comments.store', $project) }}" method="POST" class="space-y-4">
-                                    @csrf
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tulis Komentar</label>
-                                        <textarea name="content" rows="4" required
-                                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent resize-none"
-                                                  placeholder="Bagikan pemikiran Anda tentang proyek ini..."></textarea>
-                                    </div>
-                                    <div class="flex justify-end">
-                                        <button type="submit" class="bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
-                                            <i class="ri-send-plane-fill"></i>
-                                            Kirim Komentar
-                                        </button>
-                                    </div>
-                                </form>
-                                </div>
-                        @else
-                            <!-- Guest Message -->
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-center">
-                                <i class="ri-lock-line text-4xl text-blue-500 mb-2"></i>
-                                <p class="text-gray-700 font-medium mb-3">Anda harus login untuk memberikan komentar</p>
-                                <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                                    <i class="ri-login-box-line"></i>
-                                    Login Sekarang
-                                </a>
-                            </div>
-                        @endauth
-
-                        <!-- Comments List -->
-                        <div class="space-y-6">
-                            @forelse($project->comments as $comment)
-                            <div class="border-b border-gray-200 pb-6 last:border-0">
-                                <div class="flex items-start gap-3">
-                                    @if($comment->user->avatar)
-                                    <img src="{{ $comment->user->avatar_url }}" alt="{{ $comment->user->username }}" class="w-10 h-10 rounded-full object-cover">
-                                    @else
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-bold">
-                                        {{ strtoupper(substr($comment->user->username, 0, 1)) }}
-                                    </div>
-                                    @endif
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="font-semibold text-gray-800">{{ $comment->user->full_name ?? $comment->user->username }}</span>
-                                            <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
-                        </div>
-                                        <p class="text-gray-600 mb-3">{{ $comment->content }}</p>
-                                        
-                                        <div class="flex items-center gap-4">
-                                            @auth
-                                            <button @click="replyTo = replyTo === {{ $comment->id }} ? null : {{ $comment->id }}" 
-                                                    class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium flex items-center gap-1">
-                                                <i class="ri-reply-line"></i>
-                                                Balas
-                                            </button>
-                                            @endauth
-                                            
-                                            @auth
-                                                @if(auth()->id() === $comment->user_id || $isOwner)
-                                                <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $comment) }}" 
-                                                      method="POST" 
-                                                      class="inline"
-                                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
-                                                        <i class="ri-delete-bin-line"></i>
-                                                        Hapus
-                                                    </button>
-                                                </form>
-                                                @endif
-                                            @endauth
-                    </div>
-
-                                        <!-- Reply Form -->
-                                        @auth
-                                        <div x-show="replyTo === {{ $comment->id }}" x-transition class="mt-4">
-                                            <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.store' : 'investor.comments.store', $project) }}" method="POST" class="space-y-3">
-                                                @csrf
-                                                <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                                                <textarea name="content" rows="3" required
-                                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent resize-none text-sm"
-                                                          placeholder="Tulis balasan Anda..."></textarea>
-                                                <div class="flex justify-end gap-2">
-                                                    <button type="button" @click="replyTo = null" class="text-sm text-gray-600 hover:text-gray-800 font-medium py-1 px-3">
-                                                        Batal
-                                                    </button>
-                                                    <button type="submit" class="bg-[#b01116] hover:bg-[#8d0d11] text-white text-sm font-semibold py-1 px-4 rounded-lg transition-colors">
-                                                        Kirim
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                        @endauth
-
-                                        <!-- Replies -->
-                                        @if($comment->allReplies->count() > 0)
-                                        <div class="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
-                                            @foreach($comment->allReplies as $reply)
-                                            <div class="flex items-start gap-3">
-                                                @if($reply->user->avatar)
-                                                <img src="{{ $reply->user->avatar_url }}" alt="{{ $reply->user->username }}" class="w-8 h-8 rounded-full object-cover">
-                                                @else
-                                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-xs font-bold">
-                                                    {{ strtoupper(substr($reply->user->username, 0, 1)) }}
-                                                </div>
-                                                @endif
-                                <div class="flex-1">
-                                                    <div class="flex items-center gap-2 mb-1">
-                                                        <span class="font-semibold text-gray-800 text-sm">{{ $reply->user->full_name ?? $reply->user->username }}</span>
-                                                        <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
-                                                    </div>
-                                                    <p class="text-gray-600 text-sm">{{ $reply->content }}</p>
-                                                    
-                                                    @auth
-                                                        @if(auth()->id() === $reply->user_id || $isOwner)
-                                                        <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $reply) }}" 
-                                                              method="POST" 
-                                                              class="inline mt-2"
-                                                              onsubmit="return confirm('Apakah Anda yakin ingin menghapus balasan ini?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
-                                                                <i class="ri-delete-bin-line"></i>
-                                                                Hapus
-                                                            </button>
-                                                        </form>
-                                                        @endif
-                                                    @endauth
-                                                </div>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            @empty
-                            <div class="text-center py-12">
-                                <i class="ri-chat-off-line text-5xl text-gray-300 mb-3"></i>
-                                <p class="text-gray-500">Belum ada komentar. Jadilah yang pertama!</p>
-                            </div>
-                            @endforelse
-                        </div>
-                    </div>
+            <!-- Tab Content -->
+            <div class="p-6">
+            <!-- Overview Tab -->
+            <div x-show="activeTab === 'overview'" x-transition>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Ringkasan Proyek</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gray-500 rounded-full flex items-center justify-center">
+                <i class="ri-eye-line text-white text-xl"></i>
                 </div>
+                <div>
+                <p class="text-2xl font-bold text-gray-700">{{ $project->view_count }}</p>
+                <p class="text-sm text-gray-600">Total Views</p>
+                </div>
+                </div>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-[#b01116] rounded-full flex items-center justify-center">
+                <i class="ri-bookmark-line text-white text-xl"></i>
+                </div>
+                <div>
+                <p class="text-2xl font-bold text-[#b01116]">{{ $project->wishlists->count() }}</p>
+                <p class="text-sm text-red-600">Wishlists</p>
+                </div>
+                </div>
+                </div>
+                <div class="bg-pink-50 rounded-lg p-4 border border-pink-200">
+                <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
+                <i class="ri-chat-3-line text-white text-xl"></i>
+                </div>
+                <div>
+                <p class="text-2xl font-bold text-pink-700">{{ $project->comments->count() }}</p>
+                <p class="text-sm text-pink-600">Comments</p>
+                </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Comments Tab -->
+            <div x-show="activeTab === 'comments'" x-transition>
+            @auth
+                <!-- Comment Form -->
+                <div class="mb-6">
+                <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.store' : 'investor.comments.store', $project) }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tulis Komentar</label>
+                <textarea name="content" rows="4" required
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent resize-none"
+                      placeholder="Bagikan pemikiran Anda tentang proyek ini..."></textarea>
+                </div>
+                <div class="flex justify-end">
+                <button type="submit" class="bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="ri-send-plane-fill"></i>
+                    Kirim Komentar
+                </button>
+                </div>
+                </form>
+                </div>
+            @else
+                <!-- Guest Message -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 text-center">
+                <i class="ri-lock-line text-4xl text-blue-500 mb-2"></i>
+                <p class="text-gray-700 font-medium mb-3">Anda harus login untuk memberikan komentar</p>
+                <a href="{{ route('login') }}" class="inline-flex items-center gap-2 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                <i class="ri-login-box-line"></i>
+                Login Sekarang
+                </a>
+                </div>
+            @endauth
+
+            <!-- Comments List -->
+            <div class="space-y-6">
+                @forelse($project->comments as $comment)
+                <div class="border-b border-gray-200 pb-6 last:border-0">
+                <div class="flex items-start gap-3">
+                @if($comment->user->avatar)
+                <img src="{{ $comment->user->avatar_url }}" alt="{{ $comment->user->username }}" class="w-10 h-10 rounded-full object-cover">
+                @else
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-bold">
+                {{ strtoupper(substr($comment->user->username, 0, 1)) }}
+                </div>
+                @endif
+                <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="font-semibold text-gray-800">{{ $comment->user->full_name ?? $comment->user->username }}</span>
+                    <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
+            </div>
+                <p class="text-gray-600 mb-3">{{ $comment->content }}</p>
+                
+                <div class="flex items-center gap-4">
+                    @auth
+                    <button @click="replyTo = replyTo === {{ $comment->id }} ? null : {{ $comment->id }}" 
+                    class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium flex items-center gap-1">
+                    <i class="ri-reply-line"></i>
+                    Balas
+                    </button>
+                    @endauth
+                    
+                    @auth
+                    @if(auth()->id() === $comment->user_id || $isOwner)
+                    <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $comment) }}" 
+                      method="POST" 
+                      class="inline"
+                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+                    <i class="ri-delete-bin-line"></i>
+                    Hapus
+                    </button>
+                    </form>
+                    @endif
+                    @endauth
+            </div>
+
+                <!-- Reply Form -->
+                @auth
+                <div x-show="replyTo === {{ $comment->id }}" x-transition class="mt-4">
+                    <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.store' : 'investor.comments.store', $project) }}" method="POST" class="space-y-3">
+                    @csrf
+                    <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                    <textarea name="content" rows="3" required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent resize-none text-sm"
+                      placeholder="Tulis balasan Anda..."></textarea>
+                    <div class="flex justify-end gap-2">
+                    <button type="button" @click="replyTo = null" class="text-sm text-gray-600 hover:text-gray-800 font-medium py-1 px-3">
+                    Batal
+                    </button>
+                    <button type="submit" class="bg-[#b01116] hover:bg-[#8d0d11] text-white text-sm font-semibold py-1 px-4 rounded-lg transition-colors">
+                    Kirim
+                    </button>
+                    </div>
+                    </form>
+                </div>
+                @endauth
+
+                <!-- Replies -->
+                @if($comment->allReplies->count() > 0)
+                <div class="mt-4 space-y-4 pl-4 border-l-2 border-gray-200">
+                    @foreach($comment->allReplies as $reply)
+                    <div class="flex items-start gap-3">
+                    @if($reply->user->avatar)
+                    <img src="{{ $reply->user->avatar_url }}" alt="{{ $reply->user->username }}" class="w-8 h-8 rounded-full object-cover">
+                    @else
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ strtoupper(substr($reply->user->username, 0, 1)) }}
+                    </div>
+                    @endif
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                    <span class="font-semibold text-gray-800 text-sm">{{ $reply->user->full_name ?? $reply->user->username }}</span>
+                    <span class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">{{ $reply->content }}</p>
+                    
+                    @auth
+                    @if(auth()->id() === $reply->user_id || $isOwner)
+                    <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $reply) }}" 
+                          method="POST" 
+                          class="inline mt-2"
+                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus balasan ini?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+                        <i class="ri-delete-bin-line"></i>
+                        Hapus
+                        </button>
+                    </form>
+                    @endif
+                    @endauth
+                    </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+                </div>
+                </div>
+                </div>
+                @empty
+                <div class="text-center py-12">
+                <i class="ri-chat-off-line text-5xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">Belum ada komentar. Jadilah yang pertama!</p>
+                </div>
+                @endforelse
+            </div>
+            </div>
+            </div>
             </div>
         </div>
 
