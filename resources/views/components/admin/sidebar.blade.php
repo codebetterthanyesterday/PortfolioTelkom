@@ -39,7 +39,7 @@
                     Komentar
                 </x-admin.nav-link>
 
-                <x-admin.nav-link href="{{ route('admin.wishlist') }}" icon="ri-bookmark-line">
+                <x-admin.nav-link href="{{ route('admin.wishlist') }}" icon="ri-heart-fill">
                     Wishlist
                 </x-admin.nav-link>
 

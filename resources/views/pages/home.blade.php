@@ -261,7 +261,7 @@ function homeFilters() {
                                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                                 <button type="submit" 
                                         class="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center transition-all">
-                                    <i class="${isWishlisted ? 'ri-bookmark-fill text-[#b01116]' : 'ri-bookmark-line text-gray-600'} text-xl"></i>
+                                    <i class="${isWishlisted ? 'ri-heart-fill text-[#b01116]' : 'ri-heart-line text-gray-600'} text-xl"></i>
                                 </button>
                             </form>
                         ` : ''}
@@ -326,11 +326,11 @@ function homeFilters() {
                 
                 if (data.success) {
                     if (data.isWishlisted) {
-                        icon.classList.remove('ri-bookmark-line', 'text-gray-600');
-                        icon.classList.add('ri-bookmark-fill', 'text-[#b01116]');
+                        icon.classList.remove('ri-heart-line', 'text-gray-600');
+                        icon.classList.add('ri-heart-fill', 'text-[#b01116]');
                     } else {
-                        icon.classList.remove('ri-bookmark-fill', 'text-[#b01116]');
-                        icon.classList.add('ri-bookmark-line', 'text-gray-600');
+                        icon.classList.remove('ri-heart-fill', 'text-[#b01116]');
+                        icon.classList.add('ri-heart-line', 'text-gray-600');
                     }
                     
                     const Toast = Swal.mixin({

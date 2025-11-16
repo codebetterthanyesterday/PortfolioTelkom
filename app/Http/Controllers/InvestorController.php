@@ -4,35 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\Investor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class InvestorController extends Controller
 {
-    public function dashboard()
+    // public function dashboard()
+    // {
+    //     $investor = auth()->user()->investor;
+        
+    //     $stats = [
+    //         'total_wishlists' => $investor->wishlists()->count(),
+    //     ];
+
+    //     $recentWishlists = $investor->wishlistProjects()
+    //         ->with(['student.user', 'media', 'categories'])
+    //         ->latest('wishlists.created_at')
+    //         ->limit(6)
+    //         ->get();
+
+    //     return view('investor.dashboard', compact('investor', 'stats', 'recentWishlists'));
+    // }
+
+    public function edit()
     {
         $investor = auth()->user()->investor;
-        
-        $stats = [
-            'total_wishlists' => $investor->wishlists()->count(),
-        ];
+        $this->authorize('update', $investor);
 
         $recentWishlists = $investor->wishlistProjects()
             ->with(['student.user', 'media', 'categories'])
             ->latest('wishlists.created_at')
-            ->limit(6)
+            ->limit(10)
             ->get();
 
-        return view('investor.dashboard', compact('investor', 'stats', 'recentWishlists'));
+        return view('pages.investor.profile', compact('investor', 'recentWishlists'));
     }
 
-    public function edit(Investor $investor)
+    public function update(Request $request)
     {
-        $this->authorize('update', $investor);
-
-        return view('investor.edit', compact('investor'));
-    }
-
-    public function update(Request $request, Investor $investor)
-    {
+        $investor = auth()->user()->investor;
         $this->authorize('update', $investor);
 
         $validated = $request->validate([
@@ -68,7 +77,7 @@ class InvestorController extends Controller
             'industry' => $validated['industry'],
         ]);
 
-        return redirect()->route('investor.dashboard')
+        return redirect()->route('investor.profile')
             ->with('success', 'Profile updated successfully!');
     }
 }

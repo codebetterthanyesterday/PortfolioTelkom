@@ -379,7 +379,9 @@ class ProjectController extends Controller
                 'categories',
                 'subjects', 
                 'teachers',
-                'media',
+                'media' => function($query) {
+                    $query->where('type', 'image')->orderBy('order');
+                },
                 'members.student.user'
             ]);
 

@@ -63,7 +63,7 @@
              class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 hover:-translate-y-1">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-                    <i class="ri-bookmark-line text-2xl text-amber-600"></i>
+                    <i class="ri-heart-line text-2xl text-amber-600"></i>
                 </div>
                 <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">+20%</span>
             </div>
@@ -141,7 +141,7 @@
                 </a>
                 <a href="#" class="flex items-center gap-3 p-3 rounded-lg hover:bg-[#b01116] hover:text-white text-gray-700 transition-all group">
                     <div class="w-10 h-10 bg-amber-50 group-hover:bg-white/20 rounded-lg flex items-center justify-center transition-colors">
-                        <i class="ri-bookmark-line text-xl text-amber-600 group-hover:text-white"></i>
+                        <i class="ri-heart-line text-xl text-amber-600 group-hover:text-white"></i>
                     </div>
                     <span class="font-medium">Lihat Wishlist</span>
                 </a>

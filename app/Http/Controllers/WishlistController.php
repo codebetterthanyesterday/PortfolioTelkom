@@ -45,4 +45,13 @@ class WishlistController extends Controller
 
         return back()->with('success', $message);
     }
+
+    public function remove(Project $project)
+    {
+        $investor = auth()->user()->investor;
+        
+        $investor->wishlists()->where('project_id', $project->id)->delete();
+
+        return back()->with('success', 'Proyek berhasil dihapus dari wishlist!');
+    }
 }

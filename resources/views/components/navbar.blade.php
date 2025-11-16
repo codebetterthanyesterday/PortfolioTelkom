@@ -190,7 +190,7 @@
                                 <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
                                     <p class="font-semibold text-gray-900">{{ auth()->user()->username }}</p>
                                     <p class="text-xs text-gray-500 mt-0.5">{{ auth()->user()->email }}</p>
-                                    <span class="inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded-full {{ auth()->user()->isStudent() ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                    <span class="inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded-full bg-[#b0111614] text-[#b01116]">
                                         {{ auth()->user()->isStudent() ? 'Student' : 'Investor' }}
                                     </span>
                                 </div>

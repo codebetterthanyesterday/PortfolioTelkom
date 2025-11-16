@@ -23,7 +23,7 @@
                 @csrf
                 <button type="submit" 
                         class="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center transition-all">
-                    <i class="{{ in_array($project->id, $wishlistedProjects ?? []) ? 'ri-bookmark-fill text-[#b01116]' : 'ri-bookmark-line text-gray-600' }} text-xl"></i>
+                    <i class="{{ in_array($project->id, $wishlistedProjects ?? []) ? 'ri-heart-fill text-[#b01116]' : 'ri-heart-line text-gray-600' }} text-xl"></i>
                 </button>
             </form>
             @endif

@@ -250,11 +250,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     if (data.isWishlisted) {
-                        icon.classList.remove('ri-bookmark-line', 'text-gray-600');
-                        icon.classList.add('ri-bookmark-fill', 'text-[#b01116]');
+                        icon.classList.remove('ri-heart-line', 'text-gray-600');
+                        icon.classList.add('ri-heart-fill', 'text-[#b01116]');
                     } else {
-                        icon.classList.remove('ri-bookmark-fill', 'text-[#b01116]');
-                        icon.classList.add('ri-bookmark-line', 'text-gray-600');
+                        icon.classList.remove('ri-heart-fill', 'text-[#b01116]');
+                        icon.classList.add('ri-heart-line', 'text-gray-600');
                     }
                     
                     const Toast = Swal.mixin({

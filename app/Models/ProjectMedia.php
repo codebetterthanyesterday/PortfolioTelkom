@@ -26,6 +26,8 @@ class ProjectMedia extends Model
         'order' => 'integer',
     ];
 
+    protected $appends = ['url'];
+
     // Relationships
     public function project()
     {

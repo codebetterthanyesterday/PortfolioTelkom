@@ -146,7 +146,7 @@
             </div>
             @if($project->wishlists->count() > 0)
             <div class="flex items-center gap-2">
-                <i class="ri-bookmark-line text-gray-400"></i>
+                <i class="ri-heart-line text-gray-400"></i>
                 <span>{{ $project->wishlists->count() }} saves</span>
             </div>
             @endif
@@ -240,7 +240,7 @@
                 <div class="bg-red-50 rounded-lg p-4 border border-red-200">
                 <div class="flex items-center gap-3">
                 <div class="w-12 h-12 bg-[#b01116] rounded-full flex items-center justify-center">
-                <i class="ri-bookmark-line text-white text-xl"></i>
+                <i class="ri-heart-line text-white text-xl"></i>
                 </div>
                 <div>
                 <p class="text-2xl font-bold text-[#b01116]">{{ $project->wishlists->count() }}</p>
@@ -927,191 +927,367 @@
                             </div>
                         </div>
 
-                        <!-- Media Upload -->
-                        <div x-data="mediaPreview('edit_media_detail')">
-                            <label class="block text-sm font-semibold text-gray-700 mb-3">
-                                Upload Media (Opsional)
-                            </label>
-                            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#b01116] hover:bg-red-50 transition-all">
-                                <i class="ri-upload-cloud-2-line text-6xl text-gray-400 mb-3"></i>
-                                <div class="text-sm text-gray-600 mb-3 font-medium">
-                                    Drop files here or click to upload
-                                </div>
-                                <input type="file" 
-                                       name="media[]" 
-                                       multiple 
-                                       accept="image/*,video/*" 
-                                       class="hidden" 
-                                       id="edit_media_detail"
-                                       @change="handleFiles($event.target.files)">
-                                <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-6 py-3 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
-                                    <i class="ri-folder-open-line"></i>
-                                    Choose Files
-                                </label>
-                                <div class="text-xs text-gray-500 mt-3">
-                                    Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
-                                </div>
-                            </div>
+                        <!-- Enhanced Media Management -->
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
+                                <i class="ri-image-line text-[#b01116]"></i>
+                                Kelola Gambar Proyek <span class="text-[#b01116]">*</span>
+                            </h4>
+                            <p class="text-sm text-gray-600 mb-4">Minimal 1 gambar diperlukan untuk proyek</p>
                             
-                            <!-- Image Previews -->
-                            <div x-show="previews.length > 0" class="mt-4">
-                                <p class="text-sm font-medium text-gray-700 mb-3">
-                                    Selected Files (<span x-text="previews.length"></span>)
-                                    <span class="text-xs text-gray-500 ml-2">• First image will be the main image</span>
-                                </p>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                    <template x-for="(preview, index) in previews" :key="index">
+                            
+                            <!-- Existing Images Section -->
+                            <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="mb-6">
+                                <h5 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <i class="ri-gallery-line text-[#b01116]"></i>
+                                    Gambar Saat Ini (<span x-text="projectData.existing_images.length"></span>)
+                                </h5>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                                    <template x-for="(image, index) in projectData.existing_images" :key="'existing-' + index">
                                         <div class="relative group">
                                             <div class="aspect-square rounded-lg overflow-hidden border-2"
-                                                 :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
-                                                <img :src="preview.url" 
-                                                     :alt="preview.name" 
+                                                 :class="index === 0 ? 'border-[#b01116] ring-2 ring-red-100' : 'border-gray-300'">
+                                                <img :src="image.url || image.file_path" 
+                                                     :alt="image.alt_text || 'Project Image'" 
                                                      class="w-full h-full object-cover">
                                             </div>
-                                            <button type="button"
-                                                    @click="removeFile(index)"
-                                                    class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
-                                                <i class="ri-close-line text-sm"></i>
-                                            </button>
+                                            
+                                            <!-- Action Buttons -->
+                                            <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button type="button"
+                                                        @click="setAsMainImage(index, 'existing')"
+                                                        :disabled="index === 0"
+                                                        :class="index === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'"
+                                                        class="bg-blue-500 text-white rounded-full p-1.5 text-xs transition-colors"
+                                                        title="Set as main image">
+                                                    <i class="ri-star-line"></i>
+                                                </button>
+                                                <button type="button"
+                                                        @click="markImageForDeletion(index)"
+                                                        class="bg-red-600 text-white rounded-full p-1.5 transition-colors hover:bg-red-700"
+                                                        title="Delete image">
+                                                    <i class="ri-close-line text-xs"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Main Image Badge -->
                                             <div x-show="index === 0" 
                                                  class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
-                                                Main Image
+                                                <i class="ri-star-fill mr-1"></i>Gambar Utama
+                                            </div>
+                                            
+                                            <!-- Deletion Overlay -->
+                                            <div x-show="projectData.images_to_delete && projectData.images_to_delete.includes(image.id || index)" 
+                                                 class="absolute inset-0 bg-red-600 bg-opacity-75 flex items-center justify-center rounded-lg">
+                                                <div class="text-white text-center">
+                                                    <i class="ri-delete-bin-line text-2xl mb-1"></i>
+                                                    <p class="text-xs font-medium">Akan Dihapus</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
                             </div>
+                            
+                            <!-- Add New Images Section -->
+                            <div x-data="mediaPreview('edit_media_detail')">
+                                <h5 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <i class="ri-add-circle-line text-[#b01116]"></i>
+                                    Tambah Gambar Baru
+                                </h5>
+                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#b01116] hover:bg-red-50 transition-all">
+                                    <i class="ri-upload-cloud-2-line text-4xl text-gray-400 mb-3"></i>
+                                    <div class="text-sm text-gray-600 mb-3 font-medium">
+                                        Drop files here or click to upload
+                                    </div>
+                                    <input type="file" 
+                                           name="new_media[]" 
+                                           multiple 
+                                           accept="image/*" 
+                                           class="hidden" 
+                                           id="edit_media_detail"
+                                           @change="handleFiles($event.target.files)">
+                                    <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
+                                        <i class="ri-folder-open-line"></i>
+                                        Pilih Gambar
+                                    </label>
+                                    <div class="text-xs text-gray-500 mt-3">
+                                        Max 10 files • Each up to 10MB • JPG, PNG, GIF
+                                    </div>
+                                </div>
+                                
+                                <!-- New Images Preview -->
+                                <div x-show="previews.length > 0" class="mt-4">
+                                    <p class="text-sm font-medium text-gray-700 mb-3">
+                                        Gambar Baru (<span x-text="previews.length"></span>)
+                                        <span class="text-xs text-gray-500 ml-2">• Akan ditambahkan setelah gambar yang ada</span>
+                                    </p>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        <template x-for="(preview, index) in previews" :key="'new-' + index">
+                                            <div class="relative group">
+                                                <div class="aspect-square rounded-lg overflow-hidden border-2 border-green-300">
+                                                    <img :src="preview.url" 
+                                                         :alt="preview.name" 
+                                                         class="w-full h-full object-cover">
+                                                </div>
+                                                <button type="button"
+                                                        @click="removeFile(index)"
+                                                        class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                                    <i class="ri-close-line text-xs"></i>
+                                                </button>
+                                                <div class="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 text-center font-medium">
+                                                    <i class="ri-add-line mr-1"></i>Baru
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Summary -->
+                            <div class="mt-4 p-4 rounded-lg border-2"
+                                 :class="getTotalImagesCount() === 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'">
+                                <div class="flex items-center gap-3"
+                                     :class="getTotalImagesCount() === 0 ? 'text-red-700' : 'text-green-700'">
+                                    <i :class="getTotalImagesCount() === 0 ? 'ri-error-warning-line text-xl' : 'ri-checkbox-circle-line text-xl'"></i>
+                                    <div class="flex-1">
+                                        <div class="font-semibold">
+                                            <span x-show="getTotalImagesCount() === 0">Minimal 1 gambar diperlukan</span>
+                                            <span x-show="getTotalImagesCount() > 0">
+                                                Total: <span x-text="getTotalImagesCount()"></span> gambar
+                                            </span>
+                                        </div>
+                                        <div class="text-sm mt-1" x-show="getTotalImagesCount() > 0">
+                                            <span x-text="getExistingImagesCount() + ' gambar saat ini'"></span>
+                                            <span x-show="previews.length > 0"> • <span x-text="previews.length + ' gambar baru'"></span></span>
+                                            <span x-show="getDeletedImagesCount() > 0"> • <span x-text="getDeletedImagesCount() + ' akan dihapus'"></span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Review Section -->
+                        <!-- Enhanced Review Section with AS-IS vs TO-BE -->
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
                             <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-lg">
                                 <i class="ri-file-list-3-line text-[#b01116]"></i>
                                 Review Perubahan
                             </h4>
-                            <div class="space-y-3 text-sm">
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('title') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-file-text-line mt-0.5"
-                                       :class="hasChanged('title') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Judul:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.title || 'Belum diisi'"></p>
-                                            <p x-show="hasChanged('title')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: "<span x-text="getOriginalValue('title') || 'Belum diisi'"></span>"</span>
-                                            </p>
+                            <div class="space-y-4 text-sm">
+                                
+                                <!-- Title Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('title') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-file-text-line" :class="hasChanged('title') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Judul Proyek</span>
+                                        <span x-show="hasChanged('title')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('title') || 'Belum diisi'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.title || 'Belum diisi'"></p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('description') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-file-text-line mt-0.5"
-                                       :class="hasChanged('description') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Deskripsi:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.description ? (projectData.description.substring(0, 100) + (projectData.description.length > 100 ? '...' : '')) : 'Belum diisi'"></p>
-                                            <p x-show="hasChanged('description')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-edit-line"></i>
-                                                <span>Deskripsi telah diubah</span>
-                                            </p>
+
+                                <!-- Description Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('description') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-file-text-line" :class="hasChanged('description') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Deskripsi Proyek</span>
+                                        <span x-show="hasChanged('description')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 text-sm" x-text="getOriginalValue('description') ? (getOriginalValue('description').substring(0, 100) + (getOriginalValue('description').length > 100 ? '...' : '')) : 'Belum diisi'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 text-sm" x-text="projectData.description ? (projectData.description.substring(0, 100) + (projectData.description.length > 100 ? '...' : '')) : 'Belum diisi'"></p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('price') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-money-dollar-circle-line mt-0.5"
-                                       :class="hasChanged('price') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Estimasi Harga:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.price ? 'Rp ' + new Intl.NumberFormat('id-ID').format(projectData.price) : 'Tidak diisi'"></p>
-                                            <p x-show="hasChanged('price')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('price') ? 'Rp ' + new Intl.NumberFormat('id-ID').format(getOriginalValue('price')) : 'Tidak diisi'"></span></span>
-                                            </p>
+
+                                <!-- Price Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('price') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-money-dollar-circle-line" :class="hasChanged('price') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Estimasi Harga</span>
+                                        <span x-show="hasChanged('price')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('price') ? 'Rp ' + new Intl.NumberFormat('id-ID').format(getOriginalValue('price')) : 'Tidak diisi'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.price ? 'Rp ' + new Intl.NumberFormat('id-ID').format(projectData.price) : 'Tidak diisi'"></p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('status') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-eye-line mt-0.5"
-                                       :class="hasChanged('status') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Status:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600">
-                                                <span x-show="projectData.status === 'draft'" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs font-medium">Draft</span>
-                                                <span x-show="projectData.status === 'published'" class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">Published</span>
-                                                <span x-show="projectData.status === 'archived'" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs font-medium">Archived</span>
-                                            </p>
-                                            <p x-show="hasChanged('status')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('status') === 'draft' ? 'Draft' : getOriginalValue('status') === 'published' ? 'Published' : 'Archived'"></span></span>
-                                            </p>
+
+                                <!-- Status Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('status') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-eye-line" :class="hasChanged('status') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Status Publikasi</span>
+                                        <span x-show="hasChanged('status')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+                                                  :class="getOriginalValue('status') === 'published' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'"
+                                                  x-text="getOriginalValue('status') === 'draft' ? 'Draft' : getOriginalValue('status') === 'published' ? 'Published' : 'Archived'"></span>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+                                                  :class="projectData.status === 'published' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'"
+                                                  x-text="projectData.status === 'draft' ? 'Draft' : projectData.status === 'published' ? 'Published' : 'Archived'"></span>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('categories') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-price-tag-3-line mt-0.5"
-                                       :class="hasChanged('categories') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Kategori:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.categories.length + ' dipilih'"></p>
-                                            <p x-show="hasChanged('categories')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('categories') + ' dipilih'"></span></span>
-                                            </p>
+
+                                <!-- Categories Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('categories') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-price-tag-3-line" :class="hasChanged('categories') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Kategori</span>
+                                        <span x-show="hasChanged('categories')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('categories') + ' kategori dipilih'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.categories.length + ' kategori dipilih'"></p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('subjects') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-book-open-line mt-0.5"
-                                       :class="hasChanged('subjects') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Mata Kuliah:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.subjects.length + ' terpilih'"></p>
-                                            <p x-show="hasChanged('subjects')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('subjects') + ' terpilih'"></span></span>
-                                            </p>
+
+                                <!-- Subjects Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('subjects') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-book-open-line" :class="hasChanged('subjects') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Mata Kuliah</span>
+                                        <span x-show="hasChanged('subjects')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('subjects') + ' mata kuliah terpilih'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.subjects.length + ' mata kuliah terpilih'"></p>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('teachers') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-user-star-line mt-0.5"
-                                       :class="hasChanged('teachers') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Pembimbing:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.teachers.length + ' terpilih'"></p>
-                                            <p x-show="hasChanged('teachers')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('teachers') + ' terpilih'"></span></span>
-                                            </p>
+
+                                <!-- Teachers Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasChanged('teachers') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-user-star-line" :class="hasChanged('teachers') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Pembimbing</span>
+                                        <span x-show="hasChanged('teachers')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('teachers') + ' pembimbing terpilih'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.teachers.length + ' pembimbing terpilih'"></p>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Team Members Comparison (for team projects) -->
                                 <div x-show="projectType === 'team'" 
-                                     class="flex items-start gap-3 p-3 rounded-lg transition-all"
-                                     :class="hasChanged('team_members') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
-                                    <i class="ri-team-line mt-0.5"
-                                       :class="hasChanged('team_members') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                    <div class="flex-1">
-                                        <span class="font-semibold text-gray-700">Anggota Tim:</span>
-                                        <div class="mt-1">
-                                            <p class="text-gray-600" x-text="projectData.team_members.length + ' anggota (+ 1 leader)'"></p>
-                                            <p x-show="hasChanged('team_members')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
-                                                <i class="ri-arrow-right-line"></i>
-                                                <span>Berubah dari: <span x-text="getOriginalValue('team_members') + ' anggota (+ 1 leader)'"></span></span>
-                                            </p>
+                                     class="p-4 rounded-lg border"
+                                     :class="hasChanged('team_members') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="ri-team-line" :class="hasChanged('team_members') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Anggota Tim</span>
+                                        <span x-show="hasChanged('team_members')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sebelum:</p>
+                                            <p class="text-gray-600 font-medium" x-text="getOriginalValue('team_members') + ' anggota (+ 1 leader)'"></p>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-1">Sesudah:</p>
+                                            <p class="text-gray-800 font-medium" x-text="projectData.team_members.length + ' anggota (+ 1 leader)'"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Images Comparison -->
+                                <div class="p-4 rounded-lg border"
+                                     :class="hasImagesChanged() ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <i class="ri-image-line" :class="hasImagesChanged() ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                        <span class="font-semibold text-gray-700">Gambar Proyek</span>
+                                        <span x-show="hasImagesChanged()" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-2">Sebelum:</p>
+                                            <div class="text-gray-600">
+                                                <p class="font-medium" x-text="(projectData.existing_images ? projectData.existing_images.length : 0) + ' gambar'"></p>
+                                                <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="mt-2 grid grid-cols-3 gap-1">
+                                                    <template x-for="(image, index) in (projectData.existing_images || []).slice(0, 3)" :key="'review-existing-' + index">
+                                                        <div class="aspect-square rounded border overflow-hidden">
+                                                            <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 mb-2">Sesudah:</p>
+                                            <div class="text-gray-800">
+                                                <p class="font-medium" x-text="getTotalImagesCount() + ' gambar'"></p>
+                                                <div class="text-xs mt-1 space-y-1">
+                                                    <p x-show="getExistingImagesCount() > 0" class="flex items-center gap-1">
+                                                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                        <span x-text="getExistingImagesCount() + ' gambar tetap'"></span>
+                                                    </p>
+                                                    <p x-show="getDeletedImagesCount() > 0" class="flex items-center gap-1">
+                                                        <span class="w-2 h-2 bg-red-500 rounded-full"></span>
+                                                        <span x-text="getDeletedImagesCount() + ' gambar dihapus'"></span>
+                                                    </p>
+                                                    <p x-show="previews.length > 0" class="flex items-center gap-1">
+                                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                        <span x-text="previews.length + ' gambar baru'"></span>
+                                                    </p>
+                                                </div>
+                                                <div x-show="previews.length > 0" class="mt-2 grid grid-cols-3 gap-1">
+                                                    <template x-for="(preview, index) in previews.slice(0, 3)" :key="'review-new-' + index">
+                                                        <div class="aspect-square rounded border-2 border-green-300 overflow-hidden">
+                                                            <img :src="preview.url" class="w-full h-full object-cover" :alt="preview.name">
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1279,8 +1455,9 @@ function projectDetail(projectId) {
         canCreateProject() {
             const hasTitle = this.projectData.title.trim() !== '';
             const hasCategories = this.projectData.categories.length > 0;
+            const hasMinImages = this.getTotalImagesCount() >= 1;
             const hasTeamMembers = this.projectType === 'individual' || this.projectData.team_members.length > 0;
-            return hasTitle && hasCategories && hasTeamMembers;
+            return hasTitle && hasCategories && hasMinImages && hasTeamMembers;
         },
         
         // Reset modal
@@ -1294,7 +1471,9 @@ function projectDetail(projectId) {
                 subjects: [],
                 teachers: [],
                 team_members: [],
-                team_positions: {}
+                team_positions: {},
+                existing_images: [],
+                images_to_delete: []
             };
             this.currentStep = 1;
             this.editingProject = null;
@@ -1355,6 +1534,10 @@ function projectDetail(projectId) {
                 
                 this.editingProject = data.project;
                 this.projectType = data.project.type;
+                
+                // Debug: Log the media data
+                console.log('Raw media data:', data.project.media);
+                
                 this.projectData = {
                     title: data.project.title || '',
                     description: data.project.description || '',
@@ -1364,8 +1547,19 @@ function projectDetail(projectId) {
                     subjects: data.project.subjects?.map(s => s.id) || [],
                     teachers: data.project.teachers?.map(t => t.id) || [],
                     team_members: data.project.team_members?.filter(m => m.role !== 'leader').map(m => m.student_id) || [],
-                    team_positions: {}
+                    team_positions: {},
+                    existing_images: data.project.media?.map((m, index) => ({
+                        id: m.id,
+                        url: m.url || (m.file_path ? '/storage/' + m.file_path : ''),
+                        file_path: m.file_path,
+                        alt_text: 'Project Image',
+                        is_main: index === 0
+                    })) || [],
+                    images_to_delete: []
                 };
+                
+                // Debug: Log the processed existing_images
+                console.log('Processed existing_images:', this.projectData.existing_images);
                 
                 // Populate team positions
                 if (data.project.team_members) {
@@ -1414,8 +1608,18 @@ function projectDetail(projectId) {
                     });
                 }
                 
-                if (this.selectedFiles.length > 0) {
-                    this.selectedFiles.forEach(file => formData.append('media[]', file));
+                // Add images to delete
+                if (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0) {
+                    this.projectData.images_to_delete.forEach(id => {
+                        formData.append('images_to_delete[]', id);
+                    });
+                }
+                
+                // Add new media files
+                if (this.selectedFiles && this.selectedFiles.length > 0) {
+                    this.selectedFiles.forEach((file, idx) => {
+                        formData.append(`new_media[${idx}]`, file);
+                    });
                 }
                 
                 const res = await fetch(`/student/projects/${this.editingProject.id}`, {
@@ -1474,6 +1678,54 @@ function projectDetail(projectId) {
                 this.projectData.team_members.push(id);
                 this.projectData.team_positions[id] = '';
             }
+        },
+
+        // Image management functions
+        setAsMainImage(index, type = 'existing') {
+            if (type === 'existing' && this.projectData.existing_images && this.projectData.existing_images.length > 0) {
+                // Move the selected image to the first position
+                const selectedImage = this.projectData.existing_images.splice(index, 1)[0];
+                this.projectData.existing_images.unshift(selectedImage);
+            }
+        },
+
+        markImageForDeletion(index) {
+            if (!this.projectData.images_to_delete) {
+                this.projectData.images_to_delete = [];
+            }
+            
+            const imageId = this.projectData.existing_images[index].id || index;
+            
+            if (this.projectData.images_to_delete.includes(imageId)) {
+                // Remove from deletion list
+                const deleteIndex = this.projectData.images_to_delete.indexOf(imageId);
+                this.projectData.images_to_delete.splice(deleteIndex, 1);
+            } else {
+                // Add to deletion list
+                this.projectData.images_to_delete.push(imageId);
+            }
+        },
+
+        getTotalImagesCount() {
+            const existingCount = this.getExistingImagesCount();
+            const newCount = this.previews ? this.previews.length : 0;
+            return existingCount + newCount;
+        },
+
+        getExistingImagesCount() {
+            if (!this.projectData.existing_images) return 0;
+            const deletedCount = this.getDeletedImagesCount();
+            return this.projectData.existing_images.length - deletedCount;
+        },
+
+        getDeletedImagesCount() {
+            return this.projectData.images_to_delete ? this.projectData.images_to_delete.length : 0;
+        },
+
+        hasImagesChanged() {
+            // Check if there are new images or deleted images
+            return (this.previews && this.previews.length > 0) || 
+                   (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0);
         }
     }
 }
@@ -1575,20 +1827,20 @@ function deleteProject(projectId) {
                 .then(response => response.json())
                 .then(data => {
                     // Update button state
-                    const isWishlisted = button.querySelector('i').classList.contains('ri-bookmark-line');
+                    const isWishlisted = button.querySelector('i').classList.contains('ri-heart-line');
                     
                     if (isWishlisted) {
-                        icon.classList.remove('ri-bookmark-line');
-                        icon.classList.add('ri-bookmark-fill');
+                        icon.classList.remove('ri-heart-line');
+                        icon.classList.add('ri-heart-fill');
                         button.classList.add('bg-pink-100', 'border-pink-300');
                         button.classList.remove('bg-pink-50', 'border-pink-200');
-                        button.innerHTML = '<i class="ri-bookmark-fill"></i> Tersimpan';
+                        button.innerHTML = '<i class="ri-heart-fill"></i> Tersimpan';
                     } else {
-                        icon.classList.remove('ri-bookmark-fill');
-                        icon.classList.add('ri-bookmark-line');
+                        icon.classList.remove('ri-heart-fill');
+                        icon.classList.add('ri-heart-line');
                         button.classList.remove('bg-pink-100', 'border-pink-300');
                         button.classList.add('bg-pink-50', 'border-pink-200');
-                        button.innerHTML = '<i class="ri-bookmark-line"></i> Simpan Proyek';
+                        button.innerHTML = '<i class="ri-heart-line"></i> Tambah ke Wishlist';
                     }
                     
                     button.disabled = false;

@@ -72,8 +72,8 @@
                     @csrf
                     <button type="submit" 
                             class="w-full {{ $isWishlisted ? 'bg-pink-100 border-pink-300' : 'bg-pink-50 border-pink-200' }} hover:bg-pink-100 text-[#b01116] font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 border">
-                        <i class="{{ $isWishlisted ? 'ri-bookmark-fill' : 'ri-bookmark-line' }}"></i>
-                        {{ $isWishlisted ? 'Tersimpan' : 'Simpan Proyek' }}
+                        <i class="{{ $isWishlisted ? 'ri-heart-fill' : 'ri-heart-line' }}"></i>
+                        {{ $isWishlisted ? 'Ditambahkan' : 'Tambahkan ke Wishlist' }}
                     </button>
                 </form>
             @else
@@ -96,7 +96,7 @@
             <button disabled 
                     class="w-full bg-gray-50 text-gray-400 font-semibold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200"
                     title="Login untuk menyimpan">
-                <i class="ri-bookmark-line"></i>
+                <i class="ri-heart-line"></i>
                 Login untuk Simpan
             </button>
             
