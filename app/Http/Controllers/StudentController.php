@@ -20,18 +20,51 @@ class StudentController extends Controller
         return view('students.index', compact('students'));
     }
 
-    public function show(Student $student)
+    public function show($username, Request $request)
     {
-        $student->load([
-            'user',
-            'expertises',
-            'educationInfo',
-            'projects' => function ($query) {
-                $query->published()->with(['media', 'categories'])->latest();
-            }
-        ]);
-
-        return view('students.show', compact('student'));
+        // Find student by username (which is in the users table)
+        $student = Student::whereHas('user', function($query) use ($username) {
+            $query->where('username', $username);
+        })->with(['user', 'expertises', 'educationInfo'])->firstOrFail();
+        
+        // Base query for published projects owned by the student
+        $projectsQuery = $student->projects()->published()
+            ->with(['media', 'categories', 'wishlists']);
+        
+        // Filter by project type if specified
+        if ($request->filled('type') && in_array($request->type, ['individual', 'team'])) {
+            $projectsQuery->where('type', $request->type);
+        }
+        
+        // Paginate projects
+        $projects = $projectsQuery->latest('updated_at')->paginate(12)->withQueryString();
+        
+        // Get team projects where student is a member (not owner)
+        $memberProjectsQuery = $student->memberProjects()
+            ->published()
+            ->with(['media', 'categories', 'wishlists', 'student.user']);
+        
+        // Apply same type filter to member projects if specified
+        if ($request->filled('type') && in_array($request->type, ['individual', 'team'])) {
+            $memberProjectsQuery->where('type', $request->type);
+        }
+        
+        $memberProjects = $memberProjectsQuery->latest('updated_at')->get();
+        
+        // Check wishlist status for investors
+        $wishlistedProjects = [];
+        if (auth()->check() && auth()->user()->isInvestor()) {
+            $wishlistedProjects = auth()->user()->investor->wishlists()
+                ->pluck('project_id')
+                ->toArray();
+        }
+        
+        return view('pages.detail-student', compact(
+            'student',
+            'projects',
+            'memberProjects',
+            'wishlistedProjects'
+        ));
     }
 
     public function showProfile()

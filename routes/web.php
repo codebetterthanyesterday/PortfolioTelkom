@@ -7,17 +7,18 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\InvestorController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
 
 // =============================================================================
 // PUBLIC ROUTES (Guest & Authenticated)
 // =============================================================================
-Route::get('/', function () {
-    return view('pages.home');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/api/home/filter', [HomeController::class, 'filterProjects'])->name('home.filter');
 
-Route::get('/project', function () {
-    return view('pages.gallery');
-})->name('project');
+Route::get('/project', [ProjectController::class, 'gallery'])->name('project');
+Route::get('/project/{category:slug}', [ProjectController::class, 'galleryByCategory'])->name('project.category');
+Route::get('/api/projects/filter', [ProjectController::class, 'filterProjects'])->name('projects.filter');
 
 Route::get('/about', function () {
     return view('pages.comming');
@@ -31,13 +32,11 @@ Route::get('/qa', function () {
     return view('pages.comming');
 })->name('qa');
 
-Route::get('/project-detail', function () {
-    return view('pages.project-detail');
-})->name('project.detail');
+// Dynamic project detail page
+Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name('projects.show');
 
-Route::get('/student-detail', function () {
-    return view('pages.detail-student');
-})->name('detail.student');
+// Dynamic student detail page
+Route::get('/students/{student:username}', [StudentController::class, 'show'])->name('detail.student');
 
 // Temporary admin routes (static pages)
 Route::get('/adm/dashboard', function () {
@@ -104,6 +103,12 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     // Comments
     Route::post('/projects/{project}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unreadCount');
 });
 
 // =============================================================================
@@ -124,4 +129,10 @@ Route::middleware(['auth', 'role:investor'])->prefix('investor')->name('investor
     // Comments
     Route::post('/projects/{project}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unreadCount');
 });

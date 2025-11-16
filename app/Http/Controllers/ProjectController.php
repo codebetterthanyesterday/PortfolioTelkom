@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +15,138 @@ use Illuminate\Support\Str;
 
 class ProjectController extends Controller
 {
+    public function gallery(Request $request)
+    {
+        // Get top 10 categories with most published projects
+        $categories = Category::withCount(['projects' => function($q) {
+                $q->published();
+            }])
+            ->get()
+            ->filter(function($category) {
+                return $category->projects_count > 0;
+            })
+            ->sortByDesc('projects_count')
+            ->take(10)
+            ->values();
+        
+        // Featured/Recent Projects (initial load - 8 projects)
+        $featuredProjects = Project::published()
+            ->with(['student.user', 'media', 'categories', 'wishlists'])
+            ->recent()
+            ->take(8)
+            ->get();
+        
+        // Most Viewed Projects (6 projects)
+        $mostViewedProjects = Project::published()
+            ->with(['student.user', 'media', 'categories', 'wishlists'])
+            ->popular()
+            ->take(6)
+            ->get();
+        
+        // Check wishlist status for investors
+        $wishlistedProjects = [];
+        if (auth()->check() && auth()->user()->isInvestor()) {
+            $wishlistedProjects = auth()->user()->investor->wishlists()
+                ->pluck('project_id')
+                ->toArray();
+        }
+        
+        return view('pages.gallery', compact(
+            'categories',
+            'featuredProjects',
+            'mostViewedProjects',
+            'wishlistedProjects'
+        ));
+    }
+
+    public function galleryByCategory(Category $category)
+    {
+        // Get top 10 categories with most published projects
+        $categories = Category::withCount(['projects' => function($q) {
+                $q->published();
+            }])
+            ->get()
+            ->filter(function($category) {
+                return $category->projects_count > 0;
+            })
+            ->sortByDesc('projects_count')
+            ->take(10)
+            ->values();
+        
+        // Featured/Recent Projects filtered by category (8 projects)
+        $featuredProjects = Project::published()
+            ->with(['student.user', 'media', 'categories', 'wishlists'])
+            ->whereHas('categories', function($q) use ($category) {
+                $q->where('categories.id', $category->id);
+            })
+            ->recent()
+            ->take(8)
+            ->get();
+        
+        // Most Viewed Projects filtered by category (6 projects)
+        $mostViewedProjects = Project::published()
+            ->with(['student.user', 'media', 'categories', 'wishlists'])
+            ->whereHas('categories', function($q) use ($category) {
+                $q->where('categories.id', $category->id);
+            })
+            ->popular()
+            ->take(6)
+            ->get();
+        
+        // Check wishlist status for investors
+        $wishlistedProjects = [];
+        if (auth()->check() && auth()->user()->isInvestor()) {
+            $wishlistedProjects = auth()->user()->investor->wishlists()
+                ->pluck('project_id')
+                ->toArray();
+        }
+        
+        return view('pages.gallery', compact(
+            'categories',
+            'featuredProjects',
+            'mostViewedProjects',
+            'wishlistedProjects',
+            'category'
+        ));
+    }
+
+    public function filterProjects(Request $request)
+    {
+        $query = Project::published()
+            ->with(['student.user', 'media', 'categories', 'wishlists']);
+        
+        // Filter by category slug
+        if ($request->filled('category_slug') && $request->category_slug !== 'all') {
+            $query->whereHas('categories', function($q) use ($request) {
+                $q->where('categories.slug', $request->category_slug);
+            });
+        }
+        
+        // Sort
+        $sort = $request->get('sort', 'recent');
+        if ($sort === 'popular') {
+            $query->popular();
+        } else {
+            $query->recent();
+        }
+        
+        $projects = $query->paginate(12);
+        
+        // Check wishlist status
+        $wishlistedProjects = [];
+        if (auth()->check() && auth()->user()->isInvestor()) {
+            $wishlistedProjects = auth()->user()->investor->wishlists()
+                ->pluck('project_id')
+                ->toArray();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'projects' => $projects,
+            'wishlistedProjects' => $wishlistedProjects
+        ]);
+    }
+
     public function index(Request $request)
     {
         $query = Project::query()
@@ -60,6 +193,7 @@ class ProjectController extends Controller
             'subjects',
             'teachers',
             'teamMembers.user',
+            'members.student.user',
             'comments' => function ($query) {
                 $query->parent()->with(['user', 'allReplies.user'])->latest();
             }
@@ -74,7 +208,25 @@ class ProjectController extends Controller
             $isWishlisted = auth()->user()->investor->hasWishlisted($project);
         }
 
-        return view('projects.show', compact('project', 'isWishlisted'));
+        // Check if current user is project owner
+        $isOwner = false;
+        if (auth()->check() && auth()->user()->isStudent()) {
+            $isOwner = auth()->user()->student->id === $project->student_id;
+        }
+
+        // Load data for edit modal (if owner)
+        $categories = [];
+        $subjects = [];
+        $teachers = [];
+        $students = [];
+        if ($isOwner) {
+            $categories = Category::all();
+            $subjects = Subject::all();
+            $teachers = Teacher::all();
+            $students = Student::with('user')->where('id', '!=', auth()->user()->student->id)->get();
+        }
+
+        return view('pages.project-detail', compact('project', 'isWishlisted', 'isOwner', 'categories', 'subjects', 'teachers', 'students'));
     }
 
     public function create()
@@ -94,7 +246,7 @@ class ProjectController extends Controller
             'description' => 'required|string',
             'price' => 'nullable|numeric|min:0',
             'type' => 'required|in:individual,team',
-            'status' => 'required|in:draft,published',
+            'status' => 'required|in:draft,published,archived',
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
             'subjects' => 'nullable|array',
@@ -142,6 +294,7 @@ class ProjectController extends Controller
                     $path = $file->store('projects/' . $project->id, 'public');
                     
                     $project->media()->create([
+                        'project_id' => $project->id,
                         'type' => str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video',
                         'file_path' => $path,
                         'file_name' => $file->getClientOriginalName(),
@@ -171,13 +324,30 @@ class ProjectController extends Controller
                             'position' => $validated['team_positions'][$index] ?? 'Team Member',
                             'joined_at' => now(),
                         ]);
+                        
+                        // Notify team member about being mentioned
+                        $memberStudent = Student::find($memberId);
+                        if ($memberStudent) {
+                            Notification::create([
+                                'user_id' => $memberStudent->user_id,
+                                'type' => 'team_mention',
+                                'notifiable_type' => Project::class,
+                                'notifiable_id' => $project->id,
+                                'data' => json_encode([
+                                    'project_title' => $project->title,
+                                    'project_slug' => $project->slug,
+                                    'leader_name' => $student->user->full_name ?? $student->user->username,
+                                    'message' => 'You have been added as a team member'
+                                ])
+                            ]);
+                        }
                     }
                 }
             }
 
             DB::commit();
 
-            return redirect()->route('projects.show', $project)
+            return redirect()->route('student.profile')
                 ->with('success', 'Project created successfully!');
 
         } catch (\Exception $e) {
@@ -304,6 +474,7 @@ class ProjectController extends Controller
                     $path = $file->store('projects/' . $project->id, 'public');
                     
                     $project->media()->create([
+                        'project_id' => $project->id,
                         'type' => str_starts_with($file->getMimeType(), 'image') ? 'image' : 'video',
                         'file_path' => $path,
                         'file_name' => $file->getClientOriginalName(),
@@ -319,6 +490,9 @@ class ProjectController extends Controller
                 // Get current leader
                 $leader = $project->members()->where('role', 'leader')->first();
                 
+                // Get existing member IDs before deletion
+                $existingMembers = $project->members()->where('role', 'member')->pluck('student_id')->toArray();
+                
                 // Delete old members (except leader)
                 $project->members()->where('role', 'member')->delete();
                 
@@ -332,6 +506,25 @@ class ProjectController extends Controller
                             'position' => $validated['team_positions'][$index] ?? 'Team Member',
                             'joined_at' => now(),
                         ]);
+                        
+                        // Notify newly added team members (not previously in the team)
+                        if (!in_array($memberId, $existingMembers)) {
+                            $memberStudent = Student::find($memberId);
+                            if ($memberStudent) {
+                                Notification::create([
+                                    'user_id' => $memberStudent->user_id,
+                                    'type' => 'team_mention',
+                                    'notifiable_type' => Project::class,
+                                    'notifiable_id' => $project->id,
+                                    'data' => json_encode([
+                                        'project_title' => $project->title,
+                                        'project_slug' => $project->slug,
+                                        'leader_name' => auth()->user()->full_name ?? auth()->user()->username,
+                                        'message' => 'You have been added as a team member'
+                                    ])
+                                ]);
+                            }
+                        }
                     }
                 }
             }

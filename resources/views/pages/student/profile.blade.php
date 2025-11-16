@@ -20,6 +20,7 @@
             // Profile data
             selectedExpertises: @js(auth()->user()->student && auth()->user()->student->expertises ? auth()->user()->student->expertises->pluck('id') : []),
             education: @js(auth()->user()->student && auth()->user()->student->educationInfo ? auth()->user()->student->educationInfo : []),
+            avatarPreview: null,
 
             // Project creation data
             projectType: 'individual',
@@ -34,6 +35,8 @@
                 team_members: [],
                 team_positions: {}
             },
+            originalProjectData: null,
+            originalTeamPositions: null,
 
             // Search filters
             searchCategory: '',
@@ -250,6 +253,27 @@
                 this.searchExpertise = '';
                 this.showAddExpertise = false;
                 this.newExpertise = { name: '' };
+                this.avatarPreview = null;
+            },
+            
+            // Handle avatar preview
+            handleAvatarPreview(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Ukuran file terlalu besar. Maksimal 2MB.');
+                        event.target.value = '';
+                        this.avatarPreview = null;
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.avatarPreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.avatarPreview = null;
+                }
             },
 
             // Reset project modals
@@ -268,6 +292,8 @@
                 };
                 this.selectedFiles = [];
                 this.editingProject = null;
+                this.originalProjectData = null;
+                this.originalTeamPositions = null;
                 this.searchCategory = '';
                 this.searchSubject = '';
                 this.searchTeacher = '';
@@ -279,6 +305,31 @@
                 this.newSubject = { name: '', code: '', description: '' };
                 this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
                 this.newExpertise = { name: '' };
+            },
+
+            // Change detection helpers
+            hasChanged(field) {
+                if (!this.originalProjectData) return false;
+                if (Array.isArray(this.projectData[field])) {
+                    const original = (this.originalProjectData[field] || []).sort().join(',');
+                    const current = (this.projectData[field] || []).sort().join(',');
+                    return original !== current;
+                }
+                return this.projectData[field] !== this.originalProjectData[field];
+            },
+            getChangedValue(field) {
+                if (!this.originalProjectData) return this.projectData[field];
+                if (Array.isArray(this.projectData[field])) {
+                    return this.projectData[field].length;
+                }
+                return this.projectData[field];
+            },
+            getOriginalValue(field) {
+                if (!this.originalProjectData) return null;
+                if (Array.isArray(this.originalProjectData[field])) {
+                    return this.originalProjectData[field].length;
+                }
+                return this.originalProjectData[field];
             },
 
             // Load project data for editing
@@ -333,6 +384,10 @@
                             }
                         });
                     }
+                    
+                    // Store original data for change detection
+                    this.originalProjectData = JSON.parse(JSON.stringify(this.projectData));
+                    this.originalTeamPositions = JSON.parse(JSON.stringify(this.projectData.team_positions));
                     
                     this.currentStep = 1;
                     this.showEditProjectModal = true;
@@ -565,21 +620,25 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             @php
                                 $allProjects = collect();
+                                $existingProjectIds = [];
+
                                 // Add personal projects
                                 if(auth()->user()->student && auth()->user()->student->projects) {
-                                    $personalProjects = auth()->user()->student->projects->map(function($project) {
-                                        $project->project_type = 'personal';
-                                        return $project;
-                                    });
-                                    $allProjects = $allProjects->merge($personalProjects);
+                                    foreach(auth()->user()->student->projects as $project) {
+                                        $project->project_type = 'individual';
+                                        $allProjects->push($project);
+                                        $existingProjectIds[] = $project->id;
+                                    }
                                 }
-                                // Add team projects
+                                // Add team projects, skipping if already present
                                 if(auth()->user()->student && auth()->user()->student->memberProjects) {
-                                    $teamProjects = auth()->user()->student->memberProjects->map(function($project) {
-                                        $project->project_type = 'team_member';
-                                        return $project;
-                                    });
-                                    $allProjects = $allProjects->merge($teamProjects);
+                                    foreach(auth()->user()->student->memberProjects as $project) {
+                                        if (!in_array($project->id, $existingProjectIds)) {
+                                            $project->project_type = 'team';
+                                            $allProjects->push($project);
+                                            $existingProjectIds[] = $project->id;
+                                        }
+                                    }
                                 }
                                 $allProjects = $allProjects->sortByDesc('created_at');
                             @endphp
@@ -587,28 +646,40 @@
                             @if($allProjects->count() > 0)
                                 @foreach($allProjects as $project)
                                     <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative">
+                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative overflow-hidden">
+                                            @if($project->media->where('type', 'image')->first())
+                                                <img src="{{ $project->media->where('type', 'image')->first()->url }}" 
+                                                     alt="{{ $project->title }}" 
+                                                     class="w-full h-full object-cover">
+                                            @endif
                                             @if($project->categories && $project->categories->first())
-                                                <div class="absolute top-3 left-3">
-                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-white/20 backdrop-blur-sm text-white rounded-full">
+                                                <div class="absolute top-3 left-3 z-10">
+                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-pink-100 hover:bg-pink-100 text-[#b01116] border border-pink-200 rounded-full">
                                                         {{ $project->categories->first()->name }}
                                                     </span>
-                                                </div>
+                                                </div>  
                                             @endif
-                                            <div class="absolute top-3 right-3">
-                                                <span class="inline-block px-2 py-1 text-xs font-medium {{ $project->project_type === 'personal' ? 'bg-[#b01116]' : 'bg-[#8d0d11]' }} text-white rounded-full">
-                                                    {{ $project->project_type === 'personal' ? 'Pribadi' : 'Tim' }}
+                                            <div class="absolute top-3 right-3 z-10">
+                                                <span class="inline-block px-2 py-1 text-xs font-medium {{ $project->type === 'individual' ? 'bg-[#b01116]' : 'bg-[#8d0d11]' }} text-white rounded-full">
+                                                    {{ $project->type === 'individual' ? 'Pribadi' : 'Tim' }}
                                                 </span>
                                             </div>
+                                            @if(!$project->media->where('type', 'image')->first())
                                             <div class="absolute inset-0 flex items-center justify-center">
                                                 <div class="text-center text-white">
                                                     <i class="ri-code-box-line text-3xl mb-2"></i>
                                                     <p class="text-sm font-medium">{{ $project->type === 'team' ? 'Tim Project' : 'Individual Project' }}</p>
                                                 </div>
                                             </div>
+                                            @endif
                                         </div>
                                         <div class="p-4">
-                                            <h3 class="font-semibold text-gray-800 mb-1">{{ $project->title }}</h3>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <h3 class="font-semibold text-gray-800">{{ $project->title }}</h3>
+                                                <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
+                                                    {{ ucfirst($project->status) }}
+                                                </span>
+                                            </div>
                                             <p class="text-xs text-gray-500 mb-2">{{ $project->created_at->format('d F Y') }}</p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
                                             <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
@@ -616,23 +687,20 @@
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
                                                 </div>
-                                                <a href="{{ route('project.detail') }}?id={{ $project->id }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
+                                                <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
                                             <div class="mt-3 pt-3 border-t border-gray-200">
-                                                <div class="flex items-center gap-2">
+                                                <div class="flex flex-wrap items-center gap-2">
                                                     @can('update', $project)
                                                         <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
                                                             <i class="ri-edit-line mr-1"></i>Edit
                                                         </button>
                                                     @endcan
                                                     @can('delete', $project)
-                                                        <button @click="deleteProject({{ $project->id }}, '{{ $project->title }}')" class="flex-1 text-xs text-center px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                        <button @click="deleteProject({{ $project->id }}, '{{ $project->title }}')" class="flex-1 min-w-[110px] text-xs text-center px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                                             <i class="ri-delete-bin-line mr-1"></i>Hapus
                                                         </button>
                                                     @endcan
-                                                    <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
-                                                        {{ ucfirst($project->status) }}
-                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -674,33 +742,45 @@
                                         $membership = auth()->user()->student->projectMemberships->where('project_id', $project->id)->first();
                                     @endphp
                                     <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative">
+                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative overflow-hidden">
+                                            @if($project->media->where('type', 'image')->first())
+                                                <img src="{{ $project->media->where('type', 'image')->first()->url }}" 
+                                                     alt="{{ $project->title }}" 
+                                                     class="w-full h-full object-cover">
+                                            @endif
                                             @if($project->categories && $project->categories->first())
-                                                <div class="absolute top-3 left-3">
-                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-white/20 backdrop-blur-sm text-white rounded-full">
+                                                <div class="absolute top-3 left-3 z-10">
+                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-pink-100 hover:bg-pink-100 text-[#b01116] border border-pink-200 rounded-full">
                                                         {{ $project->categories->first()->name }}
                                                     </span>
                                                 </div>
                                             @endif
-                                            <div class="absolute top-3 right-3">
+                                            <div class="absolute top-3 right-3 z-10">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium bg-[#8d0d11] text-white rounded-full">
-                                                    Tim ({{ $project->members->count() + 1 }} orang)
+                                                    Tim
                                                 </span>
                                             </div>
+                                            @if(!$project->media->where('type', 'image')->first())
                                             <div class="absolute inset-0 flex items-center justify-center">
                                                 <div class="text-center text-white">
                                                     <i class="ri-team-line text-3xl mb-2"></i>
                                                     <p class="text-sm font-medium">Team Project</p>
                                                 </div>
                                             </div>
+                                            @endif
                                         </div>
                                         <div class="p-4">
-                                            <h3 class="font-semibold text-gray-800 mb-1">{{ $project->title }}</h3>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <h3 class="font-semibold text-gray-800">{{ $project->title }}</h3>
+                                                <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
+                                                    {{ ucfirst($project->status) }}
+                                                </span>
+                                            </div>
                                             <p class="text-xs text-gray-500 mb-2">
                                                 {{ $project->created_at->format('d F Y') }}
-                                                @if($membership)
-                                                    • Role: {{ $membership->position ?? ucfirst($membership->role) }}
-                                                @endif
+                                            </p>
+                                            <p class="text-xs text-gray-500 mb-2">
+                                                As a <span class="text-[#b01116] font-semibold">{{ ucfirst($membership->role) }}</span>
                                             </p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
                                             <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
@@ -708,7 +788,7 @@
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
                                                 </div>
-                                                <a href="{{ route('project.detail') }}?id={{ $project->id }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
+                                                <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
                                             <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex items-center gap-2">
@@ -722,9 +802,6 @@
                                                             <i class="ri-delete-bin-line mr-1"></i>Hapus
                                                         </button>
                                                     @endcan
-                                                    <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
-                                                        {{ ucfirst($project->status) }}
-                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -754,31 +831,43 @@
 
                         <!-- Projects Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            @if(auth()->user()->student && auth()->user()->student->projects->count() > 0)
-                                @foreach(auth()->user()->student->projects as $project)
+                            @if(auth()->user()->student && auth()->user()->student->projects->where('type', 'individual')->count() > 0)
+                                @foreach(auth()->user()->student->projects->where('type', 'individual') as $project)
                                     <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative">
+                                        <div class="aspect-video bg-gradient-to-br from-[#b01116] to-[#8d0d11] relative overflow-hidden">
+                                            @if($project->media->where('type', 'image')->first())
+                                                <img src="{{ $project->media->where('type', 'image')->first()->url }}" 
+                                                     alt="{{ $project->title }}" 
+                                                     class="w-full h-full object-cover">
+                                            @endif
                                             @if($project->categories && $project->categories->first())
-                                                <div class="absolute top-3 left-3">
-                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-white/20 backdrop-blur-sm text-white rounded-full">
+                                                <div class="absolute top-3 left-3 z-10">
+                                                    <span class="inline-block px-2 py-1 text-xs font-medium bg-pink-100 hover:bg-pink-100 text-[#b01116] border border-pink-200 rounded-full">
                                                         {{ $project->categories->first()->name }}
                                                     </span>
                                                 </div>
                                             @endif
-                                            <div class="absolute top-3 right-3">
+                                            <div class="absolute top-3 right-3 z-10">
                                                 <span class="inline-block px-2 py-1 text-xs font-medium bg-[#b01116] text-white rounded-full">
                                                     {{ ucfirst($project->type) }}
                                                 </span>
                                             </div>
+                                            @if(!$project->media->where('type', 'image')->first())
                                             <div class="absolute inset-0 flex items-center justify-center">
                                                 <div class="text-center text-white">
                                                     <i class="ri-user-line text-3xl mb-2"></i>
                                                     <p class="text-sm font-medium">Personal Project</p>
                                                 </div>
                                             </div>
+                                            @endif
                                         </div>
                                         <div class="p-4">
-                                            <h3 class="font-semibold text-gray-800 mb-1">{{ $project->title }}</h3>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <h3 class="font-semibold text-gray-800">{{ $project->title }}</h3>
+                                                <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
+                                                    {{ ucfirst($project->status) }}
+                                                </span>
+                                            </div>
                                             <p class="text-xs text-gray-500 mb-2">{{ $project->created_at->format('d F Y') }}</p>
                                             <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ Str::limit($project->description, 100) }}</p>
                                             <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
@@ -786,7 +875,7 @@
                                                     <i class="ri-eye-line"></i>
                                                     <span>{{ number_format($project->view_count) }}</span>
                                                 </div>
-                                                <a href="{{ route('project.detail') }}?id={{ $project->id }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
+                                                <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
                                             <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex items-center gap-2">
@@ -800,9 +889,6 @@
                                                             <i class="ri-delete-bin-line mr-1"></i>Hapus
                                                         </button>
                                                     @endcan
-                                                    <span class="px-2 py-1 text-xs {{ $project->status === 'published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }} rounded-full">
-                                                        {{ ucfirst($project->status) }}
-                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -865,15 +951,15 @@
 
                             <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">Statistik</h3>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
                                     <div class="text-2xl font-bold text-[#b01116] mb-1">{{ auth()->user()->student->projects->count() ?? 0 }}</div>
                                     <div class="text-sm text-gray-600">Proyek Pribadi</div>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
                                     <div class="text-2xl font-bold text-[#b01116] mb-1">{{ auth()->user()->student->projectMemberships->count() ?? 0 }}</div>
                                     <div class="text-sm text-gray-600">Proyek Tim</div>
                                 </div>
-                                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="bg-gray-50 rounded-lg p-4 text-center border border-gray-200">
                                     <div class="text-2xl font-bold text-[#b01116] mb-1">{{ auth()->user()->student->expertises->count() ?? 0 }}</div>
                                     <div class="text-sm text-gray-600">Keahlian</div>
                                 </div>
@@ -903,6 +989,9 @@
 
                     <!-- Student Name -->
                     <h1 class="text-2xl font-bold text-gray-800 text-center mb-2">{{ auth()->user()->full_name ?? auth()->user()->username }}</h1>
+
+                    <!-- Username -->
+                    <p class="text-sm text-gray-500 text-center mb-4">{{ "@" . auth()->user()->username }}</p>
                     
                     <!-- Student ID -->
                     <p class="text-sm text-gray-500 text-center mb-4">NIM: {{ auth()->user()->student->student_id ?? 'Belum diisi' }}</p>
@@ -1022,17 +1111,30 @@
                                         <div class="mb-6">
                                             <label class="block text-sm font-semibold text-gray-700 mb-2">Foto Profil</label>
                                             <div class="flex items-center gap-4">
-                                                <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200">
-                                                    @if(auth()->user()->avatar)
-                                                        <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
-                                                    @else
-                                                        <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
-                                                            {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
-                                                        </div>
-                                                    @endif
+                                                <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200 shrink-0 relative">
+                                                    <!-- Preview Image -->
+                                                    <img x-show="avatarPreview" 
+                                                         :src="avatarPreview" 
+                                                         alt="Avatar Preview" 
+                                                         class="w-full h-full object-cover absolute inset-0">
+                                                    
+                                                    <!-- Current Avatar or Placeholder -->
+                                                    <div x-show="!avatarPreview" class="w-full h-full absolute inset-0">
+                                                        @if(auth()->user()->avatar)
+                                                            <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                                                        @else
+                                                            <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
+                                                                {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                                 <div class="flex-1">
-                                                    <input type="file" name="avatar" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#b01116] file:text-white hover:file:bg-[#8d0d11] cursor-pointer">
+                                                    <input type="file" 
+                                                           name="avatar" 
+                                                           accept="image/*" 
+                                                           @change="handleAvatarPreview($event)"
+                                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#b01116] file:text-white hover:file:bg-[#8d0d11] cursor-pointer">
                                                     <p class="text-xs text-gray-500 mt-1">JPG, PNG atau GIF (Maks. 2MB)</p>
                                                 </div>
                                             </div>
@@ -1283,7 +1385,7 @@
             </div>
         </div>
         
-        <template x-teleport="body">
+<template x-teleport="body">
     <div x-show="showIndividualProjectModal"
          x-transition
          @keydown.escape.window="showIndividualProjectModal = false; resetProjectModal()"
@@ -1340,7 +1442,7 @@
             </div>
 
             <!-- Modal Body -->
-            <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
                 <input type="hidden" name="type" value="individual">
                 
@@ -1414,6 +1516,7 @@
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all">
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
+                                <option value="archived">Archived</option>
                             </select>
                         </div>
                     </div>
@@ -1756,7 +1859,7 @@
                     </h3>
                     
                     <!-- Media Upload -->
-                    <div>
+                    <div x-data="mediaPreview('ind_media')">
                         <label class="block text-sm font-semibold text-gray-700 mb-3">
                             Upload Media (Opsional)
                         </label>
@@ -1765,13 +1868,48 @@
                             <div class="text-sm text-gray-600 mb-3 font-medium">
                                 Drop files here or click to upload
                             </div>
-                            <input type="file" name="media[]" multiple accept="image/*,video/*" class="hidden" id="ind_media">
+                            <input type="file" 
+                                   name="media[]" 
+                                   multiple 
+                                   accept="image/*,video/*" 
+                                   class="hidden" 
+                                   id="ind_media"
+                                   @change="handleFiles($event.target.files)">
                             <label for="ind_media" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-6 py-3 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                 <i class="ri-folder-open-line"></i>
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
                                 Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
+                            </div>
+                        </div>
+                        
+                        <!-- Image Previews -->
+                        <div x-show="previews.length > 0" class="mt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-3">
+                                Selected Files (<span x-text="previews.length"></span>)
+                                <span class="text-xs text-gray-500 ml-2">• First image will be the main image</span>
+                            </p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                <template x-for="(preview, index) in previews" :key="index">
+                                    <div class="relative group">
+                                        <div class="aspect-square rounded-lg overflow-hidden border-2"
+                                             :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
+                                            <img :src="preview.url" 
+                                                 :alt="preview.name" 
+                                                 class="w-full h-full object-cover">
+                                        </div>
+                                        <button type="button"
+                                                @click="removeFile(index)"
+                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                            <i class="ri-close-line text-sm"></i>
+                                        </button>
+                                        <div x-show="index === 0" 
+                                             class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
+                                            Main Image
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -1864,13 +2002,10 @@
                         
                         <button type="submit" 
                                 x-show="currentStep === totalSteps"
-                                :disabled="!canCreateProject()"
-                                :class="!canCreateProject() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-gradient-to-r from-[#b01116] to-[#8d0d11] hover:from-[#8d0d11] hover:to-[#b01116] shadow-lg hover:shadow-xl'"
-                                class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
-                                @click="console.log('Submit clicked, canCreateProject:', canCreateProject(), 'projectData:', projectData)">
+                                :class="!canCreateProject() ? 'bg-gray-400 hover:bg-gray-500' : 'bg-gradient-to-r from-[#b01116] to-[#8d0d11] hover:from-[#8d0d11] hover:to-[#b01116] shadow-lg hover:shadow-xl'"
+                                class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2">
                             <i class="ri-save-line"></i>
-                            <span x-show="canCreateProject()">Buat Proyek</span>
-                            <span x-show="!canCreateProject()">Lengkapi semua field wajib</span>
+                            <span>Buat Proyek</span>
                         </button>
                     </div>
                 </div>
@@ -1937,7 +2072,7 @@
             </div>
 
             <!-- Modal Body -->
-            <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('student.projects.store') }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
                 <input type="hidden" name="type" value="team">
                 
@@ -2017,6 +2152,7 @@
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all">
                                 <option value="draft">Draft</option>
                                 <option value="published">Published</option>
+                                <option value="archived">Archived</option>
                             </select>
                         </div>
                     </div>
@@ -2454,7 +2590,7 @@
                     </div>
 
                     <!-- Media Upload -->
-                    <div>
+                    <div x-data="mediaPreview('team_media')">
                         <label class="block text-sm font-semibold text-gray-700 mb-3">
                             Upload Media (Opsional)
                         </label>
@@ -2463,13 +2599,48 @@
                             <div class="text-sm text-gray-600 mb-3 font-medium">
                                 Drop files here or click to upload
                             </div>
-                            <input type="file" name="media[]" multiple accept="image/*,video/*" class="hidden" id="team_media">
+                            <input type="file" 
+                                   name="media[]" 
+                                   multiple 
+                                   accept="image/*,video/*" 
+                                   class="hidden" 
+                                   id="team_media"
+                                   @change="handleFiles($event.target.files)">
                             <label for="team_media" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-6 py-3 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                 <i class="ri-folder-open-line"></i>
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
                                 Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
+                            </div>
+                        </div>
+                        
+                        <!-- Image Previews -->
+                        <div x-show="previews.length > 0" class="mt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-3">
+                                Selected Files (<span x-text="previews.length"></span>)
+                                <span class="text-xs text-gray-500 ml-2">• First image will be the main image</span>
+                            </p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                <template x-for="(preview, index) in previews" :key="index">
+                                    <div class="relative group">
+                                        <div class="aspect-square rounded-lg overflow-hidden border-2"
+                                             :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
+                                            <img :src="preview.url" 
+                                                 :alt="preview.name" 
+                                                 class="w-full h-full object-cover">
+                                        </div>
+                                        <button type="button"
+                                                @click="removeFile(index)"
+                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                            <i class="ri-close-line text-sm"></i>
+                                        </button>
+                                        <div x-show="index === 0" 
+                                             class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
+                                            Main Image
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -2572,13 +2743,10 @@
                         
                         <button type="submit" 
                                 x-show="currentStep === totalSteps"
-                                :disabled="!canCreateProject()"
-                                :class="!canCreateProject() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-gradient-to-r from-[#b01116] to-[#8d0d11] hover:from-[#8d0d11] hover:to-[#b01116] shadow-lg hover:shadow-xl'"
-                                class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
-                                @click="console.log('Team Submit clicked, canCreateProject:', canCreateProject(), 'projectData:', projectData)">
+                                :class="!canCreateProject() ? 'bg-gray-400 hover:bg-gray-500' : 'bg-gradient-to-r from-[#b01116] to-[#8d0d11] hover:from-[#8d0d11] hover:to-[#b01116] shadow-lg hover:shadow-xl'"
+                                class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2">
                             <i class="ri-save-line"></i>
-                            <span x-show="canCreateProject()">Inisiasi Proyek Tim</span>
-                            <span x-show="!canCreateProject()">Lengkapi semua field wajib</span>
+                            <span>Inisiasi Proyek Tim</span>
                         </button>
                     </div>
                 </div>
@@ -2653,26 +2821,37 @@
                         Informasi Dasar Proyek
                     </h3>
                     
+                    <!-- Project Title -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
                             Judul Proyek <span class="text-[#b01116]">*</span>
                         </label>
                         <input type="text" x-model="projectData.title" required 
-                               :class="projectData.title.trim() === '' ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-[#b01116]'"
+                               :class="projectData.title.trim() === '' ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#b01116] focus:border-[#b01116]'"
                                class="w-full px-4 py-3 border-2 rounded-lg transition-all"
-                               placeholder="Masukkan judul proyek...">
+                               placeholder="Masukkan judul proyek yang menarik...">
+                        <p x-show="projectData.title.trim() === ''" class="text-xs text-red-500 mt-1 flex items-center gap-1">
+                            <i class="ri-error-warning-line"></i>
+                            Judul proyek wajib diisi
+                        </p>
                     </div>
 
+                    <!-- Project Description -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
                             Deskripsi Proyek
                         </label>
                         <textarea x-model="projectData.description" rows="6" 
-                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] resize-none" 
-                                  placeholder="Jelaskan detail proyek Anda..."></textarea>
+                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all resize-none" 
+                                  placeholder="Jelaskan detail proyek Anda, tujuan, fitur utama, dan hal menarik lainnya..."></textarea>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <i class="ri-lightbulb-line"></i>
+                            Tips: Deskripsi yang detail akan menarik lebih banyak investor
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Project Price -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 Estimasi Harga (Rp)
@@ -2680,128 +2859,351 @@
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">Rp</span>
                                 <input type="number" x-model="projectData.price" min="0" step="1000"
-                                       class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]"
+                                       class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all"
                                        placeholder="0">
                             </div>
                         </div>
 
+                        <!-- Project Status -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
                                 Status Publikasi <span class="text-[#b01116]">*</span>
                             </label>
                             <select x-model="projectData.status" required 
-                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
-                                <option value="draft">💾 Draft - Hanya saya yang dapat melihat</option>
-                                <option value="published">🚀 Published - Terlihat oleh semua orang</option>
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all">
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                                <option value="archived">Archived</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Step 2: Categories, Subjects & Teachers (Reuse from create modal - same structure) -->
+                <!-- Step 2: Categories, Subjects & Teachers -->
                 <div x-show="currentStep === 2" x-transition class="p-6 space-y-8">
-                    <!-- Categories Section -->
+                    <!-- CATEGORIES SECTION -->
                     <div>
                         <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
                             <i class="ri-price-tag-3-line text-[#b01116]"></i>
                             Kategori Proyek <span class="text-[#b01116]">*</span>
                         </h4>
+                        <p class="text-sm text-gray-600 mb-4">Edit kategori proyek Anda</p>
                         
+                        <!-- Search Box -->
                         <div class="relative mb-4">
-                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" x-model="searchCategory" placeholder="Cari kategori..."
-                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="text" 
+                                x-model="searchCategory"
+                                placeholder="Cari kategori..."
+                                class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto mb-4">
+                        <!-- Selection Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-72 overflow-y-auto p-1">
                             <template x-for="category in filteredCategories" :key="category.id">
-                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
-                                       :class="projectData.categories.includes(category.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
-                                    <input type="checkbox" class="sr-only" 
-                                           :checked="projectData.categories.includes(category.id)"
-                                           @change="toggleCategory(category.id)">
-                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
-                                         :class="projectData.categories.includes(category.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
-                                        <i class="ri-check-line text-white text-sm" x-show="projectData.categories.includes(category.id)"></i>
+                                <label 
+                                    class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all duration-200 group"
+                                    :class="projectData.categories.includes(category.id) ? 'border-[#b01116] bg-red-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="sr-only" 
+                                        :checked="projectData.categories.includes(category.id)"
+                                        @change="toggleCategory(category.id)">
+                                    <div 
+                                        class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all flex-shrink-0"
+                                        :class="projectData.categories.includes(category.id) ? 'bg-[#b01116] border-[#b01116] scale-110' : 'border-gray-300 group-hover:border-gray-400'">
+                                        <i class="ri-check-line text-white text-sm font-bold" x-show="projectData.categories.includes(category.id)"></i>
                                     </div>
-                                    <span class="text-sm font-medium" x-text="category.name"></span>
+                                    <span 
+                                        class="text-sm font-medium transition-colors"
+                                        :class="projectData.categories.includes(category.id) ? 'text-[#b01116]' : 'text-gray-700'"
+                                        x-text="category.name"></span>
                                 </label>
                             </template>
                         </div>
                         
-                        <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <div class="flex items-center gap-2 text-blue-700">
-                                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
-                                    <span x-text="projectData.categories.length"></span>
+                        <!-- No Results -->
+                        <div x-show="filteredCategories.length === 0" class="text-center py-12 text-gray-500">
+                            <i class="ri-search-line text-5xl mb-3 opacity-50"></i>
+                            <p class="font-medium">Tidak ada kategori yang sesuai</p>
+                            <p class="text-sm mt-1">Coba kata kunci lain atau tambahkan kategori baru</p>
+                        </div>
+                        
+                        <!-- Add New Button -->
+                        <button 
+                            type="button"
+                            @click="showAddCategory = !showAddCategory"
+                            class="w-full mt-3 py-3 border-2 border-dashed rounded-lg text-gray-600 hover:border-[#b01116] hover:text-[#b01116] hover:bg-red-50 transition-all flex items-center justify-center gap-2 font-medium">
+                            <i class="ri-add-circle-line text-xl" :class="showAddCategory ? 'rotate-45 transition-transform' : ''"></i>
+                            <span x-text="showAddCategory ? 'Batal Tambah' : 'Tambah Kategori Baru'"></span>
+                        </button>
+                        
+                        <!-- Inline Create Form -->
+                        <div x-show="showAddCategory" x-transition x-collapse class="mt-4 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border-2 border-red-200">
+                            <h5 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="ri-add-line text-[#b01116] text-xl"></i>
+                                Tambah Kategori Baru
+                            </h5>
+                            <div class="space-y-3">
+                                <input 
+                                    type="text" 
+                                    x-model="newCategory.name"
+                                    placeholder="Nama Kategori *"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                <textarea 
+                                    x-model="newCategory.description"
+                                    placeholder="Deskripsi (opsional)"
+                                    rows="2"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent resize-none"></textarea>
+                                <button 
+                                    type="button"
+                                    @click="createCategory()"
+                                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white py-2.5 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                                    <i class="ri-save-line"></i>
+                                    Simpan Kategori
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Selection Counter -->
+                        <div class="mt-4 p-3 rounded-lg border"
+                             :class="projectData.categories.length === 0 ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200' : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200'">
+                            <div class="flex items-center gap-3"
+                                 :class="projectData.categories.length === 0 ? 'text-red-700' : 'text-gray-700'">
+                                <i :class="projectData.categories.length === 0 ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'" class="text-xl"></i>
+                                <div class="flex-1">
+                                    <div class="font-semibold">
+                                        <span x-show="projectData.categories.length === 0">Pilih minimal 1 kategori untuk melanjutkan</span>
+                                        <span x-show="projectData.categories.length > 0" x-text="projectData.categories.length + ' kategori dipilih'"></span>
+                                    </div>
+                                    <div class="text-xs opacity-75" x-show="projectData.categories.length > 0">
+                                        Kategori membantu investor menemukan proyek Anda
+                                    </div>
                                 </div>
-                                <span class="text-sm font-medium">Kategori Dipilih</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Subjects Section (Optional) -->
+                    <!-- SUBJECTS SECTION (Similar structure) -->
                     <div>
-                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
                             <i class="ri-book-open-line text-[#b01116]"></i>
-                            Mata Kuliah/Pelajaran (Opsional)
+                            Mata Kuliah (Opsional)
                         </h4>
+                        <p class="text-sm text-gray-600 mb-4">Edit mata kuliah yang berkaitan</p>
                         
+                        <!-- Search Box -->
                         <div class="relative mb-4">
-                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" x-model="searchSubject" placeholder="Cari mata kuliah..."
-                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="text" 
+                                x-model="searchSubject"
+                                placeholder="Cari mata kuliah atau kode..."
+                                class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                        <!-- Selection Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-72 overflow-y-auto p-1">
                             <template x-for="subject in filteredSubjects" :key="subject.id">
-                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
-                                       :class="projectData.subjects.includes(subject.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
-                                    <input type="checkbox" class="sr-only" 
-                                           :checked="projectData.subjects.includes(subject.id)"
-                                           @change="toggleSubject(subject.id)">
-                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
-                                         :class="projectData.subjects.includes(subject.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
-                                        <i class="ri-check-line text-white text-sm" x-show="projectData.subjects.includes(subject.id)"></i>
+                                <label 
+                                    class="flex flex-col p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all duration-200 group"
+                                    :class="projectData.subjects.includes(subject.id) ? 'border-[#b01116] bg-red-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'">
+                                    <div class="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            class="sr-only" 
+                                            :checked="projectData.subjects.includes(subject.id)"
+                                            @change="toggleSubject(subject.id)">
+                                        <div 
+                                            class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all flex-shrink-0"
+                                            :class="projectData.subjects.includes(subject.id) ? 'bg-[#b01116] border-[#b01116] scale-110' : 'border-gray-300 group-hover:border-gray-400'">
+                                            <i class="ri-check-line text-white text-sm font-bold" x-show="projectData.subjects.includes(subject.id)"></i>
+                                        </div>
+                                        <span 
+                                            class="text-sm font-medium transition-colors flex-1"
+                                            :class="projectData.subjects.includes(subject.id) ? 'text-[#b01116]' : 'text-gray-700'"
+                                            x-text="subject.name"></span>
                                     </div>
-                                    <div class="flex-1">
-                                        <div class="text-sm font-medium" x-text="subject.name"></div>
-                                        <div class="text-xs text-gray-500" x-text="subject.code" x-show="subject.code"></div>
-                                    </div>
+                                    <template x-if="subject.code">
+                                        <span class="text-xs text-gray-500 ml-8 mt-1" x-text="'Kode: ' + subject.code"></span>
+                                    </template>
                                 </label>
                             </template>
+                        </div>
+                        
+                        <div x-show="filteredSubjects.length === 0" class="text-center py-12 text-gray-500">
+                            <i class="ri-book-line text-5xl mb-3 opacity-50"></i>
+                            <p class="font-medium">Tidak ada mata kuliah yang sesuai</p>
+                        </div>
+                        
+                        <!-- Add New Button & Form (Similar to categories) -->
+                        <button 
+                            type="button"
+                            @click="showAddSubject = !showAddSubject"
+                            class="w-full mt-3 py-3 border-2 border-dashed rounded-lg text-gray-600 hover:border-[#b01116] hover:text-[#b01116] hover:bg-red-50 transition-all flex items-center justify-center gap-2 font-medium">
+                            <i class="ri-add-circle-line text-xl"></i>
+                            <span x-text="showAddSubject ? 'Batal Tambah' : 'Tambah Mata Kuliah Baru'"></span>
+                        </button>
+                        
+                        <div x-show="showAddSubject" x-transition x-collapse class="mt-4 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border-2 border-red-200">
+                            <h5 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="ri-add-line text-[#b01116] text-xl"></i>
+                                Tambah Mata Kuliah Baru
+                            </h5>
+                            <div class="space-y-3">
+                                <input 
+                                    type="text" 
+                                    x-model="newSubject.name"
+                                    placeholder="Nama Mata Kuliah *"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <input 
+                                    type="text" 
+                                    x-model="newSubject.code"
+                                    placeholder="Kode Mata Kuliah (opsional)"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <textarea 
+                                    x-model="newSubject.description"
+                                    placeholder="Deskripsi (opsional)"
+                                    rows="2"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] resize-none"></textarea>
+                                <button 
+                                    type="button"
+                                    @click="createSubject()"
+                                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white py-2.5 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-md">
+                                    <i class="ri-save-line"></i>
+                                    Simpan Mata Kuliah
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200">
+                            <div class="flex items-center gap-3 text-red-700">
+                                <div class="w-10 h-10 rounded-full bg-[#b01116] text-white flex items-center justify-center font-bold shadow-sm">
+                                    <span x-text="projectData.subjects.length"></span>
+                                </div>
+                                <span class="text-sm font-semibold">Mata Kuliah Dipilih</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Teachers Section (Optional) -->
+                    <!-- TEACHERS SECTION (Similar structure) -->
                     <div>
-                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
                             <i class="ri-user-star-line text-[#b01116]"></i>
                             Dosen/Guru Pembimbing (Opsional)
                         </h4>
+                        <p class="text-sm text-gray-600 mb-4">Edit dosen atau guru pembimbing</p>
                         
+                        <!-- Search Box -->
                         <div class="relative mb-4">
-                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" x-model="searchTeacher" placeholder="Cari dosen/guru..."
-                                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                            <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input 
+                                type="text" 
+                                x-model="searchTeacher"
+                                placeholder="Cari nama atau NIP..."
+                                class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                        <!-- Selection List -->
+                        <div class="space-y-2 max-h-72 overflow-y-auto p-1">
                             <template x-for="teacher in filteredTeachers" :key="teacher.id">
-                                <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all"
-                                       :class="projectData.teachers.includes(teacher.id) ? 'border-[#b01116] bg-red-50' : 'border-gray-200'">
-                                    <input type="checkbox" class="sr-only" 
-                                           :checked="projectData.teachers.includes(teacher.id)"
-                                           @change="toggleTeacher(teacher.id)">
-                                    <div class="w-5 h-5 rounded border-2 mr-3 flex items-center justify-center transition-all"
-                                         :class="projectData.teachers.includes(teacher.id) ? 'bg-[#b01116] border-[#b01116]' : 'border-gray-300'">
-                                        <i class="ri-check-line text-white text-sm" x-show="projectData.teachers.includes(teacher.id)"></i>
+                                <label 
+                                    class="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:shadow-md transition-all duration-200 group"
+                                    :class="projectData.teachers.includes(teacher.id) ? 'border-[#b01116] bg-red-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="sr-only" 
+                                        :checked="projectData.teachers.includes(teacher.id)"
+                                        @change="toggleTeacher(teacher.id)">
+                                    <div 
+                                        class="w-5 h-5 rounded border-2 mr-3 mt-0.5 flex items-center justify-center transition-all flex-shrink-0"
+                                        :class="projectData.teachers.includes(teacher.id) ? 'bg-[#b01116] border-[#b01116] scale-110' : 'border-gray-300 group-hover:border-gray-400'">
+                                        <i class="ri-check-line text-white text-sm font-bold" x-show="projectData.teachers.includes(teacher.id)"></i>
                                     </div>
                                     <div class="flex-1">
-                                        <div class="text-sm font-medium" x-text="teacher.name"></div>
-                                        <div class="text-xs text-gray-500" x-text="teacher.nip" x-show="teacher.nip"></div>
+                                        <div 
+                                            class="font-semibold transition-colors"
+                                            :class="projectData.teachers.includes(teacher.id) ? 'text-[#b01116]' : 'text-gray-800'"
+                                            x-text="teacher.name"></div>
+                                        <template x-if="teacher.nip">
+                                            <div class="text-sm text-gray-600 mt-0.5">NIP: <span x-text="teacher.nip"></span></div>
+                                        </template>
+                                        <template x-if="teacher.institution">
+                                            <div class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                                <i class="ri-building-line"></i>
+                                                <span x-text="teacher.institution"></span>
+                                            </div>
+                                        </template>
                                     </div>
                                 </label>
                             </template>
+                        </div>
+                        
+                        <div x-show="filteredTeachers.length === 0" class="text-center py-12 text-gray-500">
+                            <i class="ri-user-line text-5xl mb-3 opacity-50"></i>
+                            <p class="font-medium">Tidak ada dosen/guru yang sesuai</p>
+                        </div>
+                        
+                        <!-- Add New Button & Form -->
+                        <button 
+                            type="button"
+                            @click="showAddTeacher = !showAddTeacher"
+                            class="w-full mt-3 py-3 border-2 border-dashed rounded-lg text-gray-600 hover:border-[#b01116] hover:text-[#b01116] hover:bg-red-50 transition-all flex items-center justify-center gap-2 font-medium">
+                            <i class="ri-add-circle-line text-xl"></i>
+                            <span x-text="showAddTeacher ? 'Batal Tambah' : 'Tambah Dosen/Guru Baru'"></span>
+                        </button>
+                        
+                        <div x-show="showAddTeacher" x-transition x-collapse class="mt-4 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border-2 border-red-200">
+                            <h5 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="ri-add-line text-[#b01116] text-xl"></i>
+                                Tambah Dosen/Guru Baru
+                            </h5>
+                            <div class="space-y-3">
+                                <input 
+                                    type="text" 
+                                    x-model="newTeacher.name"
+                                    placeholder="Nama Lengkap *"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <input 
+                                    type="text" 
+                                    x-model="newTeacher.nip"
+                                    placeholder="NIP/NIDN (opsional)"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input 
+                                        type="email" 
+                                        x-model="newTeacher.email"
+                                        placeholder="Email (opsional)"
+                                        class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                    <input 
+                                        type="text" 
+                                        x-model="newTeacher.phone_number"
+                                        placeholder="No. Telepon (opsional)"
+                                        class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                </div>
+                                <input 
+                                    type="text" 
+                                    x-model="newTeacher.institution"
+                                    placeholder="Institusi/Sekolah (opsional)"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
+                                <button 
+                                    type="button"
+                                    @click="createTeacher()"
+                                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white py-2.5 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-md">
+                                    <i class="ri-save-line"></i>
+                                    Simpan Dosen/Guru
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200">
+                            <div class="flex items-center gap-3 text-red-700">
+                                <div class="w-10 h-10 rounded-full bg-[#8d0d11] text-white flex items-center justify-center font-bold shadow-sm">
+                                    <span x-text="projectData.teachers.length"></span>
+                                </div>
+                                <span class="text-sm font-semibold">Pembimbing Dipilih</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2856,51 +3258,192 @@
                         </div>
                     </div>
 
-                    <!-- Media Upload Section -->
-                    <div>
-                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <i class="ri-image-add-line text-[#b01116]"></i>
-                            Upload Media Baru (Opsional)
-                        </h4>
-                        <p class="text-sm text-gray-600 mb-3">Upload foto/video baru jika ada perubahan</p>
+                    <!-- Media Upload -->
+                    <div x-data="mediaPreview('edit_media')">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            Upload Media (Opsional)
+                        </label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-[#b01116] hover:bg-red-50 transition-all">
+                            <i class="ri-upload-cloud-2-line text-6xl text-gray-400 mb-3"></i>
+                            <div class="text-sm text-gray-600 mb-3 font-medium">
+                                Drop files here or click to upload
+                            </div>
+                            <input type="file" 
+                                   name="media[]" 
+                                   multiple 
+                                   accept="image/*,video/*" 
+                                   class="hidden" 
+                                   id="edit_media"
+                                   @change="handleFiles($event.target.files)">
+                            <label for="edit_media" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-6 py-3 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
+                                <i class="ri-folder-open-line"></i>
+                                Choose Files
+                            </label>
+                            <div class="text-xs text-gray-500 mt-3">
+                                Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
+                            </div>
+                        </div>
                         
-                        <input type="file" 
-                               @change="selectedFiles = Array.from($event.target.files)" 
-                               multiple 
-                               accept="image/*,video/*"
-                               class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#b01116] transition-all cursor-pointer">
-                        
-                        <div x-show="selectedFiles.length > 0" class="mt-3">
-                            <p class="text-sm font-medium text-gray-700"><span x-text="selectedFiles.length"></span> file dipilih</p>
+                        <!-- Image Previews -->
+                        <div x-show="previews.length > 0" class="mt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-3">
+                                Selected Files (<span x-text="previews.length"></span>)
+                                <span class="text-xs text-gray-500 ml-2">• First image will be the main image</span>
+                            </p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                <template x-for="(preview, index) in previews" :key="index">
+                                    <div class="relative group">
+                                        <div class="aspect-square rounded-lg overflow-hidden border-2"
+                                             :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
+                                            <img :src="preview.url" 
+                                                 :alt="preview.name" 
+                                                 class="w-full h-full object-cover">
+                                        </div>
+                                        <button type="button"
+                                                @click="removeFile(index)"
+                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                            <i class="ri-close-line text-sm"></i>
+                                        </button>
+                                        <div x-show="index === 0" 
+                                             class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
+                                            Main Image
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Review Section -->
                     <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
-                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-lg">
                             <i class="ri-file-list-3-line text-[#b01116]"></i>
                             Review Perubahan
                         </h4>
                         <div class="space-y-3 text-sm">
-                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
-                                <i class="ri-file-text-line text-gray-400"></i>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('title') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-file-text-line mt-0.5"
+                                   :class="hasChanged('title') ? 'text-yellow-600' : 'text-gray-400'"></i>
                                 <div class="flex-1">
                                     <span class="font-semibold text-gray-700">Judul:</span>
-                                    <p class="text-gray-600" x-text="projectData.title || 'Belum diisi'"></p>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.title || 'Belum diisi'"></p>
+                                        <p x-show="hasChanged('title')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: "<span x-text="getOriginalValue('title') || 'Belum diisi'"></span>"</span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex items-start gap-3 p-3 bg-white rounded-lg">
-                                <i class="ri-price-tag-3-line text-gray-400"></i>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('description') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-file-text-line mt-0.5"
+                                   :class="hasChanged('description') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Deskripsi:</span>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.description ? (projectData.description.substring(0, 100) + (projectData.description.length > 100 ? '...' : '')) : 'Belum diisi'"></p>
+                                        <p x-show="hasChanged('description')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-edit-line"></i>
+                                            <span>Deskripsi telah diubah</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('price') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-money-dollar-circle-line mt-0.5"
+                                   :class="hasChanged('price') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Estimasi Harga:</span>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.price ? 'Rp ' + new Intl.NumberFormat('id-ID').format(projectData.price) : 'Tidak diisi'"></p>
+                                        <p x-show="hasChanged('price')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('price') ? 'Rp ' + new Intl.NumberFormat('id-ID').format(getOriginalValue('price')) : 'Tidak diisi'"></span></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('status') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-eye-line mt-0.5"
+                                   :class="hasChanged('status') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Status:</span>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600">
+                                            <span x-show="projectData.status === 'draft'" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs font-medium">Draft</span>
+                                            <span x-show="projectData.status === 'published'" class="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">Published</span>
+                                            <span x-show="projectData.status === 'archived'" class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs font-medium">Archived</span>
+                                        </p>
+                                        <p x-show="hasChanged('status')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('status') === 'draft' ? 'Draft' : getOriginalValue('status') === 'published' ? 'Published' : 'Archived'"></span></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('categories') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-price-tag-3-line mt-0.5"
+                                   :class="hasChanged('categories') ? 'text-yellow-600' : 'text-gray-400'"></i>
                                 <div class="flex-1">
                                     <span class="font-semibold text-gray-700">Kategori:</span>
-                                    <p class="text-gray-600" x-text="projectData.categories.length + ' dipilih'"></p>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.categories.length + ' dipilih'"></p>
+                                        <p x-show="hasChanged('categories')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('categories') + ' dipilih'"></span></span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                            <div x-show="projectType === 'team'" class="flex items-start gap-3 p-3 bg-white rounded-lg">
-                                <i class="ri-team-line text-gray-400"></i>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('subjects') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-book-open-line mt-0.5"
+                                   :class="hasChanged('subjects') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Mata Kuliah:</span>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.subjects.length + ' terpilih'"></p>
+                                        <p x-show="hasChanged('subjects')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('subjects') + ' terpilih'"></span></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('teachers') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-user-star-line mt-0.5"
+                                   :class="hasChanged('teachers') ? 'text-yellow-600' : 'text-gray-400'"></i>
+                                <div class="flex-1">
+                                    <span class="font-semibold text-gray-700">Pembimbing:</span>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.teachers.length + ' terpilih'"></p>
+                                        <p x-show="hasChanged('teachers')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('teachers') + ' terpilih'"></span></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div x-show="projectType === 'team'" 
+                                 class="flex items-start gap-3 p-3 rounded-lg transition-all"
+                                 :class="hasChanged('team_members') ? 'bg-yellow-50 border-2 border-yellow-300' : 'bg-white'">
+                                <i class="ri-team-line mt-0.5"
+                                   :class="hasChanged('team_members') ? 'text-yellow-600' : 'text-gray-400'"></i>
                                 <div class="flex-1">
                                     <span class="font-semibold text-gray-700">Anggota Tim:</span>
-                                    <p class="text-gray-600" x-text="projectData.team_members.length + ' anggota (+ 1 leader)'"></p>
+                                    <div class="mt-1">
+                                        <p class="text-gray-600" x-text="projectData.team_members.length + ' anggota (+ 1 leader)'"></p>
+                                        <p x-show="hasChanged('team_members')" class="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                                            <i class="ri-arrow-right-line"></i>
+                                            <span>Berubah dari: <span x-text="getOriginalValue('team_members') + ' anggota (+ 1 leader)'"></span></span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2949,4 +3492,49 @@
 
     </div>
 </div>
+
+<script>
+function mediaPreview(inputId) {
+    return {
+        previews: [],
+        files: [],
+        inputId: inputId,
+        
+        handleFiles(fileList) {
+            this.files = Array.from(fileList);
+            this.previews = [];
+            
+            this.files.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.previews.push({
+                            url: e.target.result,
+                            name: file.name,
+                            type: file.type,
+                            size: file.size
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        },
+        
+        removeFile(index) {
+            this.previews.splice(index, 1);
+            this.files.splice(index, 1);
+            
+            // Update the SPECIFIC file input using the inputId
+            const fileInput = document.getElementById(this.inputId);
+            if (fileInput) {
+                const dt = new DataTransfer();
+                this.files.forEach(file => {
+                    dt.items.add(file);
+                });
+                fileInput.files = dt.files;
+            }
+        }
+    }
+}
+</script>
 @endsection

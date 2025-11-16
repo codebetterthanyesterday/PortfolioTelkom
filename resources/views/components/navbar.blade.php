@@ -19,75 +19,72 @@
 
             <!-- Desktop Auth Buttons -->
             <div class="hidden lg:flex gap-3 text-[0.9rem] items-center">
-                <!-- Notification (Desktop Only) -->
-                <div x-data="{ notifOpen: false }" class="relative">
-                    <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
-                        <i class="ri-notification-3-line"></i>
-                        <!-- Notification badge -->
-                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-                    </button>
-                    <div x-show="notifOpen" 
-                         x-transition 
-                         @click.away="notifOpen = false"
-                         class="absolute z-50 right-0 top-full mt-2 w-80 bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
-                        <!-- Header -->
-                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-semibold text-gray-900">Notifikasi</h3>
-                        </div>
-                        <!-- Notifications List -->
-                        <div class="max-h-96 overflow-y-auto">
-                            <!-- Notification Item 1 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <i class="ri-message-3-line text-blue-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Komentar Baru</p>
-                                        <p class="text-xs text-gray-500 mt-1">Seseorang mengomentari proyek Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">5 menit yang lalu</p>
-                                    </div>
+                @auth
+                    @if(auth()->user()->isStudent() || auth()->user()->isInvestor())
+                        @php
+                            $unreadCount = auth()->user()->notifications()->unread()->count();
+                            $recentNotifications = auth()->user()->notifications()->recent()->limit(5)->get();
+                        @endphp
+                        <!-- Notification (Desktop Only) -->
+                        <div x-data="{ notifOpen: false }" class="relative">
+                            <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
+                                <i class="ri-notification-3-line"></i>
+                                <!-- Notification badge -->
+                                @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $unreadCount }}</span>
+                                @endif
+                            </button>
+                            <div x-show="notifOpen" 
+                                 x-transition 
+                                 @click.away="notifOpen = false"
+                                 class="absolute z-50 right-0 top-full mt-2 w-80 bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
+                                <!-- Header -->
+                                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                    <h3 class="font-semibold text-gray-900">Notifikasi</h3>
                                 </div>
-                            </a>
-                            <!-- Notification Item 2 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <i class="ri-heart-line text-green-600"></i>
+                                <!-- Notifications List -->
+                                <div class="max-h-96 overflow-y-auto">
+                                    @forelse($recentNotifications as $notification)
+                                        @php
+                                            $data = is_array($notification->data) ? $notification->data : json_decode($notification->data, true);
+                                        @endphp
+                                        <a href="@if($notification->type === 'team_mention'){{ route('projects.show', $data['project_slug']) }}@else#@endif" 
+                                           class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 {{ $notification->isUnread() ? 'bg-blue-50' : '' }}">
+                                            <div class="flex gap-3">
+                                                <div class="flex-shrink-0">
+                                                    @if($notification->type === 'team_mention')
+                                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                        <i class="ri-team-line text-[#b01116]"></i>
+                                                    </div>
+                                                    @else
+                                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="ri-notification-line text-blue-600"></i>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-gray-900">{{ $data['leader_name'] ?? 'Notification' }}</p>
+                                                    <p class="text-xs text-gray-500 mt-1">{{ $data['message'] ?? '' }}</p>
+                                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-8 text-center text-gray-500">
+                                            <i class="ri-notification-off-line text-2xl mb-2"></i>
+                                            <p class="text-sm">Tidak ada notifikasi</p>
                                         </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Proyek Disukai</p>
-                                        <p class="text-xs text-gray-500 mt-1">10 orang menyukai proyek Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">2 jam yang lalu</p>
-                                    </div>
+                                    @endforelse
                                 </div>
-                            </a>
-                            <!-- Notification Item 3 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                            <i class="ri-user-add-line text-purple-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Pengikut Baru</p>
-                                        <p class="text-xs text-gray-500 mt-1">3 orang mulai mengikuti Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">1 hari yang lalu</p>
-                                    </div>
+                                <!-- Footer -->
+                                <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                                    <a href="{{ route(auth()->user()->isStudent() ? 'student.notifications.index' : 'investor.notifications.index') }}" 
+                                       class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
                                 </div>
-                            </a>
+                            </div>
                         </div>
-                        <!-- Footer -->
-                        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
-                            <a href="#" class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
-                        </div>
-                    </div>
-                </div>
+                    @endif
+                @endauth
 
                 <!-- Search (Desktop Only) -->
                 <div x-data="{ searchOpen: false }" class="relative hidden lg:block">
@@ -200,19 +197,11 @@
                                 <!-- Menu Items -->
                                 <div class="py-2">
                                     @if(auth()->user()->isStudent())
-                                        <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            <i class="ri-dashboard-line text-gray-400"></i>
-                                            <span>Dashboard</span>
-                                        </a>
                                         <a href="{{ route('student.profile') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <i class="ri-user-line text-gray-400"></i>
                                             <span>Profil Saya</span>
                                         </a>
                                     @else
-                                        <a href="{{ route('investor.dashboard') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                            <i class="ri-dashboard-line text-gray-400"></i>
-                                            <span>Dashboard</span>
-                                        </a>
                                         <a href="{{ route('investor.profile') }}" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                             <i class="ri-user-line text-gray-400"></i>
                                             <span>Profil Saya</span>
@@ -244,75 +233,68 @@
 
             <!-- Desktop Search & Mobile Menu Button -->
             <div class="flex gap-3 items-center lg:hidden">
-                <!-- Mobile Notification Button -->
-                <div x-data="{ notifOpen: false }" class="relative">
-                    <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
-                        <i class="ri-notification-3-line"></i>
-                        <!-- Notification badge -->
-                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-                    </button>
-                    <div x-show="notifOpen" 
-                         x-transition 
-                         @click.away="notifOpen = false"
-                         class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
-                        <!-- Header -->
-                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                            <h3 class="font-semibold text-gray-900">Notifikasi</h3>
-                        </div>
-                        <!-- Notifications List -->
-                        <div class="max-h-96 overflow-y-auto">
-                            <!-- Notification Item 1 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <i class="ri-message-3-line text-blue-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Komentar Baru</p>
-                                        <p class="text-xs text-gray-500 mt-1">Seseorang mengomentari proyek Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">5 menit yang lalu</p>
-                                    </div>
+                @auth
+                    @if(auth()->user()->isStudent() || auth()->user()->isInvestor())
+                        <!-- Mobile Notification Button -->
+                        <div x-data="{ notifOpen: false }" class="relative">
+                            <button @click="notifOpen = !notifOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300 relative">
+                                <i class="ri-notification-3-line"></i>
+                                <!-- Notification badge -->
+                                @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-[#b01116] text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $unreadCount }}</span>
+                                @endif
+                            </button>
+                            <div x-show="notifOpen" 
+                                 x-transition 
+                                 @click.away="notifOpen = false"
+                                 class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
+                                <!-- Header -->
+                                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                    <h3 class="font-semibold text-gray-900">Notifikasi</h3>
                                 </div>
-                            </a>
-                            <!-- Notification Item 2 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <i class="ri-heart-line text-green-600"></i>
+                                <!-- Notifications List -->
+                                <div class="max-h-96 overflow-y-auto">
+                                    @forelse($recentNotifications as $notification)
+                                        @php
+                                            $data = is_array($notification->data) ? $notification->data : json_decode($notification->data, true);
+                                        @endphp
+                                        <a href="@if($notification->type === 'team_mention'){{ route('projects.show', $data['project_slug']) }}@else#@endif" 
+                                           class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 {{ $notification->isUnread() ? 'bg-blue-50' : '' }}">
+                                            <div class="flex gap-3">
+                                                <div class="flex-shrink-0">
+                                                    @if($notification->type === 'team_mention')
+                                                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                                                        <i class="ri-team-line text-[#b01116]"></i>
+                                                    </div>
+                                                    @else
+                                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <i class="ri-notification-line text-blue-600"></i>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-gray-900">{{ $data['leader_name'] ?? 'Notification' }}</p>
+                                                    <p class="text-xs text-gray-500 mt-1">{{ $data['message'] ?? '' }}</p>
+                                                    <p class="text-xs text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-8 text-center text-gray-500">
+                                            <i class="ri-notification-off-line text-2xl mb-2"></i>
+                                            <p class="text-sm">Tidak ada notifikasi</p>
                                         </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Proyek Disukai</p>
-                                        <p class="text-xs text-gray-500 mt-1">10 orang menyukai proyek Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">2 jam yang lalu</p>
-                                    </div>
+                                    @endforelse
                                 </div>
-                            </a>
-                            <!-- Notification Item 3 -->
-                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
-                                <div class="flex gap-3">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                            <i class="ri-user-add-line text-purple-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-900">Pengikut Baru</p>
-                                        <p class="text-xs text-gray-500 mt-1">3 orang mulai mengikuti Anda</p>
-                                        <p class="text-xs text-gray-400 mt-1">1 hari yang lalu</p>
-                                    </div>
+                                <!-- Footer -->
+                                <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                                    <a href="{{ route(auth()->user()->isStudent() ? 'student.notifications.index' : 'investor.notifications.index') }}" 
+                                       class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
                                 </div>
-                            </a>
+                            </div>
                         </div>
-                        <!-- Footer -->
-                        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
-                            <a href="#" class="text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Semua Notifikasi</a>
-                        </div>
-                    </div>
-                </div>
+                    @endif
+                @endauth
 
                 <!-- Mobile Search Button -->
                 <div x-data="{ searchOpen: false }" class="relative">
@@ -439,19 +421,11 @@
                         <!-- Menu Items -->
                         <div class="space-y-1">
                             @if(auth()->user()->isStudent())
-                                <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
-                                    <i class="ri-dashboard-line text-gray-400"></i>
-                                    <span>Dashboard</span>
-                                </a>
                                 <a href="{{ route('student.profile') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
                                     <i class="ri-user-line text-gray-400"></i>
                                     <span>Profil Saya</span>
                                 </a>
                             @else
-                                <a href="{{ route('investor.dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
-                                    <i class="ri-dashboard-line text-gray-400"></i>
-                                    <span>Dashboard</span>
-                                </a>
                                 <a href="{{ route('investor.profile') }}" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors">
                                     <i class="ri-user-line text-gray-400"></i>
                                     <span>Profil Saya</span>

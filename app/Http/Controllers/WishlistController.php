@@ -25,11 +25,22 @@ class WishlistController extends Controller
         if ($investor->hasWishlisted($project)) {
             $investor->wishlists()->where('project_id', $project->id)->delete();
             $message = 'Project removed from wishlist!';
+            $isWishlisted = false;
         } else {
             $investor->wishlists()->create([
                 'project_id' => $project->id,
             ]);
             $message = 'Project added to wishlist!';
+            $isWishlisted = true;
+        }
+
+        // Return JSON for AJAX requests
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'isWishlisted' => $isWishlisted
+            ]);
         }
 
         return back()->with('success', $message);
