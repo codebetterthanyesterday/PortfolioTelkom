@@ -87,83 +87,197 @@
                 @endauth
 
                 <!-- Search (Desktop Only) -->
-                <div x-data="{ searchOpen: false }" class="relative hidden lg:block">
-                    <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <div x-data="{
+                    searchOpen: false,
+                    searchQuery: '',
+                    searchResults: { students: [], projects: [], investors: [] },
+                    searchCounts: { students: 0, projects: 0, investors: 0, total: 0 },
+                    loading: false,
+                    
+                    async search() {
+                        if (this.searchQuery.length < 2) {
+                            this.searchResults = { students: [], projects: [], investors: [] };
+                            this.searchCounts = { students: 0, projects: 0, investors: 0, total: 0 };
+                            return;
+                        }
+                        
+                        this.loading = true;
+                        try {
+                            const response = await fetch(`{{ route('api.search') }}?q=${encodeURIComponent(this.searchQuery)}`, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                this.searchResults = data.results;
+                                this.searchCounts = data.counts;
+                            }
+                        } catch (error) {
+                            console.error('Search error:', error);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    
+                    reset() {
+                        this.searchQuery = '';
+                        this.searchResults = { students: [], projects: [], investors: [] };
+                        this.searchCounts = { students: 0, projects: 0, investors: 0, total: 0 };
+                        this.loading = false;
+                    }
+                }" class="relative hidden lg:block">
+                    <button @click="searchOpen = !searchOpen; if(!searchOpen) reset();" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
                         <i class="ri-search-line"></i>
                     </button>
                     <div x-show="searchOpen" 
                          x-transition
-                         @click.away="searchOpen = false"
-                         class="absolute z-50 right-0 top-full mt-2 w-96 bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden">
+                         @click.away="searchOpen = false; reset();"
+                         class="absolute z-50 right-0 top-full mt-2 w-[500px] bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden max-h-[600px] overflow-y-auto">
                         <!-- Search Header -->
-                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                                     <i class="ri-search-line text-[#b01116]"></i>
-                                    Cari Proyek
+                                    Pencarian Global
                                 </h3>
-                                <button @click="searchOpen = false" class="text-gray-400 hover:text-gray-600">
+                                <button @click="searchOpen = false; reset();" class="text-gray-400 hover:text-gray-600">
                                     <i class="ri-close-line text-xl"></i>
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- Search Form -->
-                        <form action="" method="GET" autocomplete="off" class="p-4">
+                        <!-- Search Input -->
+                        <div class="p-4 border-b border-gray-200 sticky top-[57px] bg-white z-10">
                             <div class="relative">
                                 <input type="text" 
-                                       name="q" 
-                                       placeholder="Cari proyek, mahasiswa, atau kategori..." 
-                                       x-data="{ value: '' }"
-                                       x-model="value"
-                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
+                                       x-model="searchQuery"
+                                       @input.debounce.300ms="search()"
+                                       placeholder="Cari proyek, mahasiswa, investor..." 
+                                       class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all"
+                                       autofocus>
                                 <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            </div>
-                            
-                            <!-- Quick Filters -->
-                            <div class="mt-4">
-                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Filter Cepat</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        UI/UX Design
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Web Development
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Mobile App
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Data Science
-                                    </button>
+                                <div x-show="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <i class="ri-loader-4-line animate-spin text-[#b01116]"></i>
                                 </div>
                             </div>
-                            
-                            <!-- Recent Searches -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Pencarian Terkini</p>
-                                <div class="space-y-2">
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>Manajemen Proyek</span>
-                                    </a>
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>Aplikasi Kesehatan</span>
-                                    </a>
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>E-commerce Platform</span>
-                                    </a>
-                                </div>
+                            <p class="text-xs text-gray-500 mt-2" x-show="searchQuery.length > 0">
+                                Ditemukan <span class="font-semibold text-[#b01116]" x-text="searchCounts.total"></span> hasil
+                            </p>
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div class="max-h-[400px] overflow-y-auto">
+                            <!-- No Results -->
+                            <div x-show="searchQuery.length >= 2 && searchCounts.total === 0 && !loading" class="px-4 py-8 text-center text-gray-500">
+                                <i class="ri-search-line text-3xl mb-2"></i>
+                                <p class="text-sm">Tidak ada hasil ditemukan</p>
                             </div>
                             
-                            <!-- Search Button -->
-                            <button type="submit" class="w-full mt-4 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
-                                <i class="ri-search-line"></i>
-                                Cari Sekarang
-                            </button>
-                        </form>
+                            <!-- Students Results -->
+                            <div x-show="searchResults.students.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Mahasiswa (<span x-text="searchCounts.students"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="student in searchResults.students" :key="student.id">
+                                    <a :href="student.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3 items-center">
+                                            <template x-if="student.avatar_url">
+                                                <img :src="student.avatar_url" :alt="student.username" class="w-10 h-10 rounded-full object-cover">
+                                            </template>
+                                            <template x-if="!student.avatar_url">
+                                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-semibold">
+                                                    <span x-text="student.username.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900" x-text="student.full_name || student.username"></p>
+                                                <p class="text-xs text-gray-500">@<span x-text="student.username"></span></p>
+                                                <div x-show="student.expertises.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                                    <template x-for="expertise in student.expertises.slice(0, 2)" :key="expertise">
+                                                        <span class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full" x-text="expertise"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-gray-400"></i>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                            
+                            <!-- Projects Results -->
+                            <div x-show="searchResults.projects.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Proyek (<span x-text="searchCounts.projects"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="project in searchResults.projects" :key="project.id">
+                                    <a :href="project.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3">
+                                            <template x-if="project.thumbnail">
+                                                <img :src="project.thumbnail" :alt="project.title" class="w-16 h-16 rounded-lg object-cover">
+                                            </template>
+                                            <template x-if="!project.thumbnail">
+                                                <div class="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center">
+                                                    <i class="ri-image-line text-2xl text-gray-400"></i>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
+                                                <p class="text-xs text-gray-500 line-clamp-1" x-text="project.description"></p>
+                                                <div class="flex items-center gap-2 mt-1">
+                                                    <span class="text-xs text-gray-600">by <span x-text="project.owner.username"></span></span>
+                                                    <template x-if="project.categories.length > 0">
+                                                        <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-gray-400"></i>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                            
+                            <!-- Investors Results -->
+                            <div x-show="searchResults.investors.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Investor (<span x-text="searchCounts.investors"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="investor in searchResults.investors" :key="investor.id">
+                                    <div class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3 items-center">
+                                            <template x-if="investor.avatar_url">
+                                                <img :src="investor.avatar_url" :alt="investor.username" class="w-10 h-10 rounded-full object-cover">
+                                            </template>
+                                            <template x-if="!investor.avatar_url">
+                                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-semibold">
+                                                    <span x-text="investor.username.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900" x-text="investor.full_name || investor.username"></p>
+                                                <p class="text-xs text-gray-500" x-show="investor.company_name" x-text="investor.company_name"></p>
+                                                <p class="text-xs text-gray-400" x-show="investor.industry" x-text="investor.industry"></p>
+                                            </div>
+                                            <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Investor</span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- Initial State -->
+                            <div x-show="searchQuery.length === 0" class="px-4 py-8 text-center text-gray-500">
+                                <i class="ri-search-2-line text-3xl mb-2"></i>
+                                <p class="text-sm">Mulai ketik untuk mencari proyek, mahasiswa, atau investor</p>
+                                <p class="text-xs text-gray-400 mt-1">Minimal 2 karakter</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -297,83 +411,196 @@
                 @endauth
 
                 <!-- Mobile Search Button -->
-                <div x-data="{ searchOpen: false }" class="relative">
-                    <button @click="searchOpen = !searchOpen" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
+                <div x-data="{
+                    searchOpen: false,
+                    searchQuery: '',
+                    searchResults: { students: [], projects: [], investors: [] },
+                    searchCounts: { students: 0, projects: 0, investors: 0, total: 0 },
+                    loading: false,
+                    
+                    async search() {
+                        if (this.searchQuery.length < 2) {
+                            this.searchResults = { students: [], projects: [], investors: [] };
+                            this.searchCounts = { students: 0, projects: 0, investors: 0, total: 0 };
+                            return;
+                        }
+                        
+                        this.loading = true;
+                        try {
+                            const response = await fetch(`{{ route('api.search') }}?q=${encodeURIComponent(this.searchQuery)}`, {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                                this.searchResults = data.results;
+                                this.searchCounts = data.counts;
+                            }
+                        } catch (error) {
+                            console.error('Search error:', error);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    
+                    reset() {
+                        this.searchQuery = '';
+                        this.searchResults = { students: [], projects: [], investors: [] };
+                        this.searchCounts = { students: 0, projects: 0, investors: 0, total: 0 };
+                        this.loading = false;
+                    }
+                }" class="relative">
+                    <button @click="searchOpen = !searchOpen; if(!searchOpen) reset();" class="border-gray-300 flex gap-2 text-gray-600 rounded-md border font-medium px-3 py-1 hover:bg-gray-100 transition-colors ease-in-out duration-300">
                         <i class="ri-search-line"></i>
                     </button>
                     <div x-show="searchOpen" 
                          x-transition
-                         @click.away="searchOpen = false"
-                         class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden max-h-[calc(100vh-88px)] overflow-y-auto">
+                         @click.away="searchOpen = false; reset();"
+                         class="fixed z-50 left-4 right-4 top-[72px] bg-white border border-gray-300 rounded-lg shadow-xl overflow-hidden max-h-[calc(100vh-88px)] flex flex-col">
                         <!-- Search Header -->
-                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 sticky top-0">
+                        <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                                     <i class="ri-search-line text-[#b01116]"></i>
-                                    Cari Proyek
+                                    Pencarian Global
                                 </h3>
-                                <button @click="searchOpen = false" class="text-gray-400 hover:text-gray-600">
+                                <button @click="searchOpen = false; reset();" class="text-gray-400 hover:text-gray-600">
                                     <i class="ri-close-line text-xl"></i>
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- Search Form -->
-                        <form action="" method="GET" autocomplete="off" class="p-4">
+                        <!-- Search Input -->
+                        <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0">
                             <div class="relative">
                                 <input type="text" 
-                                       name="q" 
-                                       placeholder="Cari proyek, mahasiswa..." 
-                                       x-data="{ value: '' }"
-                                       x-model="value"
-                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
+                                       x-model="searchQuery"
+                                       @input.debounce.300ms="search()"
+                                       placeholder="Cari proyek, mahasiswa, investor..." 
+                                       class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                 <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            </div>
-                            
-                            <!-- Quick Filters -->
-                            <div class="mt-4">
-                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Filter Cepat</p>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        UI/UX Design
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Web Dev
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Mobile App
-                                    </button>
-                                    <button type="button" class="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-[#b01116] hover:text-white text-gray-700 rounded-full transition-colors">
-                                        Data Science
-                                    </button>
+                                <div x-show="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <i class="ri-loader-4-line animate-spin text-[#b01116]"></i>
                                 </div>
                             </div>
-                            
-                            <!-- Recent Searches -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Pencarian Terkini</p>
-                                <div class="space-y-2">
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>Manajemen Proyek</span>
-                                    </a>
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>Aplikasi Kesehatan</span>
-                                    </a>
-                                    <a href="#" class="flex items-center gap-2 text-sm text-gray-600 hover:text-[#b01116] hover:bg-gray-50 p-2 rounded-lg transition-colors">
-                                        <i class="ri-time-line text-gray-400"></i>
-                                        <span>E-commerce Platform</span>
-                                    </a>
-                                </div>
+                            <p class="text-xs text-gray-500 mt-2" x-show="searchQuery.length > 0">
+                                Ditemukan <span class="font-semibold text-[#b01116]" x-text="searchCounts.total"></span> hasil
+                            </p>
+                        </div>
+                        
+                        <!-- Search Results -->
+                        <div class="flex-1 overflow-y-auto">
+                            <!-- No Results -->
+                            <div x-show="searchQuery.length >= 2 && searchCounts.total === 0 && !loading" class="px-4 py-8 text-center text-gray-500">
+                                <i class="ri-search-line text-3xl mb-2"></i>
+                                <p class="text-sm">Tidak ada hasil ditemukan</p>
                             </div>
                             
-                            <!-- Search Button -->
-                            <button type="submit" class="w-full mt-4 bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
-                                <i class="ri-search-line"></i>
-                                Cari Sekarang
-                            </button>
-                        </form>
+                            <!-- Students Results -->
+                            <div x-show="searchResults.students.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Mahasiswa (<span x-text="searchCounts.students"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="student in searchResults.students" :key="student.id">
+                                    <a :href="student.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3 items-center">
+                                            <template x-if="student.avatar_url">
+                                                <img :src="student.avatar_url" :alt="student.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                            </template>
+                                            <template x-if="!student.avatar_url">
+                                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                                                    <span x-text="student.username.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate" x-text="student.full_name || student.username"></p>
+                                                <p class="text-xs text-gray-500 truncate">@<span x-text="student.username"></span></p>
+                                                <div x-show="student.expertises.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                                    <template x-for="expertise in student.expertises.slice(0, 2)" :key="expertise">
+                                                        <span class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full" x-text="expertise"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-gray-400 flex-shrink-0"></i>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                            
+                            <!-- Projects Results -->
+                            <div x-show="searchResults.projects.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Proyek (<span x-text="searchCounts.projects"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="project in searchResults.projects" :key="project.id">
+                                    <a :href="project.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3">
+                                            <template x-if="project.thumbnail">
+                                                <img :src="project.thumbnail" :alt="project.title" class="w-14 h-14 rounded-lg object-cover flex-shrink-0">
+                                            </template>
+                                            <template x-if="!project.thumbnail">
+                                                <div class="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                    <i class="ri-image-line text-xl text-gray-400"></i>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
+                                                <p class="text-xs text-gray-500 line-clamp-1" x-text="project.description"></p>
+                                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                    <span class="text-xs text-gray-600 truncate">by <span x-text="project.owner.username"></span></span>
+                                                    <template x-if="project.categories.length > 0">
+                                                        <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-gray-400 flex-shrink-0"></i>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                            
+                            <!-- Investors Results -->
+                            <div x-show="searchResults.investors.length > 0" class="border-b border-gray-200">
+                                <div class="px-4 py-2 bg-gray-50 sticky top-0">
+                                    <h4 class="text-xs font-semibold text-gray-600 uppercase">
+                                        Investor (<span x-text="searchCounts.investors"></span>)
+                                    </h4>
+                                </div>
+                                <template x-for="investor in searchResults.investors" :key="investor.id">
+                                    <div class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                        <div class="flex gap-3 items-center">
+                                            <template x-if="investor.avatar_url">
+                                                <img :src="investor.avatar_url" :alt="investor.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                            </template>
+                                            <template x-if="!investor.avatar_url">
+                                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                                                    <span x-text="investor.username.charAt(0).toUpperCase()"></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900 truncate" x-text="investor.full_name || investor.username"></p>
+                                                <p class="text-xs text-gray-500 truncate" x-show="investor.company_name" x-text="investor.company_name"></p>
+                                                <p class="text-xs text-gray-400 truncate" x-show="investor.industry" x-text="investor.industry"></p>
+                                            </div>
+                                            <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full flex-shrink-0">Investor</span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- Initial State -->
+                            <div x-show="searchQuery.length === 0" class="px-4 py-8 text-center text-gray-500">
+                                <i class="ri-search-2-line text-3xl mb-2"></i>
+                                <p class="text-sm">Mulai ketik untuk mencari</p>
+                                <p class="text-xs text-gray-400 mt-1">Minimal 2 karakter</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
