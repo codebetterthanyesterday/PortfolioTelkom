@@ -479,6 +479,37 @@
                             <span x-text="projectType === 'team' ? 'Langkah 3: Anggota Tim & Review' : 'Langkah 3: Media & Review'"></span>
                         </span>
                     </div>
+                    
+                    <!-- Undo Notification Area -->
+                    <div x-show="deletedImages.length > 0" x-transition class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="ri-delete-bin-line text-orange-500"></i>
+                                <span class="text-sm text-orange-700 font-medium">
+                                    <span x-text="deletedImages.length"></span> gambar akan dihapus
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="deletedImages.forEach(img => undoImageDeletion(img.id)); deletedImages = []"
+                                        class="text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded transition-colors">
+                                    <i class="ri-arrow-go-back-line mr-1"></i>Undo Semua
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Individual deleted images with undo buttons -->
+                        <div x-show="deletedImages.length > 0" class="mt-2 flex flex-wrap gap-2">
+                            <template x-for="deletedImg in deletedImages" :key="deletedImg.id">
+                                <div class="flex items-center gap-2 bg-white border border-orange-200 rounded-md px-2 py-1 text-xs">
+                                    <span x-text="deletedImg.name" class="text-gray-600"></span>
+                                    <button @click="undoImageDeletion(deletedImg.id)"
+                                            class="text-orange-600 hover:text-orange-700 transition-colors">
+                                        <i class="ri-arrow-go-back-line"></i>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Modal Body -->
@@ -978,10 +1009,16 @@
                                             
                                             <!-- Deletion Overlay -->
                                             <div x-show="projectData.images_to_delete && projectData.images_to_delete.includes(image.id || index)" 
-                                                 class="absolute inset-0 bg-red-600 bg-opacity-75 flex items-center justify-center rounded-lg">
-                                                <div class="text-white text-center">
-                                                    <i class="ri-delete-bin-line text-2xl mb-1"></i>
-                                                    <p class="text-xs font-medium">Akan Dihapus</p>
+                                                 class="absolute inset-0 bg-red-600/80 flex items-center justify-center rounded-lg">
+                                                <div class="text-center text-white">
+                                                    <div class="flex items-center justify-center gap-2 mb-2">
+                                                        <i class="ri-delete-bin-line text-lg"></i>
+                                                        <span class="text-sm font-medium">Akan Dihapus</span>
+                                                    </div>
+                                                    <button @click="undoImageDeletion(image.id || index)"
+                                                            class="bg-white text-red-600 px-2 py-1 rounded text-xs font-medium hover:bg-gray-100 transition-colors">
+                                                        <i class="ri-arrow-go-back-line mr-1"></i>Undo
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -990,7 +1027,7 @@
                             </div>
                             
                             <!-- Add New Images Section -->
-                            <div x-data="mediaPreview('edit_media_detail')">
+                            <div>
                                 <h5 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                     <i class="ri-add-circle-line text-[#b01116]"></i>
                                     Tambah Gambar Baru
@@ -1006,7 +1043,7 @@
                                            accept="image/*" 
                                            class="hidden" 
                                            id="edit_media_detail"
-                                           @change="handleFiles($event.target.files)">
+                                           @change="handleNewMediaFiles($event.target.files)">
                                     <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                         <i class="ri-folder-open-line"></i>
                                         Pilih Gambar
@@ -1017,13 +1054,13 @@
                                 </div>
                                 
                                 <!-- New Images Preview -->
-                                <div x-show="previews.length > 0" class="mt-4">
+                                <div x-show="newMediaPreviews.length > 0" class="mt-4">
                                     <p class="text-sm font-medium text-gray-700 mb-3">
-                                        Gambar Baru (<span x-text="previews.length"></span>)
+                                        Gambar Baru (<span x-text="newMediaPreviews.length"></span>)
                                         <span class="text-xs text-gray-500 ml-2">• Akan ditambahkan setelah gambar yang ada</span>
                                     </p>
                                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                        <template x-for="(preview, index) in previews" :key="'new-' + index">
+                                        <template x-for="(preview, index) in newMediaPreviews" :key="'new-' + index">
                                             <div class="relative group">
                                                 <div class="aspect-square rounded-lg overflow-hidden border-2 border-green-300">
                                                     <img :src="preview.url" 
@@ -1031,7 +1068,7 @@
                                                          class="w-full h-full object-cover">
                                                 </div>
                                                 <button type="button"
-                                                        @click="removeFile(index)"
+                                                        @click="removeNewMediaFile(index)"
                                                         class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
                                                     <i class="ri-close-line text-xs"></i>
                                                 </button>
@@ -1059,7 +1096,7 @@
                                         </div>
                                         <div class="text-sm mt-1" x-show="getTotalImagesCount() > 0">
                                             <span x-text="getExistingImagesCount() + ' gambar saat ini'"></span>
-                                            <span x-show="previews.length > 0"> • <span x-text="previews.length + ' gambar baru'"></span></span>
+                                            <span x-show="newMediaPreviews.length > 0"> • <span x-text="newMediaPreviews.length + ' gambar baru'"></span></span>
                                             <span x-show="getDeletedImagesCount() > 0"> • <span x-text="getDeletedImagesCount() + ' akan dihapus'"></span></span>
                                         </div>
                                     </div>
@@ -1068,20 +1105,32 @@
                         </div>
 
                         <!-- Enhanced Review Section with AS-IS vs TO-BE -->
-                        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
-                            <h4 class="font-semibold text-gray-800 mb-4 flex items-center gap-2 text-lg">
-                                <i class="ri-file-list-3-line text-[#b01116]"></i>
-                                Review Perubahan
-                            </h4>
+                        <div class="bg-gradient-to-br from-red-50 via-pink-50 to-white rounded-2xl p-6 border-2 border-red-200 shadow-lg">
+                            <div class="bg-gradient-to-r from-[#b01116] to-pink-600 text-white rounded-xl p-4 mb-6 shadow-md">
+                                <h4 class="font-bold flex items-center gap-3 text-xl">
+                                    <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                                        <i class="ri-file-list-3-line text-2xl"></i>
+                                    </div>
+                                    <span>Review Perubahan Proyek</span>
+                                </h4>
+                                <p class="text-red-100 text-sm mt-2 ml-13">Periksa kembali semua perubahan sebelum menyimpan</p>
+                            </div>
                             <div class="space-y-4 text-sm">
                                 
                                 <!-- Title Comparison -->
-                                <div class="p-4 rounded-lg border"
-                                     :class="hasChanged('title') ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <i class="ri-file-text-line" :class="hasChanged('title') ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                        <span class="font-semibold text-gray-700">Judul Proyek</span>
-                                        <span x-show="hasChanged('title')" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
+                                <div class="p-5 rounded-xl border-2 shadow-sm hover:shadow-md transition-all"
+                                     :class="hasChanged('title') ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-300 ring-2 ring-yellow-200' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                             :class="hasChanged('title') ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-400'">
+                                            <i class="ri-file-text-line text-xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <span class="font-bold text-gray-800 block">Judul Proyek</span>
+                                            <span x-show="hasChanged('title')" class="text-xs bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full font-semibold inline-flex items-center gap-1 mt-1">
+                                                <i class="ri-edit-line"></i>Diubah
+                                            </span>
+                                        </div>
                                     </div>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>
@@ -1241,53 +1290,110 @@
                                 </div>
 
                                 <!-- Images Comparison -->
-                                <div class="p-4 rounded-lg border"
-                                     :class="hasImagesChanged() ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'">
-                                    <div class="flex items-center gap-2 mb-3">
-                                        <i class="ri-image-line" :class="hasImagesChanged() ? 'text-yellow-600' : 'text-gray-400'"></i>
-                                        <span class="font-semibold text-gray-700">Gambar Proyek</span>
-                                        <span x-show="hasImagesChanged()" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Berubah</span>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-2">Sebelum:</p>
-                                            <div class="text-gray-600">
-                                                <p class="font-medium" x-text="(projectData.existing_images ? projectData.existing_images.length : 0) + ' gambar'"></p>
-                                                <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="mt-2 grid grid-cols-3 gap-1">
-                                                    <template x-for="(image, index) in (projectData.existing_images || []).slice(0, 3)" :key="'review-existing-' + index">
-                                                        <div class="aspect-square rounded border overflow-hidden">
-                                                            <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </div>
+                                <div class="p-5 rounded-xl border-2 shadow-sm hover:shadow-md transition-all"
+                                     :class="hasImagesChanged() ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-300 ring-2 ring-yellow-200' : 'bg-white border-gray-200'">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                             :class="hasImagesChanged() ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-400'">
+                                            <i class="ri-image-line text-xl"></i>
                                         </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-2">Sesudah:</p>
-                                            <div class="text-gray-800">
-                                                <p class="font-medium" x-text="getTotalImagesCount() + ' gambar'"></p>
-                                                <div class="text-xs mt-1 space-y-1">
-                                                    <p x-show="getExistingImagesCount() > 0" class="flex items-center gap-1">
-                                                        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                                        <span x-text="getExistingImagesCount() + ' gambar tetap'"></span>
-                                                    </p>
-                                                    <p x-show="getDeletedImagesCount() > 0" class="flex items-center gap-1">
-                                                        <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-                                                        <span x-text="getDeletedImagesCount() + ' gambar dihapus'"></span>
-                                                    </p>
-                                                    <p x-show="previews.length > 0" class="flex items-center gap-1">
-                                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                                                        <span x-text="previews.length + ' gambar baru'"></span>
-                                                    </p>
-                                                </div>
-                                                <div x-show="previews.length > 0" class="mt-2 grid grid-cols-3 gap-1">
-                                                    <template x-for="(preview, index) in previews.slice(0, 3)" :key="'review-new-' + index">
-                                                        <div class="aspect-square rounded border-2 border-green-300 overflow-hidden">
-                                                            <img :src="preview.url" class="w-full h-full object-cover" :alt="preview.name">
+                                        <div class="flex-1">
+                                            <span class="font-bold text-gray-800 block">Gambar Proyek</span>
+                                            <span x-show="hasImagesChanged()" class="text-xs bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1 rounded-full font-semibold inline-flex items-center gap-1 mt-1">
+                                                <i class="ri-edit-line"></i>Diubah
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Before Section -->
+                                    <div class="mb-5">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Sebelum:</span>
+                                            <div class="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                                        </div>
+                                        <div class="bg-white/70 backdrop-blur-sm rounded-lg p-4 border border-gray-200">
+                                            <p class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                                <i class="ri-gallery-line text-[#b01116]"></i>
+                                                <span x-text="(projectData.existing_images ? projectData.existing_images.length : 0) + ' Gambar'"></span>
+                                            </p>
+                                            <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="grid grid-cols-4 md:grid-cols-6 gap-2">
+                                                <template x-for="(image, index) in (projectData.existing_images || [])" :key="'review-existing-' + index">
+                                                    <div class="aspect-square rounded-lg border-2 overflow-hidden shadow-sm hover:shadow-md transition-all"
+                                                         :class="index === 0 ? 'border-[#b01116] ring-2 ring-red-200' : 'border-gray-300'">
+                                                        <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        <div x-show="index === 0" class="absolute top-0 right-0 bg-[#b01116] text-white text-xs px-1.5 py-0.5 rounded-bl-lg font-semibold">
+                                                            <i class="ri-star-fill"></i>
                                                         </div>
-                                                    </template>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <p x-show="!projectData.existing_images || projectData.existing_images.length === 0" class="text-sm text-gray-500 italic">Tidak ada gambar</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- After Section -->
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Sesudah:</span>
+                                            <div class="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                                        </div>
+                                        <div class="bg-gradient-to-br from-white to-red-50/30 backdrop-blur-sm rounded-lg p-4 border-2 border-[#b01116]/20">
+                                            <p class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                                <i class="ri-gallery-line text-[#b01116]"></i>
+                                                <span x-text="getTotalImagesCount() + ' Gambar Total'"></span>
+                                            </p>
+                                            
+                                            <!-- Summary Badges -->
+                                            <div class="flex flex-wrap gap-2 mb-4">
+                                                <div x-show="getExistingImagesCount() > 0" class="inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+                                                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                    <span x-text="getExistingImagesCount()"></span>
+                                                    <span>Tetap</span>
+                                                </div>
+                                                <div x-show="newMediaPreviews.length > 0" class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+                                                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                    <span x-text="newMediaPreviews.length"></span>
+                                                    <span>Baru</span>
+                                                </div>
+                                                <div x-show="getDeletedImagesCount() > 0" class="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+                                                    <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                                    <span x-text="getDeletedImagesCount()"></span>
+                                                    <span>Dihapus</span>
                                                 </div>
                                             </div>
+                                            
+                                            <!-- All Images Grid -->
+                                            <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
+                                                <!-- Existing Images (not deleted) -->
+                                                <template x-for="(image, index) in (projectData.existing_images || [])" :key="'review-after-existing-' + index">
+                                                    <div x-show="!projectData.images_to_delete || !projectData.images_to_delete.includes(image.id || index)" 
+                                                         class="aspect-square rounded-lg border-2 border-blue-300 overflow-hidden shadow-sm hover:shadow-md transition-all relative group"
+                                                         :class="index === 0 ? 'ring-2 ring-[#b01116]' : ''">
+                                                        <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-blue-900/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-1">
+                                                            <span class="text-white text-xs font-semibold">Tetap</span>
+                                                        </div>
+                                                        <div x-show="index === 0" class="absolute top-0 right-0 bg-[#b01116] text-white text-xs px-1.5 py-0.5 rounded-bl-lg font-semibold">
+                                                            <i class="ri-star-fill"></i>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                
+                                                <!-- New Images -->
+                                                <template x-for="(preview, index) in newMediaPreviews" :key="'review-after-new-' + index">
+                                                    <div class="aspect-square rounded-lg border-2 border-green-400 overflow-hidden shadow-sm hover:shadow-md transition-all relative group">
+                                                        <img :src="preview.url" class="w-full h-full object-cover" :alt="preview.name">
+                                                        <div class="absolute inset-0 bg-gradient-to-t from-green-900/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-1">
+                                                            <span class="text-white text-xs font-semibold">Baru</span>
+                                                        </div>
+                                                        <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-bl-lg font-semibold">
+                                                            <i class="ri-add-line"></i>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            
+                                            <p x-show="getTotalImagesCount() === 0" class="text-sm text-gray-500 italic">Tidak ada gambar</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1368,6 +1474,20 @@ function projectDetail(projectId) {
         searchSubject: '',
         searchTeacher: '',
         searchStudent: '',
+        
+        // Create new entities
+        showAddCategory: false,
+        showAddSubject: false,
+        showAddTeacher: false,
+        newCategory: { name: '', description: '' },
+        newSubject: { name: '', code: '', description: '' },
+        newTeacher: { name: '', nip: '', email: '', phone_number: '', institution: '' },
+        
+        // Media preview handling
+        previews: [],
+        newMediaPreviews: [],
+        newMediaFiles: [],
+        deletedImages: [], // Track deleted images for undo functionality
         
         // Available data
         @if($isOwner)
@@ -1574,6 +1694,10 @@ function projectDetail(projectId) {
                 this.originalProjectData = JSON.parse(JSON.stringify(this.projectData));
                 this.originalTeamPositions = JSON.parse(JSON.stringify(this.projectData.team_positions));
                 
+                // Reset form states
+                this.selectedFiles = [];
+                this.previews = [];
+                
                 this.currentStep = 1;
                 this.showEditProjectModal = true;
             } catch (e) {
@@ -1616,8 +1740,8 @@ function projectDetail(projectId) {
                 }
                 
                 // Add new media files
-                if (this.selectedFiles && this.selectedFiles.length > 0) {
-                    this.selectedFiles.forEach((file, idx) => {
+                if (this.newMediaFiles && this.newMediaFiles.length > 0) {
+                    this.newMediaFiles.forEach((file, idx) => {
                         formData.append(`new_media[${idx}]`, file);
                     });
                 }
@@ -1694,21 +1818,418 @@ function projectDetail(projectId) {
                 this.projectData.images_to_delete = [];
             }
             
-            const imageId = this.projectData.existing_images[index].id || index;
+            const imageData = this.projectData.existing_images[index];
+            const imageId = imageData.id || index;
             
             if (this.projectData.images_to_delete.includes(imageId)) {
-                // Remove from deletion list
+                // Remove from deletion list (undo deletion)
                 const deleteIndex = this.projectData.images_to_delete.indexOf(imageId);
                 this.projectData.images_to_delete.splice(deleteIndex, 1);
+                
+                // Remove from deleted images tracking
+                const deletedIndex = this.deletedImages.findIndex(img => img.id === imageId);
+                if (deletedIndex !== -1) {
+                    this.deletedImages.splice(deletedIndex, 1);
+                }
             } else {
                 // Add to deletion list
                 this.projectData.images_to_delete.push(imageId);
+                
+                // Track deleted image for undo functionality
+                this.deletedImages.push({
+                    id: imageId,
+                    url: imageData.url,
+                    name: imageData.name || `Image ${index + 1}`,
+                    index: index
+                });
+            }
+        },
+
+        // Undo image deletion
+        undoImageDeletion(imageId) {
+            // Remove from deletion list
+            const deleteIndex = this.projectData.images_to_delete.indexOf(imageId);
+            if (deleteIndex !== -1) {
+                this.projectData.images_to_delete.splice(deleteIndex, 1);
+            }
+            
+            // Remove from deleted images tracking
+            const deletedIndex = this.deletedImages.findIndex(img => img.id === imageId);
+            if (deletedIndex !== -1) {
+                this.deletedImages.splice(deletedIndex, 1);
             }
         },
 
         getTotalImagesCount() {
             const existingCount = this.getExistingImagesCount();
-            const newCount = this.previews ? this.previews.length : 0;
+            const newCount = this.newMediaPreviews ? this.newMediaPreviews.length : 0;
+            return existingCount + newCount;
+        },
+
+        getExistingImagesCount() {
+            if (!this.projectData.existing_images) return 0;
+            const deletedCount = this.getDeletedImagesCount();
+            return this.projectData.existing_images.length - deletedCount;
+        },
+
+        getDeletedImagesCount() {
+            return this.projectData.images_to_delete ? this.projectData.images_to_delete.length : 0;
+        },
+
+        
+        // Create new category
+        async createCategory() {
+            if (!this.newCategory.name.trim()) {
+                alert('Nama kategori wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/categories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newCategory)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan kategori');
+                }
+                
+                // Add to available categories
+                this.availableCategories.unshift(data.category);
+                // Auto-select the new category
+                this.projectData.categories.push(data.category.id);
+                
+                // Reset form
+                this.newCategory = { name: '', description: '' };
+                this.showAddCategory = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Kategori berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan kategori');
+            }
+        },
+        
+        // Create new subject
+        async createSubject() {
+            if (!this.newSubject.name.trim()) {
+                alert('Nama mata kuliah wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/subjects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newSubject)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan mata kuliah');
+                }
+                
+                // Add to available subjects
+                this.availableSubjects.unshift(data.subject);
+                // Auto-select the new subject
+                this.projectData.subjects.push(data.subject.id);
+                
+                // Reset form
+                this.newSubject = { name: '', code: '', description: '' };
+                this.showAddSubject = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Mata kuliah berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan mata kuliah');
+            }
+        },
+        
+        // Create new teacher
+        async createTeacher() {
+            if (!this.newTeacher.name.trim()) {
+                alert('Nama dosen/guru wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/teachers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newTeacher)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan dosen/guru');
+                }
+                
+                // Add to available teachers
+                this.availableTeachers.unshift(data.teacher);
+                // Auto-select the new teacher
+                this.projectData.teachers.push(data.teacher.id);
+                
+                // Reset form
+                this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+                this.showAddTeacher = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Dosen/Guru berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan dosen/guru');
+            }
+        },
+        
+        
+        // Reset modal
+        resetProjectModal() {
+            this.projectData = {
+                title: '',
+                description: '',
+                price: '',
+                status: 'draft',
+                categories: [],
+                subjects: [],
+                teachers: [],
+                team_members: [],
+                team_positions: {},
+                existing_images: [],
+                images_to_delete: []
+            };
+            this.currentStep = 1;
+            this.editingProject = null;
+            this.originalProjectData = null;
+            this.originalTeamPositions = null;
+            this.searchCategory = '';
+            this.searchSubject = '';
+            this.searchTeacher = '';
+            this.searchStudent = '';
+            this.showAddCategory = false;
+            this.showAddSubject = false;
+            this.showAddTeacher = false;
+            this.newCategory = { name: '', description: '' };
+            this.newSubject = { name: '', code: '', description: '' };
+            this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+            this.previews = [];
+            this.selectedFiles = [];
+            this.newMediaPreviews = [];
+            this.newMediaFiles = [];
+            this.deletedImages = [];
+        },
+        
+        // Handle new media files
+        handleNewMediaFiles(fileList) {
+            this.newMediaFiles = Array.from(fileList);
+            this.newMediaPreviews = [];
+            
+            this.newMediaFiles.forEach((file) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.newMediaPreviews.push({
+                            url: e.target.result,
+                            name: file.name,
+                            type: file.type,
+                            size: file.size
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        },
+        
+        // Remove new media file
+        removeNewMediaFile(index) {
+            this.newMediaPreviews.splice(index, 1);
+            this.newMediaFiles.splice(index, 1);
+            
+            // Update the file input
+            const fileInput = document.getElementById('edit_media_detail');
+            if (fileInput) {
+                const dt = new DataTransfer();
+                this.newMediaFiles.forEach(file => {
+                    dt.items.add(file);
+                });
+                fileInput.files = dt.files;
+            }
+        },
+        
+        // Create new category
+        async createCategory() {
+            if (!this.newCategory.name.trim()) {
+                alert('Nama kategori wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/categories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newCategory)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan kategori');
+                }
+                
+                // Add to available categories
+                this.availableCategories.unshift(data.category);
+                // Auto-select the new category
+                this.projectData.categories.push(data.category.id);
+                
+                // Reset form
+                this.newCategory = { name: '', description: '' };
+                this.showAddCategory = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Kategori berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan kategori');
+            }
+        },
+        
+        // Create new subject
+        async createSubject() {
+            if (!this.newSubject.name.trim()) {
+                alert('Nama mata kuliah wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/subjects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newSubject)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan mata kuliah');
+                }
+                
+                // Add to available subjects
+                this.availableSubjects.unshift(data.subject);
+                // Auto-select the new subject
+                this.projectData.subjects.push(data.subject.id);
+                
+                // Reset form
+                this.newSubject = { name: '', code: '', description: '' };
+                this.showAddSubject = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Mata kuliah berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan mata kuliah');
+            }
+        },
+        
+        // Create new teacher
+        async createTeacher() {
+            if (!this.newTeacher.name.trim()) {
+                alert('Nama dosen/guru wajib diisi');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/student/teachers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    },
+                    body: JSON.stringify(this.newTeacher)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal menambahkan dosen/guru');
+                }
+                
+                // Add to available teachers
+                this.availableTeachers.unshift(data.teacher);
+                // Auto-select the new teacher
+                this.projectData.teachers.push(data.teacher.id);
+                
+                // Reset form
+                this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+                this.showAddTeacher = false;
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Dosen/Guru berhasil ditambahkan',
+                    icon: 'success',
+                    confirmButtonColor: '#b01116',
+                    timer: 2000
+                });
+            } catch (e) {
+                console.error(e);
+                alert(e.message || 'Gagal menambahkan dosen/guru');
+            }
+        },
+
+        getTotalImagesCount() {
+            const existingCount = this.getExistingImagesCount();
+            const newCount = this.newMediaPreviews ? this.newMediaPreviews.length : 0;
             return existingCount + newCount;
         },
 
@@ -1724,8 +2245,9 @@ function projectDetail(projectId) {
 
         hasImagesChanged() {
             // Check if there are new images or deleted images
-            return (this.previews && this.previews.length > 0) || 
-                   (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0);
+            const hasNewImages = this.newMediaPreviews && this.newMediaPreviews.length > 0;
+            const hasDeletedImages = this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0;
+            return hasNewImages || hasDeletedImages;
         }
     }
 }

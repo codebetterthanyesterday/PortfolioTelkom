@@ -446,8 +446,10 @@ class ProjectController extends Controller
             'subjects.*' => 'exists:subjects,id',
             'teachers' => 'nullable|array',
             'teachers.*' => 'exists:teachers,id',
-            'media' => 'nullable|array|max:10',
-            'media.*' => 'file|mimes:jpg,jpeg,png,mp4,mov|max:10240',
+            'new_media' => 'nullable|array|max:10',
+            'new_media.*' => 'file|mimes:jpg,jpeg,png,gif,webp,mp4,mov|max:10240',
+            'images_to_delete' => 'nullable|array',
+            'images_to_delete.*' => 'integer|exists:project_media,id',
             'team_members' => 'nullable|array',
             'team_members.*' => 'exists:students,id',
             'team_positions' => 'nullable|array',
@@ -468,11 +470,32 @@ class ProjectController extends Controller
             $project->subjects()->sync($validated['subjects'] ?? []);
             $project->teachers()->sync($validated['teachers'] ?? []);
 
-            // Handle media uploads (add new media)
-            if ($request->hasFile('media')) {
+            // Handle image deletion
+            if (isset($validated['images_to_delete']) && !empty($validated['images_to_delete'])) {
+                $imagesToDelete = $project->media()->whereIn('id', $validated['images_to_delete'])->get();
+                
+                foreach ($imagesToDelete as $media) {
+                    // Delete the file from storage
+                    if (Storage::disk('public')->exists($media->file_path)) {
+                        Storage::disk('public')->delete($media->file_path);
+                    }
+                    
+                    // Delete the database record
+                    $media->delete();
+                }
+                
+                // Reorder remaining media
+                $remainingMedia = $project->media()->orderBy('order')->get();
+                foreach ($remainingMedia as $index => $media) {
+                    $media->update(['order' => $index]);
+                }
+            }
+            
+            // Handle new media uploads
+            if ($request->hasFile('new_media')) {
                 $existingMediaCount = $project->media()->count();
                 
-                foreach ($request->file('media') as $index => $file) {
+                foreach ($request->file('new_media') as $index => $file) {
                     $path = $file->store('projects/' . $project->id, 'public');
                     
                     $project->media()->create([
