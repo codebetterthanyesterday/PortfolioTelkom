@@ -10,6 +10,7 @@ use App\Http\Controllers\InvestorController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\AdminController;
 
 // =============================================================================
 // PUBLIC ROUTES (Guest & Authenticated)
@@ -43,27 +44,6 @@ Route::get('/students/{student:username}', [StudentController::class, 'show'])->
 Route::get('/api/search', [SearchController::class, 'liveSearch'])->name('api.search');
 Route::post('/api/search/advanced', [SearchController::class, 'advancedSearch'])->name('api.search.advanced');
 
-// Temporary admin routes (static pages)
-Route::get('/adm/dashboard', function () {
-    return view('pages.admin.dashboard');
-})->name('admin.dashboard');
-
-Route::get('/adm/projects', function () {
-    return view('pages.admin.projects');
-})->name('admin.projects');
-
-Route::get('/adm/users', function () {
-    return view('pages.admin.users');
-})->name('admin.users');
-
-Route::get('/adm/comments', function () {
-    return view('pages.admin.comments');
-})->name('admin.comments');
-
-Route::get('/adm/wishlist', function () {
-    return view('pages.admin.wishlist');
-})->name('admin.wishlist');
-
 // =============================================================================
 // AUTH ROUTES (Guest Only)
 // =============================================================================
@@ -74,11 +54,43 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.forgot');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.forgot.post');
+    
+    // Admin Login
+    Route::get('/admin/login', [AuthController::class, 'showAdminLoginForm'])->name('admin.login');
+    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout')
     ->middleware('auth');
+
+// =============================================================================
+// ADMIN ROUTES
+// =============================================================================
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    
+    // User Management
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
+    Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    
+    // Project Management
+    Route::get('/projects', [AdminController::class, 'projects'])->name('projects');
+    Route::get('/api/projects/filter', [AdminController::class, 'filterProjects'])->name('projects.filter');
+    Route::delete('/projects/{project}', [AdminController::class, 'deleteProject'])->name('projects.delete');
+    Route::post('/projects/{id}/restore', [AdminController::class, 'restoreProject'])->name('projects.restore');
+    Route::delete('/projects/{id}/force-delete', [AdminController::class, 'forceDeleteProject'])->name('projects.force-delete');
+    Route::post('/projects/{project}/toggle-status', [AdminController::class, 'toggleProjectStatus'])->name('projects.toggle-status');
+    
+    // Comment Management
+    Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
+    Route::delete('/comments/{comment}', [AdminController::class, 'deleteComment'])->name('comments.delete');
+    
+    // Wishlist Management
+    Route::get('/wishlist', [AdminController::class, 'wishlists'])->name('wishlist');
+});
 
 // =============================================================================
 // STUDENT ROUTES

@@ -17,6 +17,41 @@ class AuthController extends Controller
         return view('login');
     }
 
+    public function showAdminLoginForm()
+    {
+        return view('admin.login');
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::user();
+            
+            // Only allow admin role
+            if (!$user->isAdmin()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                return back()->withErrors([
+                    'email' => 'Access denied. Admin credentials required.',
+                ])->onlyInput('email');
+            }
+            
+            $request->session()->regenerate();
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
+    }
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -31,7 +66,7 @@ class AuthController extends Controller
             
             // Redirect based on role
             if ($user->isAdmin()) {
-                return redirect()->intended('/admin/dashboard');
+                return redirect()->intended(route('admin.dashboard'));
             } elseif ($user->isStudent() || $user->isInvestor()) {
                 return redirect()->intended(route('home'));
             }
