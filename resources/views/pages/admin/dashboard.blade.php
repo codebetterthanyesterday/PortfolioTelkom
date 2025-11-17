@@ -224,11 +224,11 @@
                 @foreach($recent_comments as $comment)
                 <div class="p-4 rounded-lg border border-gray-200 hover:border-[#b01116] transition-colors">
                     <div class="flex items-start justify-between mb-2">
-                        <h3 class="font-semibold text-gray-900 text-sm">{{ $comment->user->full_name ?? $comment->user->username }}</h3>
+                        <h3 class="font-semibold text-gray-900 text-sm">{{ $comment->user->full_name ?? $comment->user->username ?? 'Unknown User' }}</h3>
                         <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
                     </div>
-                    <p class="text-xs text-[#b01116] mb-2">pada {{ $comment->project->title }}</p>
-                    <p class="text-sm text-gray-600 line-clamp-2">{{ $comment->comment }}</p>
+                    <p class="text-xs text-[#b01116] mb-2">pada {{ $comment->project->title ?? 'Proyek Terhapus' }}</p>
+                    <p class="text-sm text-gray-600 line-clamp-2">{{ $comment->content ?? $comment->comment ?? '-' }}</p>
                     <div class="flex items-center gap-2 mt-3">
                         <form action="{{ route('admin.comments.delete', $comment) }}" method="POST" class="inline">
                             @csrf

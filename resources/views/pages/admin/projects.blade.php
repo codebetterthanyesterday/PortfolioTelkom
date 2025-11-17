@@ -231,25 +231,23 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center justify-center gap-2">
+                                    <button @click="viewProject(project)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Detail">
+                                        <i class="ri-eye-line text-lg"></i>
+                                    </button>
                                     <template x-if="!project.deleted_at">
-                                        <div class="flex items-center gap-2">
-                                            <button @click="viewProject(project)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Lihat Detail">
-                                                <i class="ri-eye-line text-lg"></i>
-                                            </button>
-                                            <button @click="deleteProject(project)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                                                <i class="ri-delete-bin-line text-lg"></i>
-                                            </button>
-                                        </div>
+                                        <button @click="deleteProject(project)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                            <i class="ri-delete-bin-line text-lg"></i>
+                                        </button>
                                     </template>
                                     <template x-if="project.deleted_at">
-                                        <div class="flex items-center gap-2">
-                                            <button @click="restoreProject(project)" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Pulihkan">
-                                                <i class="ri-refresh-line text-lg"></i>
-                                            </button>
-                                            <button @click="permanentDeleteProject(project)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Permanen">
-                                                <i class="ri-delete-bin-fill text-lg"></i>
-                                            </button>
-                                        </div>
+                                        <button @click="restoreProject(project)" class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Pulihkan">
+                                            <i class="ri-refresh-line text-lg"></i>
+                                        </button>
+                                    </template>
+                                    <template x-if="project.deleted_at">
+                                        <button @click="permanentDeleteProject(project)" class="p-2 text-red-700 hover:bg-red-100 rounded-lg transition-colors" title="Hapus Permanen">
+                                            <i class="ri-delete-bin-2-line text-lg"></i>
+                                        </button>
                                     </template>
                                 </div>
                             </td>

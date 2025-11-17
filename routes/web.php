@@ -73,8 +73,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     // User Management
     Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/api/users/filter', [AdminController::class, 'filterUsers'])->name('users.filter');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
-    Route::post('/users/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    Route::post('/users/{id}/restore', [AdminController::class, 'restoreUser'])->name('users.restore');
+    Route::delete('/users/{id}/force-delete', [AdminController::class, 'forceDeleteUser'])->name('users.force-delete');
+    Route::post('/users/{id}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('users.toggle-status');
     
     // Project Management
     Route::get('/projects', [AdminController::class, 'projects'])->name('projects');
@@ -86,10 +89,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     // Comment Management
     Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
+    Route::get('/api/comments/filter', [AdminController::class, 'filterComments'])->name('comments.filter');
     Route::delete('/comments/{comment}', [AdminController::class, 'deleteComment'])->name('comments.delete');
+    Route::post('/comments/{id}/restore', [AdminController::class, 'restoreComment'])->name('comments.restore');
+    Route::delete('/comments/{id}/force-delete', [AdminController::class, 'forceDeleteComment'])->name('comments.force-delete');
     
     // Wishlist Management
     Route::get('/wishlist', [AdminController::class, 'wishlists'])->name('wishlist');
+    Route::get('/api/wishlist/filter', [AdminController::class, 'filterWishlists'])->name('wishlist.filter');
+    Route::delete('/wishlist/{wishlist}', [AdminController::class, 'deleteWishlist'])->name('wishlist.delete');
+    Route::post('/wishlist/{id}/restore', [AdminController::class, 'restoreWishlist'])->name('wishlist.restore');
+    Route::delete('/wishlist/{id}/force-delete', [AdminController::class, 'forceDeleteWishlist'])->name('wishlist.force-delete');
 });
 
 // =============================================================================
