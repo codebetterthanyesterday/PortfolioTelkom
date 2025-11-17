@@ -9,6 +9,7 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\InvestorController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SearchController;
 
 // =============================================================================
 // PUBLIC ROUTES (Guest & Authenticated)
@@ -39,7 +40,8 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 Route::get('/students/{student:username}', [StudentController::class, 'show'])->name('detail.student');
 
 // Live search API
-Route::get('/api/search', [App\Http\Controllers\SearchController::class, 'liveSearch'])->name('api.search');
+Route::get('/api/search', [SearchController::class, 'liveSearch'])->name('api.search');
+Route::post('/api/search/advanced', [SearchController::class, 'advancedSearch'])->name('api.search.advanced');
 
 // Temporary admin routes (static pages)
 Route::get('/adm/dashboard', function () {

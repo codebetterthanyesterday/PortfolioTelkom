@@ -183,24 +183,20 @@
                                     </h4>
                                 </div>
                                 <template x-for="student in searchResults.students" :key="student.id">
-                                    <a :href="student.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                    <a :href="student.profile_url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
                                         <div class="flex gap-3 items-center">
-                                            <template x-if="student.avatar_url">
-                                                <img :src="student.avatar_url" :alt="student.username" class="w-10 h-10 rounded-full object-cover">
+                                            <template x-if="student.avatar">
+                                                <img :src="student.avatar" :alt="student.username" class="w-10 h-10 rounded-full object-cover">
                                             </template>
-                                            <template x-if="!student.avatar_url">
+                                            <template x-if="!student.avatar">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-semibold">
                                                     <span x-text="student.username.charAt(0).toUpperCase()"></span>
                                                 </div>
                                             </template>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium text-gray-900" x-text="student.full_name || student.username"></p>
-                                                <p class="text-xs text-gray-500">@<span x-text="student.username"></span></p>
-                                                <div x-show="student.expertises.length > 0" class="flex flex-wrap gap-1 mt-1">
-                                                    <template x-for="expertise in student.expertises.slice(0, 2)" :key="expertise">
-                                                        <span class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full" x-text="expertise"></span>
-                                                    </template>
-                                                </div>
+                                                <p class="text-xs text-gray-500">@<span x-text="student.username"></span> | <span x-text="student.student_id"></span></p>
+                                                <p class="text-xs text-gray-400" x-text="student.email"></p>
                                             </div>
                                             <i class="ri-arrow-right-s-line text-gray-400"></i>
                                         </div>
@@ -228,12 +224,13 @@
                                             </template>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
-                                                <p class="text-xs text-gray-500 line-clamp-1" x-text="project.description"></p>
+                                                <p class="text-xs text-gray-500" x-text="project.formatted_price"></p>
                                                 <div class="flex items-center gap-2 mt-1">
-                                                    <span class="text-xs text-gray-600">by <span x-text="project.owner.username"></span></span>
+                                                    <span class="text-xs text-gray-600">by <span x-text="project.owner.full_name"></span></span>
                                                     <template x-if="project.categories.length > 0">
                                                         <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
                                                     </template>
+                                                    <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full" x-text="project.type"></span>
                                                 </div>
                                             </div>
                                             <i class="ri-arrow-right-s-line text-gray-400"></i>
@@ -252,10 +249,10 @@
                                 <template x-for="investor in searchResults.investors" :key="investor.id">
                                     <div class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
                                         <div class="flex gap-3 items-center">
-                                            <template x-if="investor.avatar_url">
-                                                <img :src="investor.avatar_url" :alt="investor.username" class="w-10 h-10 rounded-full object-cover">
+                                            <template x-if="investor.avatar">
+                                                <img :src="investor.avatar" :alt="investor.username" class="w-10 h-10 rounded-full object-cover">
                                             </template>
-                                            <template x-if="!investor.avatar_url">
+                                            <template x-if="!investor.avatar">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-semibold">
                                                     <span x-text="investor.username.charAt(0).toUpperCase()"></span>
                                                 </div>
@@ -264,6 +261,7 @@
                                                 <p class="text-sm font-medium text-gray-900" x-text="investor.full_name || investor.username"></p>
                                                 <p class="text-xs text-gray-500" x-show="investor.company_name" x-text="investor.company_name"></p>
                                                 <p class="text-xs text-gray-400" x-show="investor.industry" x-text="investor.industry"></p>
+                                                <p class="text-xs text-gray-400 mt-1"><span x-text="investor.wishlist_count"></span> wishlist projects</p>
                                             </div>
                                             <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Investor</span>
                                         </div>
@@ -506,24 +504,19 @@
                                     </h4>
                                 </div>
                                 <template x-for="student in searchResults.students" :key="student.id">
-                                    <a :href="student.url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                                    <a :href="student.profile_url" class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
                                         <div class="flex gap-3 items-center">
-                                            <template x-if="student.avatar_url">
-                                                <img :src="student.avatar_url" :alt="student.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                            <template x-if="student.avatar">
+                                                <img :src="student.avatar" :alt="student.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                                             </template>
-                                            <template x-if="!student.avatar_url">
+                                            <template x-if="!student.avatar">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                                                     <span x-text="student.username.charAt(0).toUpperCase()"></span>
                                                 </div>
                                             </template>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium text-gray-900 truncate" x-text="student.full_name || student.username"></p>
-                                                <p class="text-xs text-gray-500 truncate">@<span x-text="student.username"></span></p>
-                                                <div x-show="student.expertises.length > 0" class="flex flex-wrap gap-1 mt-1">
-                                                    <template x-for="expertise in student.expertises.slice(0, 2)" :key="expertise">
-                                                        <span class="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full" x-text="expertise"></span>
-                                                    </template>
-                                                </div>
+                                                <p class="text-xs text-gray-500 truncate">@<span x-text="student.username"></span> | <span x-text="student.student_id"></span></p>
                                             </div>
                                             <i class="ri-arrow-right-s-line text-gray-400 flex-shrink-0"></i>
                                         </div>
@@ -551,9 +544,9 @@
                                             </template>
                                             <div class="flex-1 min-w-0">
                                                 <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
-                                                <p class="text-xs text-gray-500 line-clamp-1" x-text="project.description"></p>
+                                                <p class="text-xs text-gray-500 line-clamp-1" x-text="project.formatted_price"></p>
                                                 <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                                    <span class="text-xs text-gray-600 truncate">by <span x-text="project.owner.username"></span></span>
+                                                    <span class="text-xs text-gray-600 truncate">by <span x-text="project.owner.full_name"></span></span>
                                                     <template x-if="project.categories.length > 0">
                                                         <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
                                                     </template>
@@ -575,10 +568,10 @@
                                 <template x-for="investor in searchResults.investors" :key="investor.id">
                                     <div class="block px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
                                         <div class="flex gap-3 items-center">
-                                            <template x-if="investor.avatar_url">
-                                                <img :src="investor.avatar_url" :alt="investor.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                            <template x-if="investor.avatar">
+                                                <img :src="investor.avatar" :alt="investor.username" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                                             </template>
-                                            <template x-if="!investor.avatar_url">
+                                            <template x-if="!investor.avatar">
                                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                                                     <span x-text="investor.username.charAt(0).toUpperCase()"></span>
                                                 </div>
