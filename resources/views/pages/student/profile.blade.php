@@ -137,7 +137,7 @@
                                                 </div>
                                                 <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
-                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                            {{-- <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     @can('update', $project)
                                                         <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
@@ -150,7 +150,7 @@
                                                         </button>
                                                     @endcan
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 @endforeach
@@ -238,7 +238,7 @@
                                                 </div>
                                                 <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
-                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                            {{-- <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex items-center gap-2">
                                                     @can('update', $project)
                                                         <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
@@ -251,7 +251,7 @@
                                                         </button>
                                                     @endcan
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 @endforeach
@@ -325,7 +325,7 @@
                                                 </div>
                                                 <a href="{{ route('projects.show', $project->slug) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium">Lihat Detail</a>
                                             </div>
-                                            <div class="mt-3 pt-3 border-t border-gray-200">
+                                            {{-- <div class="mt-3 pt-3 border-t border-gray-200">
                                                 <div class="flex items-center gap-2">
                                                     @can('update', $project)
                                                         <button @click="loadProjectForEdit({{ $project->id }})" class="flex-1 text-xs text-center px-3 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
@@ -338,7 +338,7 @@
                                                         </button>
                                                     @endcan
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 @endforeach
@@ -2853,51 +2853,38 @@
                                 Gambar Saat Ini (<span x-text="projectData.existing_images.length"></span>)
                             </h5>
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
-                                <template x-for="(image, index) in projectData.existing_images" :key="'existing-' + index">
+                                <template x-for="(image, index) in projectData.existing_images" :key="'existing-' + image.id">
                                     <div class="relative group">
                                         <div class="aspect-square rounded-lg overflow-hidden border-2"
-                                             :class="index === 0 ? 'border-[#b01116] ring-2 ring-red-100' : 'border-gray-300'">
-                                            <img :src="image.url || image.file_path" 
-                                                 :alt="image.alt_text || 'Project Image'" 
+                                             :class="isImageMarkedForDeletion(image.id) ? 'border-red-300 opacity-50' : index === 0 ? 'border-[#b01116] ring-2 ring-red-100' : 'border-gray-300'">
+                                            <img :src="image.url" 
+                                                 :alt="'Project Image ' + (index + 1)" 
                                                  class="w-full h-full object-cover">
                                         </div>
                                         
                                         <!-- Action Buttons -->
                                         <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button type="button"
-                                                    @click="setAsMainImage(index, 'existing')"
-                                                    :disabled="index === 0"
-                                                    :class="index === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'"
-                                                    class="bg-blue-500 text-white rounded-full p-1.5 text-xs transition-colors"
-                                                    title="Set as main image">
-                                                <i class="ri-star-line"></i>
-                                            </button>
-                                            <button type="button"
-                                                    @click="markImageForDeletion(index)"
-                                                    class="bg-red-600 text-white rounded-full p-1.5 transition-colors hover:bg-red-700"
-                                                    title="Delete image">
-                                                <i class="ri-close-line text-xs"></i>
+                                                    @click="markImageForDeletion(image.id)"
+                                                    :class="isImageMarkedForDeletion(image.id) ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+                                                    class="text-white rounded-full p-1.5 transition-colors"
+                                                    :title="isImageMarkedForDeletion(image.id) ? 'Undo Delete' : 'Mark for Deletion'">
+                                                <i :class="isImageMarkedForDeletion(image.id) ? 'ri-arrow-go-back-line' : 'ri-delete-bin-line'" class="text-xs"></i>
                                             </button>
                                         </div>
                                         
                                         <!-- Main Image Badge -->
-                                        <div x-show="index === 0" 
+                                        <div x-show="index === 0 && !isImageMarkedForDeletion(image.id)" 
                                              class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
                                             <i class="ri-star-fill mr-1"></i>Gambar Utama
                                         </div>
                                         
                                         <!-- Deletion Overlay -->
-                                        <div x-show="projectData.images_to_delete && projectData.images_to_delete.includes(image.id || index)" 
+                                        <div x-show="isImageMarkedForDeletion(image.id)" 
                                              class="absolute inset-0 bg-red-600/80 flex items-center justify-center rounded-lg">
                                             <div class="text-center text-white">
-                                                <div class="flex items-center justify-center gap-2 mb-2">
-                                                    <i class="ri-delete-bin-line text-lg"></i>
-                                                    <span class="text-sm font-medium">Akan Dihapus</span>
-                                                </div>
-                                                <button @click="undoImageDeletion(image.id || index)"
-                                                        class="bg-white text-red-600 px-2 py-1 rounded text-xs font-medium hover:bg-gray-100 transition-colors">
-                                                    <i class="ri-arrow-go-back-line mr-1"></i>Undo
-                                                </button>
+                                                <i class="ri-delete-bin-line text-2xl mb-1"></i>
+                                                <div class="text-sm font-medium">Akan Dihapus</div>
                                             </div>
                                         </div>
                                     </div>
@@ -2921,14 +2908,14 @@
                                        multiple 
                                        accept="image/*" 
                                        class="hidden" 
-                                       id="edit_media"
-                                       @change="handleNewMediaFiles($event.target.files)">
-                                <label for="edit_media" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
+                                       id="edit_media_detail"
+                                       @change="handleNewMediaFiles($event)">
+                                <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                     <i class="ri-folder-open-line"></i>
                                     Pilih Gambar
                                 </label>
                                 <div class="text-xs text-gray-500 mt-3">
-                                    Max 10 files • Each up to 10MB • JPG, PNG, GIF
+                                    Max 10 files • Each up to 10MB • JPG, PNG, GIF, WebP
                                 </div>
                             </div>
                             
@@ -2962,21 +2949,21 @@
                         
                         <!-- Image Summary -->
                         <div class="mt-4 p-4 rounded-lg border-2"
-                             :class="getTotalImagesCount() === 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'">
+                             :class="getTotalImageCount() === 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'">
                             <div class="flex items-center gap-3"
-                                 :class="getTotalImagesCount() === 0 ? 'text-red-700' : 'text-green-700'">
-                                <i :class="getTotalImagesCount() === 0 ? 'ri-error-warning-line text-xl' : 'ri-checkbox-circle-line text-xl'"></i>
+                                 :class="getTotalImageCount() === 0 ? 'text-red-700' : 'text-green-700'">
+                                <i :class="getTotalImageCount() === 0 ? 'ri-error-warning-line text-xl' : 'ri-checkbox-circle-line text-xl'"></i>
                                 <div class="flex-1">
                                     <div class="font-semibold">
-                                        <span x-show="getTotalImagesCount() === 0">Minimal 1 gambar diperlukan</span>
-                                        <span x-show="getTotalImagesCount() > 0">
-                                            Total: <span x-text="getTotalImagesCount()"></span> gambar
+                                        <span x-show="getTotalImageCount() === 0">Minimal 1 gambar diperlukan</span>
+                                        <span x-show="getTotalImageCount() > 0">
+                                            Total: <span x-text="getTotalImageCount()"></span> gambar
                                         </span>
                                     </div>
-                                    <div class="text-sm mt-1" x-show="getTotalImagesCount() > 0">
+                                    <div class="text-sm mt-1" x-show="getTotalImageCount() > 0">
                                         <span x-text="getExistingImagesCount() + ' gambar saat ini'"></span>
                                         <span x-show="newMediaPreviews.length > 0"> • <span x-text="newMediaPreviews.length + ' gambar baru'"></span></span>
-                                        <span x-show="getDeletedImagesCount() > 0"> • <span x-text="getDeletedImagesCount() + ' akan dihapus'"></span></span>
+                                        <span x-show="projectData.images_to_delete && projectData.images_to_delete.length > 0"> • <span x-text="projectData.images_to_delete.length + ' akan dihapus'"></span></span>
                                     </div>
                                 </div>
                             </div>
@@ -3308,8 +3295,8 @@
                         <button type="button" 
                                 @click="updateProject()"
                                 x-show="currentStep === totalSteps"
-                                :disabled="!canProceedToNextStep()"
-                                :class="!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
+                                :disabled="!canCreateProject()"
+                                :class="!canCreateProject() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
                                 class="px-6 py-2.5 bg-[#b01116] text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                             <i class="ri-save-line"></i>Simpan Perubahan
                         </button>
@@ -3555,6 +3542,10 @@ document.addEventListener('alpine:init', () => {
         showEditProjectModal: false,
         projectType: 'individual',
         
+        // Original data for change detection
+        originalProjectData: null,
+        originalTeamPositions: null,
+        
         // Project Form Data
         projectData: {
             title: '',
@@ -3591,6 +3582,10 @@ document.addEventListener('alpine:init', () => {
         newCategory: { name: '' },
         newSubject: { name: '', code: '' },
         newTeacher: { name: '', nip: '', email: '', phone_number: '', institution: '' },
+        
+        // Media preview handling
+        newMediaPreviews: [],
+        newMediaFiles: [],
         
         // Computed properties for filtered lists
         get filteredCategories() {
@@ -3674,6 +3669,8 @@ document.addEventListener('alpine:init', () => {
                 existing_images: [],
                 images_to_delete: []
             };
+            this.originalProjectData = null;
+            this.originalTeamPositions = null;
             this.searchCategory = '';
             this.searchSubject = '';
             this.searchTeacher = '';
@@ -3684,6 +3681,14 @@ document.addEventListener('alpine:init', () => {
             this.newCategory = { name: '' };
             this.newSubject = { name: '', code: '' };
             this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+            this.newMediaPreviews = [];
+            this.newMediaFiles = [];
+            
+            // Clear file inputs
+            const fileInput = document.getElementById('edit_media_detail');
+            if (fileInput) {
+                fileInput.value = '';
+            }
         },
         
         // Toggle selections
@@ -3832,45 +3837,226 @@ document.addEventListener('alpine:init', () => {
             }
         },
         
-        // Edit project
-        loadProjectForEdit(project) {
-            this.projectType = project.type;
-            this.projectData = {
-                id: project.id,
-                title: project.title,
-                description: project.description,
-                price: project.price,
-                status: project.status,
-                categories: project.categories ? project.categories.map(c => c.id) : [],
-                subjects: project.subjects ? project.subjects.map(s => s.id) : [],
-                teachers: project.teachers ? project.teachers.map(t => t.id) : [],
-                team_members: project.members ? project.members.map(m => m.id) : [],
-                team_positions: project.members ? project.members.reduce((acc, m) => {
-                    acc[m.id] = m.pivot.position || 'Member';
-                    return acc;
-                }, {}) : {},
-                existing_images: project.media ? project.media.map(m => ({
-                    id: m.id,
-                    path: m.file_path,
-                    url: '/storage/' + m.file_path
-                })) : [],
-                images_to_delete: []
-            };
-            this.currentStep = 1;
-            this.showEditProjectModal = true;
+        // Edit project - Load data via AJAX
+        async loadProjectForEdit(projectId) {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'Memuat data proyek...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const response = await fetch(`/student/projects/${projectId}/edit-data`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Gagal memuat data proyek');
+                }
+
+                const project = data.project;
+                
+                // Set project type
+                this.projectType = project.type;
+                
+                // Load project data
+                this.projectData = {
+                    id: project.id,
+                    title: project.title,
+                    description: project.description,
+                    price: project.price,
+                    status: project.status,
+                    categories: project.categories ? project.categories.map(c => c.id) : [],
+                    subjects: project.subjects ? project.subjects.map(s => s.id) : [],
+                    teachers: project.teachers ? project.teachers.map(t => t.id) : [],
+                    team_members: project.team_members ? project.team_members.map(m => m.student.id) : [],
+                    team_positions: project.team_members ? project.team_members.reduce((acc, m) => {
+                        acc[m.student.id] = m.position || 'Team Member';
+                        return acc;
+                    }, {}) : {},
+                    existing_images: project.media ? project.media.map(m => ({
+                        id: m.id,
+                        path: m.file_path,
+                        url: '/storage/' + m.file_path,
+                        is_main: m.order === 0
+                    })) : [],
+                    images_to_delete: []
+                };
+                
+                // Store original data for change detection
+                this.originalProjectData = JSON.parse(JSON.stringify(this.projectData));
+                this.originalTeamPositions = JSON.parse(JSON.stringify(this.projectData.team_positions));
+                
+                // Reset to step 1 and show modal
+                this.currentStep = 1;
+                this.showEditProjectModal = true;
+                
+                // Close loading
+                Swal.close();
+                
+            } catch (error) {
+                console.error('Error loading project:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Gagal memuat data proyek',
+                    confirmButtonColor: '#b01116'
+                });
+            }
+        },
+        
+        // Update project
+        async updateProject() {
+            if (!this.canCreateProject()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Belum Lengkap',
+                    text: this.getValidationMessage(),
+                    confirmButtonColor: '#b01116'
+                });
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('_method', 'PUT');
+                formData.append('title', this.projectData.title);
+                formData.append('description', this.projectData.description);
+                formData.append('price', this.projectData.price || '');
+                formData.append('status', this.projectData.status);
+                
+                // Categories (required)
+                this.projectData.categories.forEach(catId => {
+                    formData.append('categories[]', catId);
+                });
+                
+                // Subjects (optional)
+                this.projectData.subjects.forEach(subId => {
+                    formData.append('subjects[]', subId);
+                });
+                
+                // Teachers (optional)
+                this.projectData.teachers.forEach(teachId => {
+                    formData.append('teachers[]', teachId);
+                });
+                
+                // Team members (for team projects)
+                if (this.projectType === 'team') {
+                    this.projectData.team_members.forEach((memberId, index) => {
+                        formData.append('team_members[]', memberId);
+                        formData.append('team_positions[]', this.projectData.team_positions[memberId] || 'Team Member');
+                    });
+                }
+                
+                // Images to delete
+                if (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0) {
+                    this.projectData.images_to_delete.forEach(imageId => {
+                        formData.append('images_to_delete[]', imageId);
+                    });
+                }
+                
+                // New media files
+                const fileInput = document.getElementById('edit_media_detail');
+                if (fileInput && fileInput.files.length > 0) {
+                    Array.from(fileInput.files).forEach((file, index) => {
+                        formData.append('new_media[]', file);
+                    });
+                }
+                
+                // Show loading
+                Swal.fire({
+                    title: 'Menyimpan perubahan...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                const response = await fetch(`/student/projects/${this.projectData.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Proyek berhasil diperbarui',
+                        confirmButtonColor: '#b01116',
+                        timer: 2000
+                    });
+                    
+                    // Reload page to show updated data
+                    window.location.reload();
+                } else {
+                    throw new Error(result.message || 'Gagal memperbarui proyek');
+                }
+            } catch (error) {
+                console.error('Error updating project:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.message || 'Gagal memperbarui proyek',
+                    confirmButtonColor: '#b01116'
+                });
+            }
         },
         
         markImageForDeletion(imageId) {
-            if (!this.projectData.images_to_delete.includes(imageId)) {
+            if (!this.projectData.images_to_delete) {
+                this.projectData.images_to_delete = [];
+            }
+            
+            const imageData = this.projectData.existing_images.find(img => img.id === imageId);
+            
+            if (this.projectData.images_to_delete.includes(imageId)) {
+                // Undo deletion
+                const index = this.projectData.images_to_delete.indexOf(imageId);
+                this.projectData.images_to_delete.splice(index, 1);
+            } else {
+                // Mark for deletion
                 this.projectData.images_to_delete.push(imageId);
             }
-            this.projectData.existing_images = this.projectData.existing_images.filter(img => img.id !== imageId);
+        },
+        
+        isImageMarkedForDeletion(imageId) {
+            return this.projectData.images_to_delete && this.projectData.images_to_delete.includes(imageId);
         },
         
         getTotalImageCount() {
-            const existingCount = this.projectData.existing_images.length;
-            const newCount = document.getElementById('edit_media')?.files?.length || 0;
+            const existingCount = this.getExistingImagesCount();
+            const newCount = document.getElementById('edit_media_detail')?.files?.length || 0;
             return existingCount + newCount;
+        },
+        
+        getExistingImagesCount() {
+            if (!this.projectData.existing_images) return 0;
+            const deletedCount = this.projectData.images_to_delete ? this.projectData.images_to_delete.length : 0;
+            return this.projectData.existing_images.length - deletedCount;
+        },
+        
+        canCreateProject() {
+            const hasTitle = this.projectData.title && this.projectData.title.trim() !== '';
+            const hasCategories = this.projectData.categories && this.projectData.categories.length > 0;
+            const hasMinImages = this.getTotalImageCount() >= 1;
+            const hasTeamMembers = this.projectType === 'individual' || (this.projectData.team_members && this.projectData.team_members.length > 0);
+            return hasTitle && hasCategories && hasMinImages && hasTeamMembers;
         },
         
         getValidationMessage() {
@@ -3880,7 +4066,53 @@ document.addEventListener('alpine:init', () => {
             if (this.currentStep === 2 && this.projectData.categories.length === 0) {
                 return 'Pilih minimal 1 kategori';
             }
+            if (this.getTotalImageCount() < 1) {
+                return 'Upload minimal 1 gambar';
+            }
             return 'Lengkapi data';
+        },
+        
+        // Handle new media files for edit modal
+        handleNewMediaFiles(event) {
+            const files = event.target.files;
+            this.newMediaFiles = Array.from(files);
+            this.newMediaPreviews = [];
+            
+            Array.from(files).forEach((file) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.newMediaPreviews.push({
+                            url: e.target.result,
+                            name: file.name,
+                            type: 'image'
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file.type.startsWith('video/')) {
+                    this.newMediaPreviews.push({
+                        url: URL.createObjectURL(file),
+                        name: file.name,
+                        type: 'video'
+                    });
+                }
+            });
+        },
+        
+        // Remove new media file
+        removeNewMediaFile(index) {
+            this.newMediaPreviews.splice(index, 1);
+            this.newMediaFiles.splice(index, 1);
+            
+            // Update the file input
+            const fileInput = document.getElementById('edit_media_detail');
+            if (fileInput) {
+                const dt = new DataTransfer();
+                this.newMediaFiles.forEach(file => {
+                    dt.items.add(file);
+                });
+                fileInput.files = dt.files;
+            }
         }
     }));
 });
