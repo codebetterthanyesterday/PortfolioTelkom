@@ -24,13 +24,33 @@
                         <img src="{{ asset('storage/image.png') }}" class="w-24 sm:w-28 md:w-32 mb-4 sm:mb-5 mx-auto" alt="Logo">
                     </div>
                     
-                    <form action="" class="space-y-4 sm:space-y-5">
+                    <form action="{{ route('password.forgot.post') }}" method="POST" class="space-y-4 sm:space-y-5">
+                        @csrf
                         <h3 class="font-semibold text-xl">Forgot Password</h3>
+                        
+                        @if(session('status'))
+                            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                                {{ session('status') }}
+                            </div>
+                        @endif
+
+                        @if($errors->any())
+                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        
+                        <p class="text-sm text-gray-600">Masukkan email Anda dan kami akan mengirimkan link untuk reset password.</p>
+                        
                         <div>
                             <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                            <input type="email" id="email" class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
+                            <input type="email" name="email" id="email" value="{{ old('email') }}" required class="border border-gray-300 text-gray-900 text-sm sm:text-base rounded-lg focus:ring-[#b01116] focus:border-[#b01116] focus:outline-0 block w-full p-2.5 sm:p-3" placeholder="Masukkan email Anda">
                         </div>
-                        <button type="submit" disabled class="w-full cursor-not-allowed transition-all duration-200 ease-in-out submit-button-auth px-3 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium text-gray-800 bg-gray-300">Submit</button>
+                        <button type="submit" disabled class="w-full cursor-not-allowed transition-all duration-200 ease-in-out submit-button-auth px-3 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium text-gray-800 bg-gray-300">Kirim Link Reset Password</button>
                         <p class="text-center text-xs sm:text-sm text-gray-600 pt-2">
                             Ingat password anda? <a href="{{ route('login') }}" class="text-[#b01116] font-medium hover:underline">Login di sini</a>
                         </p>

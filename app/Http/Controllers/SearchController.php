@@ -21,7 +21,7 @@ class SearchController extends Controller
         $limit = $request->input('limit', 10);
         
         // Return empty results if query is too short
-        if (strlen(trim($query)) < 2) {
+        if (strlen(trim($query)) < 1) {
             return response()->json([
                 'success' => true,
                 'results' => [

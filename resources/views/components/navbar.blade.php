@@ -95,7 +95,7 @@
                     loading: false,
                     
                     async search() {
-                        if (this.searchQuery.length < 2) {
+                        if (this.searchQuery.length < 1) {
                             this.searchResults = { students: [], projects: [], investors: [] };
                             this.searchCounts = { students: 0, projects: 0, investors: 0, total: 0 };
                             return;

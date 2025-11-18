@@ -87,11 +87,11 @@
         }
 
         function toggleSubmitButton() {
-            if (!submitButton || !emailInput) return; // safety guard
+            if (!submitButton) return; // safety guard
             let isValid = false;
 
-            const emailValue = emailInput.value.trim();
-            const emailValid = validateEmail(emailValue);
+            const emailValue = emailInput ? emailInput.value.trim() : '';
+            const emailValid = emailInput ? validateEmail(emailValue) : true;
 
             // Register page (all registration fields present)
             if (usernameInput && passwordConfirmationInput && roleInput && passwordInput) {
@@ -103,12 +103,20 @@
                 const passwordValid = validatePassword();
                 isValid = allFieldsFilled && emailValid && roleValid && passwordValid;
             }
-            // Login page (has password input but no registration extras)
-            else if (passwordInput) {
+            // Recovery page (has password, password_confirmation, email but no username/role)
+            else if (passwordInput && passwordConfirmationInput && !usernameInput && !roleInput && emailInput) {
+                const allFieldsFilled = emailValue !== '' &&
+                                       passwordInput.value.trim() !== '' &&
+                                       passwordConfirmationInput.value.trim() !== '';
+                const passwordValid = validatePassword();
+                isValid = allFieldsFilled && emailValid && passwordValid;
+            }
+            // Login page (has password input but no confirmation or registration extras)
+            else if (passwordInput && !passwordConfirmationInput) {
                 isValid = emailValue !== '' && passwordInput.value.trim() !== '' && emailValid;
             }
             // Forgot password page (only email field present)
-            else {
+            else if (emailInput && !passwordInput) {
                 isValid = emailValue !== '' && emailValid;
             }
 
