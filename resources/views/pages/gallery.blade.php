@@ -45,6 +45,24 @@
         </div>
     </section>
 
+    @if($featuredProjects->count() === 0 && $mostViewedProjects->count() === 0 && !isset($category))
+    <section class="py-24 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto">
+            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300 p-12 sm:p-16 text-center">
+                <div class="mb-6">
+                <i class="ri-inbox-line text-6xl text-gray-400"></i>
+                </div>
+                <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                Belum ada proyek tersedia
+                </h3>
+                <p class="text-gray-600 text-base sm:text-lg mb-8 leading-relaxed">
+                Kami sedang mengumpulkan proyek-proyek terbaik dari mahasiswa.
+                </p>
+            </div>
+            </div>
+        </section>
+    @endif
+
     <!-- Show category header when filtered -->
     @if(isset($category))
     <section class="py-8 bg-white border-b border-gray-200">
@@ -56,26 +74,29 @@
     @endif
 
     <!-- Featured/Recent Projects Section -->
-    <section id="featured" class="py-16 bg-white" @if(isset($category)) style="display: block;" @else x-show="!showFilteredProjects" @endif>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900">
-                    @if(isset($category))
-                        Proyek Terbaru - {{ $category->name }}
-                    @else
-                        Featured Projects
-                    @endif
-                </h2>
+    @if($featuredProjects->count() > 0)
+        <section id="featured" class="py-16 bg-white" @if(isset($category)) style="display: block;" @else x-show="!showFilteredProjects" @endif>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900">
+                        @if(isset($category))
+                            Proyek Terbaru - {{ $category->name }}
+                        @else
+                            Featured Projects
+                        @endif
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid">
+                    @foreach($featuredProjects as $project)
+                        @include('pages.partials.project-card', ['project' => $project, 'wishlistedProjects' => $wishlistedProjects])
+                    @endforeach
+                </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid">
-                @foreach($featuredProjects as $project)
-                    @include('pages.partials.project-card', ['project' => $project, 'wishlistedProjects' => $wishlistedProjects])
-                @endforeach
-            </div>
-        </div>
-    </section>
+        </section>
+    @endif
 
     <!-- Most Viewed Section -->
+    @if($mostViewedProjects->count() > 0)
     <section id="most-viewed" class="py-16 bg-gray-50" @if(isset($category)) style="display: block;" @else x-show="!showFilteredProjects" @endif>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-gray-900 mb-8">
@@ -92,6 +113,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     <!-- Filtered Projects Section with Pagination (Only show when NOT coming from category URL) -->
     @if(!isset($category))
