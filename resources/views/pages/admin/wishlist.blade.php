@@ -9,7 +9,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Wishlist</h1>
-                <p class="text-gray-600 mt-1">Kelola semua wishlist investor pada proyek mahasiswa</p>
+                <p class="text-gray-600 mt-1">Kelola semua wishlist investor pada proyek pelajar</p>
             </div>
         </div>
     </div>
@@ -333,7 +333,7 @@
                                     <template x-if="selectedWishlist.project.student?.user">
                                         <p class="text-xs text-gray-600">
                                             <i class="ri-user-line"></i>
-                                            Mahasiswa: <span class="font-semibold" x-text="selectedWishlist.project.student.user.full_name || selectedWishlist.project.student.user.username"></span>
+                                            Pelajar: <span class="font-semibold" x-text="selectedWishlist.project.student.user.full_name || selectedWishlist.project.student.user.username"></span>
                                         </p>
                                     </template>
                                     <a :href="`/projects/${selectedWishlist.project.slug}`" target="_blank" class="inline-flex items-center gap-2 mt-3 text-sm text-[#b01116] hover:text-[#8d0d11] font-medium">

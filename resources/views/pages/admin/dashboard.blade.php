@@ -43,7 +43,7 @@
             </div>
             <h3 class="text-gray-600 text-sm font-medium mb-1">Total Users</h3>
             <p class="text-3xl font-bold text-gray-900">{{ $stats['total_users'] }}</p>
-            <p class="text-xs text-gray-500 mt-2">{{ $stats['total_students'] }} siswa, {{ $stats['total_investors'] }} investor</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $stats['total_students'] }} pelajar, {{ $stats['total_investors'] }} investor</p>
         </div>
 
         <!-- Comments Card -->
@@ -233,7 +233,7 @@
                         <form action="{{ route('admin.comments.delete', $comment) }}" method="POST" class="inline">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" onclick="return confirm('Hapus komentar ini?')" class="text-xs text-red-600 hover:text-red-700 font-medium">
+                            <button type="submit" onclick="return confirmDelete(event, 'komentar')" class="text-xs text-red-600 hover:text-red-700 font-medium">
                                 <i class="ri-delete-bin-line"></i> Hapus
                             </button>
                         </form>
@@ -250,4 +250,29 @@
         </div>
     </div>
 </div>
+
+<script>
+// SweetAlert confirm delete function
+async function confirmDelete(event, itemType) {
+    event.preventDefault();
+    
+    const result = await Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: `Apakah Anda yakin ingin menghapus ${itemType} ini?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    });
+    
+    if (result.isConfirmed) {
+        event.target.closest('form').submit();
+    }
+    
+    return false;
+}
+</script>
 @endsection

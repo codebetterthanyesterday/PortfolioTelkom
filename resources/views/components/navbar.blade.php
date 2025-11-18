@@ -154,7 +154,7 @@
                                 <input type="text" 
                                        x-model="searchQuery"
                                        @input.debounce.300ms="search()"
-                                       placeholder="Cari proyek, mahasiswa, investor..." 
+                                       placeholder="Cari proyek, pelajar, investor..." 
                                        class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all"
                                        autofocus>
                                 <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -179,7 +179,7 @@
                             <div x-show="searchResults.students.length > 0" class="border-b border-gray-200">
                                 <div class="px-4 py-2 bg-gray-50 sticky top-0">
                                     <h4 class="text-xs font-semibold text-gray-600 uppercase">
-                                        Mahasiswa (<span x-text="searchCounts.students"></span>)
+                                        Pelajar (<span x-text="searchCounts.students"></span>)
                                     </h4>
                                 </div>
                                 <template x-for="student in searchResults.students" :key="student.id">
@@ -226,7 +226,7 @@
                                                 <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
                                                 <p class="text-xs text-gray-500" x-text="project.formatted_price"></p>
                                                 <div class="flex items-center gap-2 mt-1">
-                                                    <span class="text-xs text-gray-600">by <span x-text="project.owner.full_name"></span></span>
+                                                    <span class="text-xs text-gray-600">by <span x-text="project.owner.username"></span></span>
                                                     <template x-if="project.categories.length > 0">
                                                         <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
                                                     </template>
@@ -263,7 +263,8 @@
                                                 <p class="text-xs text-gray-400" x-show="investor.industry" x-text="investor.industry"></p>
                                                 <p class="text-xs text-gray-400 mt-1"><span x-text="investor.wishlist_count"></span> wishlist projects</p>
                                             </div>
-                                            <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Investor</span>
+                                            {{-- <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Investor</span> --}}
+                                            <i class="ri-arrow-right-s-line text-gray-400"></i>
                                         </div>
                                     </div>
                                 </template>
@@ -272,7 +273,7 @@
                             <!-- Initial State -->
                             <div x-show="searchQuery.length === 0" class="px-4 py-8 text-center text-gray-500">
                                 <i class="ri-search-2-line text-3xl mb-2"></i>
-                                <p class="text-sm">Mulai ketik untuk mencari proyek, mahasiswa, atau investor</p>
+                                <p class="text-sm">Mulai ketik untuk mencari proyek, pelajar, atau investor</p>
                                 <p class="text-xs text-gray-400 mt-1">Minimal 2 karakter</p>
                             </div>
                         </div>
@@ -476,7 +477,7 @@
                                 <input type="text" 
                                        x-model="searchQuery"
                                        @input.debounce.300ms="search()"
-                                       placeholder="Cari proyek, mahasiswa, investor..." 
+                                       placeholder="Cari proyek, pelajar, investor..." 
                                        class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                 <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <div x-show="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
@@ -500,7 +501,7 @@
                             <div x-show="searchResults.students.length > 0" class="border-b border-gray-200">
                                 <div class="px-4 py-2 bg-gray-50 sticky top-0">
                                     <h4 class="text-xs font-semibold text-gray-600 uppercase">
-                                        Mahasiswa (<span x-text="searchCounts.students"></span>)
+                                        Pelajar (<span x-text="searchCounts.students"></span>)
                                     </h4>
                                 </div>
                                 <template x-for="student in searchResults.students" :key="student.id">
@@ -546,7 +547,7 @@
                                                 <p class="text-sm font-medium text-gray-900 line-clamp-1" x-text="project.title"></p>
                                                 <p class="text-xs text-gray-500 line-clamp-1" x-text="project.formatted_price"></p>
                                                 <div class="flex items-center gap-2 mt-1 flex-wrap">
-                                                    <span class="text-xs text-gray-600 truncate">by <span x-text="project.owner.full_name"></span></span>
+                                                    <span class="text-xs text-gray-600 truncate">by <span x-text="project.owner.username"></span></span>
                                                     <template x-if="project.categories.length > 0">
                                                         <span class="text-[10px] px-2 py-0.5 bg-pink-100 text-[#b01116] rounded-full" x-text="project.categories[0]"></span>
                                                     </template>
@@ -581,7 +582,8 @@
                                                 <p class="text-xs text-gray-500 truncate" x-show="investor.company_name" x-text="investor.company_name"></p>
                                                 <p class="text-xs text-gray-400 truncate" x-show="investor.industry" x-text="investor.industry"></p>
                                             </div>
-                                            <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full flex-shrink-0">Investor</span>
+                                            {{-- <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full flex-shrink-0">Investor</span> --}}
+                                            <i class="ri-arrow-right-s-line text-gray-400 flex-shrink-0"></i>
                                         </div>
                                     </div>
                                 </template>

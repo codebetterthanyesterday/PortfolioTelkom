@@ -33,7 +33,7 @@
                                 <p class="text-xs text-gray-500 mt-1">5 menit yang lalu</p>
                             </a>
                             <a href="#" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
-                                <p class="text-sm font-medium text-gray-900">Mahasiswa Mendaftar</p>
+                                <p class="text-sm font-medium text-gray-900">Pelajar Mendaftar</p>
                                 <p class="text-xs text-gray-500 mt-1">1 jam yang lalu</p>
                             </a>
                         </div>
@@ -52,7 +52,7 @@
                                 <p class="text-xs text-gray-500 mt-1">5 menit yang lalu</p>
                             </a>
                             <a href="#" class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
-                                <p class="text-sm font-medium text-gray-900">Mahasiswa Mendaftar</p>
+                                <p class="text-sm font-medium text-gray-900">Pelajar Mendaftar</p>
                                 <p class="text-xs text-gray-500 mt-1">1 jam yang lalu</p>
                             </a>
                         </div>

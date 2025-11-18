@@ -25,7 +25,7 @@
                         <h2 class="text-2xl sm:text-3xl md:text-3xl font-semibold leading-tight">
                             Selamat datang di <br class="hidden sm:block"> Telkom Project Gallery!
                         </h2>
-                        <p class="text-sm sm:text-base text-gray-500">Jelajahi dan dapatkan inspirasi dari proyek siswa terkini.</p>
+                        <p class="text-sm sm:text-base text-gray-500">Jelajahi dan dapatkan inspirasi dari proyek pelajar terkini.</p>
                     </div>
                     
                     <form action="{{ route('login.post') }}" method="POST" class="space-y-4 sm:space-y-5">

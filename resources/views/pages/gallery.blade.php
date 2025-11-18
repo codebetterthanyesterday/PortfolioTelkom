@@ -17,13 +17,13 @@
 
             <!-- Main Heading -->
             <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 text-center leading-tight mb-6">
-                Karya Inovatif Mahasiswa,<br>
+                Karya Inovatif Pelajar,<br>
                 Satu Platform Serbabisa
             </h1>
 
             <!-- Description -->
             <p class="text-base sm:text-lg md:text-xl text-gray-600 text-center leading-relaxed mb-10 max-w-4xl mx-auto">
-                Temukan proyek-proyek terbaik dari mahasiswa yang terus berinovasi<br class="hidden sm:block">
+                Temukan proyek-proyek terbaik dari pelajar yang terus berinovasi<br class="hidden sm:block">
                 di bidang teknologi, desain, dan bisnis digital.
             </p>
 
@@ -56,7 +56,7 @@
                 Belum ada proyek tersedia
                 </h3>
                 <p class="text-gray-600 text-base sm:text-lg mb-8 leading-relaxed">
-                Kami sedang mengumpulkan proyek-proyek terbaik dari mahasiswa.
+                Kami sedang mengumpulkan proyek-proyek terbaik dari pelajar.
                 </p>
             </div>
             </div>

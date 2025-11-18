@@ -1,6 +1,6 @@
 @extends('layout.layout')
 
-@section('title', "Detail Mahasiswa - " . ($student->user->full_name ?? $student->user->username))
+@section('title', "Detail Pelajar - " . ($student->user->full_name ?? $student->user->username))
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 py-8" x-data="{ activeTab: 'projects' }">
@@ -19,7 +19,7 @@
                     <button @click="activeTab = 'about'" 
                             :class="activeTab === 'about' ? 'border-[#b01116] text-[#b01116]' : 'border-transparent text-gray-500 hover:text-gray-700'"
                             class="flex-1 min-w-max px-6 py-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap">
-                        <i class="ri-user-line mr-2"></i>Tentang Mahasiswa
+                        <i class="ri-user-line mr-2"></i>Tentang Pelajar
                     </button>
                 </div>
 
@@ -28,7 +28,7 @@
                     <!-- Projects Tab -->
                     <div x-show="activeTab === 'projects'" x-transition>
                         <div class="mb-6">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Jelajahi Proyek dari Mahasiswa</h2>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Jelajahi Proyek dari Pelajar</h2>
                             <p class="text-gray-600 text-sm">Total {{ $projects->total() + $memberProjects->count() }} proyek telah diselesaikan</p>
                         </div>
 
@@ -59,7 +59,7 @@
                                             <i class="ri-folder-line text-3xl text-gray-400"></i>
                                         </div>
                                         <h3 class="text-lg font-medium text-gray-800 mb-2">Belum ada proyek</h3>
-                                        <p class="text-gray-600">Mahasiswa ini belum memiliki proyek yang dipublikasikan.</p>
+                                        <p class="text-gray-600">Pelajar ini belum memiliki proyek yang dipublikasikan.</p>
                                     </div>
                                 @endif
                             @endforelse
@@ -83,7 +83,7 @@
                     <!-- About Tab -->
                     <div x-show="activeTab === 'about'" x-transition>
                         <div class="prose prose-gray max-w-none">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Mahasiswa</h2>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Pelajar</h2>
                             
                             @if($student->user->about)
                                 <p class="text-gray-600 leading-relaxed mb-6">
@@ -91,7 +91,7 @@
                                 </p>
                             @else
                                 <p class="text-gray-500 italic mb-6">
-                                    Mahasiswa ini belum menambahkan deskripsi tentang diri mereka.
+                                    Pelajar ini belum menambahkan deskripsi tentang diri mereka.
                                 </p>
                             @endif
                             
@@ -185,7 +185,7 @@
 
                     <!-- Contact Information -->
                     <div class="space-y-3">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase mb-4">Kontak Mahasiswa</h3>
+                        <h3 class="text-sm font-bold text-gray-800 uppercase mb-4">Kontak Pelajar</h3>
                         
                         <!-- Email -->
                         @if($student->user->email)

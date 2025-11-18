@@ -119,7 +119,7 @@ class SearchController extends Controller
                     'username' => $student->username,
                     'full_name' => $student->full_name,
                     'email' => $student->email,
-                    'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : asset('images/default-avatar.png'),
+                    'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
                     'profile_url' => route('detail.student', ['student' => $student->username]),
                     'created_at' => $student->created_at
                 ];
@@ -255,7 +255,7 @@ class SearchController extends Controller
                     'email' => $investor->email,
                     'company_name' => $investor->company_name,
                     'industry' => $investor->industry,
-                    'avatar' => $investor->avatar ? asset('storage/' . $investor->avatar) : asset('images/default-avatar.png'),
+                    'avatar' => $investor->avatar ? asset('storage/' . $investor->avatar) : null,
                     'wishlist_count' => $wishlistCount,
                     'created_at' => $investor->created_at
                 ];

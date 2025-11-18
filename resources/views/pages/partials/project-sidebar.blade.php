@@ -65,7 +65,7 @@
                    target="_blank"
                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
                     <i class="ri-message-3-line"></i>
-                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Mahasiswa' }}
+                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </a>
                 
                 <form action="{{ route('investor.wishlists.toggle', $project) }}" method="POST" id="wishlistForm">
@@ -82,7 +82,7 @@
                    target="_blank"
                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
                     <i class="ri-message-3-line"></i>
-                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Mahasiswa' }}
+                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </a>
             @endif
         @else

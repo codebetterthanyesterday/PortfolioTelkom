@@ -120,7 +120,7 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" 
-                                                            onclick="return confirm('Hapus proyek ini dari wishlist?')"
+                                                            onclick="return confirmDelete(event, 'proyek dari wishlist')"
                                                             class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
                                                         <i class="ri-heart-fill text-red-400"></i>
                                                     </button>
@@ -254,7 +254,12 @@
                          
                          nextStep() {
                              if (!this.canProceedToNext()) {
-                                 alert(this.getValidationMessage());
+                                Swal.fire({
+                                    title: 'Perhatian!',
+                                    text: this.getValidationMessage(),
+                                    icon: 'warning',
+                                    confirmButtonColor: '#b01116'
+                                });
                                  return;
                              }
                              if (this.currentStep < this.totalSteps) {
@@ -272,7 +277,12 @@
                              const file = event.target.files[0];
                              if (file) {
                                  if (file.size > 2 * 1024 * 1024) {
-                                     alert('Ukuran file terlalu besar. Maksimal 2MB.');
+                                     Swal.fire({
+                                         title: 'Error!',
+                                         text: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                                         icon: 'error',
+                                         confirmButtonColor: '#b01116'
+                                     });
                                      event.target.value = '';
                                      return;
                                  }
@@ -583,4 +593,29 @@
         </div>
     </div>
 </div>
+
+<script>
+// SweetAlert confirm delete function
+async function confirmDelete(event, itemType) {
+    event.preventDefault();
+    
+    const result = await Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: `Apakah Anda yakin ingin menghapus ${itemType}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    });
+    
+    if (result.isConfirmed) {
+        event.target.closest('form').submit();
+    }
+    
+    return false;
+}
+</script>
 @endsection

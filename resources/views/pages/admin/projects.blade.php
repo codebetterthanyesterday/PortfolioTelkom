@@ -9,7 +9,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Proyek</h1>
-                <p class="text-gray-600 mt-1">Kelola semua proyek mahasiswa di sistem</p>
+                <p class="text-gray-600 mt-1">Kelola semua proyek pelajar di sistem</p>
             </div>
         </div>
     </div>
@@ -26,7 +26,7 @@
                         type="text" 
                         x-model="filters.search"
                         @input.debounce.500ms="loadProjects()"
-                        placeholder="Cari judul proyek atau nama mahasiswa..."
+                        placeholder="Cari judul proyek atau nama pelajar..."
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
                 </div>
             </div>
@@ -138,7 +138,7 @@
                                 <i class="ri-arrow-up-down-line text-sm"></i>
                             </div>
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mahasiswa</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pelajar</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kategori</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipe</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
@@ -353,7 +353,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <!-- Student Info -->
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Mahasiswa</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Pelajar</label>
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#b01116] to-[#8d0d11] flex items-center justify-center overflow-hidden flex-shrink-0">
                                 <template x-if="selectedProject?.student?.user?.avatar">
@@ -517,7 +517,12 @@
                     };
                 } catch (error) {
                     console.error('Error loading projects:', error);
-                    alert('Gagal memuat data proyek');
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Gagal memuat data proyek',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 } finally {
                     this.loading = false;
                 }
@@ -558,7 +563,18 @@
             },
 
             async toggleStatus(project) {
-                if (!confirm(`Ubah status proyek "${project.title}"?`)) return;
+                const result = await Swal.fire({
+                    title: 'Ubah Status Proyek?',
+                    text: `Apakah Anda yakin ingin mengubah status proyek "${project.title}"?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#b01116',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Ubah!',
+                    cancelButtonText: 'Batal'
+                });
+                
+                if (!result.isConfirmed) return;
 
                 try {
                     const response = await fetch(`/admin/projects/${project.id}/toggle-status`, {
@@ -571,11 +587,21 @@
 
                     if (response.ok) {
                         this.loadProjects();
-                        alert('Status proyek berhasil diubah');
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'Status proyek berhasil diubah',
+                            icon: 'success',
+                            confirmButtonColor: '#b01116'
+                        });
                     }
                 } catch (error) {
                     console.error('Error toggling status:', error);
-                    alert('Gagal mengubah status proyek');
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Gagal mengubah status proyek',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 }
             },
 
@@ -756,11 +782,21 @@
                     if (response.ok) {
                         this.deleteModalOpen = false;
                         this.loadProjects();
-                        alert('Proyek berhasil dihapus');
+                        Swal.fire({
+                            title: 'Berhasil!',
+                            text: 'Proyek berhasil dihapus',
+                            icon: 'success',
+                            confirmButtonColor: '#b01116'
+                        });
                     }
                 } catch (error) {
                     console.error('Error deleting project:', error);
-                    alert('Gagal menghapus proyek');
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Gagal menghapus proyek',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 }
             },
 
@@ -823,7 +859,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Proyek</h1>
-                <p class="text-gray-600 mt-1">Kelola semua proyek mahasiswa di sistem</p>
+                <p class="text-gray-600 mt-1">Kelola semua proyek pelajar di sistem</p>
             </div>
             <button @click="openModal('add')" class="inline-flex items-center gap-2 px-4 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg transition-colors font-medium">
                 <i class="ri-add-line text-xl"></i>
@@ -1372,14 +1408,24 @@
                     // Add new project
                     const newId = Math.max(...this.projects.map(p => p.id)) + 1;
                     this.projects.unshift({ id: newId, ...this.formData });
-                    alert('Proyek berhasil ditambahkan!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Proyek berhasil ditambahkan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 } else if (this.modalMode === 'edit') {
                     // Update existing project
                     const index = this.projects.findIndex(p => p.id === this.selectedProject.id);
                     if (index !== -1) {
                         this.projects[index] = { ...this.formData };
                     }
-                    alert('Proyek berhasil diperbarui!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Perubahan berhasil disimpan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }
                 this.modalOpen = false;
             },
@@ -1388,7 +1434,12 @@
                 const index = this.projects.findIndex(p => p.id === this.selectedProject.id);
                 if (index !== -1) {
                     this.projects.splice(index, 1);
-                    alert('Proyek berhasil dihapus!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Proyek berhasil dihapus!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }
                 this.deleteModalOpen = false;
             }

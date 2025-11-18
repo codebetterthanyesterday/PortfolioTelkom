@@ -9,7 +9,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Komentar</h1>
-                <p class="text-gray-600 mt-1">Kelola semua komentar pada proyek mahasiswa</p>
+                <p class="text-gray-600 mt-1">Kelola semua komentar pada proyek pelajar</p>
             </div>
         </div>
     </div>

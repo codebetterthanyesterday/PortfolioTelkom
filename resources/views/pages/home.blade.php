@@ -8,12 +8,12 @@
     <section id="hero" class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl mx-auto text-center py-16 sm:py-20 md:py-24">
             <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-4 sm:mb-6">
-                Galeri Karya Mahasiswa yang<br>
+                Galeri Karya Pelajar yang<br>
                 <span class="text-[#b01116]">Inovatif dan Inspiratif</span>
             </h1>
             
             <p class="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed mb-8 sm:mb-10 max-w-3xl mx-auto px-4">
-                Temukan berbagai proyek mahasiswa Telkom University dari desain,<br class="hidden sm:block">
+                Temukan berbagai proyek pelajar Telkom University dari desain,<br class="hidden sm:block">
                 aplikasi, hingga penelitian yang menginspirasi. Dibuat untuk berbagi,<br class="hidden sm:block">
                 belajar, dan memberi inspirasi bagi semua.
             </p>
@@ -37,7 +37,7 @@
                 Belum ada proyek tersedia
                 </h3>
                 <p class="text-gray-600 text-base sm:text-lg mb-8 leading-relaxed">
-                Kami sedang mengumpulkan proyek-proyek terbaik dari mahasiswa.
+                Kami sedang mengumpulkan proyek-proyek terbaik dari pelajar.
                 </p>
             </div>
             </div>
@@ -167,7 +167,7 @@
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Proyek Terbaru</h2>
-                    <p class="text-lg text-gray-600">Temukan proyek-proyek terbaru dari mahasiswa</p>
+                    <p class="text-lg text-gray-600">Temukan proyek-proyek terbaru dari pelajar</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid">
                     @foreach($featured as $project)
@@ -183,8 +183,8 @@
         <section id="experienced-students" class="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12">
-                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Mahasiswa Berpengalaman</h2>
-                    <p class="text-lg text-gray-600">Mahasiswa dengan proyek dan kontribusi terbanyak</p>
+                    <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">Pelajar Berpengalaman</h2>
+                    <p class="text-lg text-gray-600">Pelajar dengan proyek dan kontribusi terbanyak</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach($experiencedStudents as $student)

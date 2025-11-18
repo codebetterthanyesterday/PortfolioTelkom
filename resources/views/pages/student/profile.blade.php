@@ -121,47 +121,99 @@
 
             // Create new entities
             async createCategory() {
-                if (!this.newCategory.name.trim()) { alert('Nama kategori harus diisi'); return; }
+                if (!this.newCategory.name.trim()) { 
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Nama kategori harus diisi',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
+                return; 
+                }
                 await this.postJSON('/student/categories', this.newCategory, (data) => {
                     this.availableCategories.push(data.category);
                     this.projectData.categories.push(data.category.id);
                     this.newCategory = { name: '', description: '' };
                     this.showAddCategory = false;
                     this.searchCategory = '';
-                    alert('Kategori berhasil ditambahkan!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Kategori berhasil ditambahkan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }, 'Gagal menambahkan kategori');
             },
             async createSubject() {
-                if (!this.newSubject.name.trim()) { alert('Nama mata kuliah harus diisi'); return; }
+                if (!this.newSubject.name.trim()) { 
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Nama mata kuliah harus diisi',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
+                    return; 
+                }
                 await this.postJSON('/student/subjects', this.newSubject, (data) => {
                     this.availableSubjects.push(data.subject);
                     this.projectData.subjects.push(data.subject.id);
                     this.newSubject = { name: '', code: '', description: '' };
                     this.showAddSubject = false;
                     this.searchSubject = '';
-                    alert('Mata kuliah berhasil ditambahkan!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Mata kuliah berhasil ditambahkan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }, 'Gagal menambahkan mata kuliah');
             },
             async createTeacher() {
-                if (!this.newTeacher.name.trim()) { alert('Nama dosen/guru harus diisi'); return; }
+                if (!this.newTeacher.name.trim()) { 
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Nama dosen/guru harus diisi',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
+                    return; 
+                }
                 await this.postJSON('/student/teachers', this.newTeacher, (data) => {
                     this.availableTeachers.push(data.teacher);
                     this.projectData.teachers.push(data.teacher.id);
                     this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
                     this.showAddTeacher = false;
                     this.searchTeacher = '';
-                    alert('Dosen/Guru berhasil ditambahkan!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Dosen/Guru berhasil ditambahkan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }, 'Gagal menambahkan dosen/guru');
             },
             async createExpertise() {
-                if (!this.newExpertise.name.trim()) { alert('Nama keahlian harus diisi'); return; }
+                if (!this.newExpertise.name.trim()) { 
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Nama keahlian harus diisi',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
+                    return; 
+                }
                 await this.postJSON('/student/expertises', this.newExpertise, (data) => {
                     this.availableExpertises.push(data.expertise);
                     this.selectedExpertises.push(data.expertise.id);
                     this.newExpertise = { name: '' };
                     this.showAddExpertise = false;
                     this.searchExpertise = '';
-                    alert('Keahlian berhasil ditambahkan!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Keahlian berhasil ditambahkan!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                 }, 'Gagal menambahkan keahlian');
             },
             async postJSON(url, payload, onSuccess, failMsg) {
@@ -177,10 +229,20 @@
                     });
                     if (!res.ok) throw new Error('Network');
                     const data = await res.json();
-                    if (data.success) { onSuccess(data); } else { alert(failMsg); }
+                    if (data.success) { onSuccess(data); } else { Swal.fire({
+                        title: 'Error!',
+                        text: failMsg || (data.message || 'Terjadi kesalahan'),
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });  }
                 } catch (e) {
                     console.error(e);
-                    alert('Terjadi kesalahan.');
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Terjadi kesalahan.',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 }
             },
 
@@ -243,7 +305,12 @@
             // Steps
             nextStep() { 
                 if (!this.canProceedToNext()) {
-                    alert(this.getValidationMessage());
+                    Swal.fire({
+                        title: 'Perhatian!',
+                        text: this.getValidationMessage(),
+                        icon: 'warning',
+                        confirmButtonColor: '#b01116'
+                    });
                     return;
                 }
                 if (this.currentStep < this.totalSteps) this.currentStep++; 
@@ -266,7 +333,12 @@
                 const file = event.target.files[0];
                 if (file) {
                     if (file.size > 2 * 1024 * 1024) {
-                        alert('Ukuran file terlalu besar. Maksimal 2MB.');
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Ukuran file terlalu besar. Maksimal 2MB.',
+                            icon: 'error',
+                            confirmButtonColor: '#b01116'
+                        });
                         event.target.value = '';
                         this.avatarPreview = null;
                         return;
@@ -396,13 +468,23 @@
                     if (!res.ok) {
                         const errorMsg = data.message || `HTTP Error ${res.status}`;
                         console.error('Server error:', errorMsg);
-                        alert('Gagal memuat data proyek: ' + errorMsg);
+                        Swal.fire({ 
+                            title: 'Error!',
+                            text: 'Gagal memuat data proyek: ' + errorMsg,
+                            icon: 'error',
+                            confirmButtonColor: '#b01116'
+                        });
                         return;
                     }
                     
                     if (!data.success || !data.project) {
                         console.error('Invalid response format:', data);
-                        alert('Format response tidak valid');
+                        Swal.fire({ 
+                            title: 'Error!',
+                            text: 'Gagal memuat data proyek: Respon tidak valid dari server.',
+                            icon: 'error',
+                            confirmButtonColor: '#b01116'
+                        });
                         return;
                     }
                     
@@ -458,14 +540,24 @@
                     console.log('Modal opened successfully');
                 } catch (e) {
                     console.error('Error loading project:', e);
-                    alert('Gagal memuat data proyek: ' + e.message);
+                    Swal.fire({ 
+                        title: 'Error!',
+                        text: 'Gagal memuat data proyek.',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 }
             },
 
             // Update project
             async updateProject() {
                 if (!this.canCreateProject()) {
-                    alert('Mohon lengkapi semua data yang diperlukan');
+                    Swal.fire({
+                        title: 'Perhatian!',
+                        text: this.getValidationMessage(),
+                        icon: 'warning',
+                        confirmButtonColor: '#b01116'
+                    });
                     return;
                 }
                 
@@ -511,14 +603,24 @@
                     });
                     
                     if (!res.ok) throw new Error('Update failed');
-                    
-                    alert('Proyek berhasil diperbarui!');
+                    // use sweetalert for better alert
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Proyek berhasil diperbarui!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     this.showEditProjectModal = false;
                     this.resetProjectModal();
                     window.location.reload();
                 } catch (e) {
                     console.error(e);
-                    alert('Gagal memperbarui proyek');
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'Gagal memperbarui proyek.',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                 }
             },
 
@@ -2786,7 +2888,7 @@
                             <input 
                                 type="text" 
                                 x-model="searchStudent"
-                                placeholder="Cari mahasiswa berdasarkan nama, username, atau NIM..."
+                                placeholder="Cari pelajar berdasarkan nama, username, atau NIM..."
                                 class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                         </div>
                         
@@ -2857,7 +2959,7 @@
                         
                         <div x-show="filteredStudents.length === 0" class="text-center py-12 text-gray-500">
                             <i class="ri-user-search-line text-5xl mb-3 opacity-50"></i>
-                            <p class="font-medium">Tidak ada mahasiswa yang sesuai</p>
+                            <p class="font-medium">Tidak ada pelajar yang sesuai</p>
                             <p class="text-sm mt-1">Coba kata kunci lain</p>
                         </div>
                         
@@ -3569,7 +3671,7 @@
                         
                         <div class="relative mb-4">
                             <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" x-model="searchStudent" placeholder="Cari mahasiswa..."
+                            <input type="text" x-model="searchStudent" placeholder="Cari pelajar..."
                                    class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
                         </div>
                         

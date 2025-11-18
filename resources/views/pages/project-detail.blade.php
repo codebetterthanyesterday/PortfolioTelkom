@@ -328,7 +328,7 @@
                     <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $comment) }}" 
                       method="POST" 
                       class="inline"
-                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?')">
+                      onsubmit="return confirmDelete(event, 'komentar')">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
@@ -385,7 +385,7 @@
                     <form action="{{ route(auth()->user()->isStudent() ? 'student.comments.destroy' : 'investor.comments.destroy', $reply) }}" 
                           method="POST" 
                           class="inline mt-2"
-                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus balasan ini?')">
+                          onsubmit="return confirmDelete(event, 'balasan')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
@@ -920,7 +920,7 @@
                             
                             <div class="relative mb-4">
                                 <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                <input type="text" x-model="searchStudent" placeholder="Cari mahasiswa..."
+                                <input type="text" x-model="searchStudent" placeholder="Cari pelajar..."
                                        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116]">
                             </div>
                             
@@ -1643,12 +1643,22 @@ function projectDetail(projectId) {
                 const data = await res.json();
                 
                 if (!res.ok) {
-                    alert('Gagal memuat data proyek: ' + (data.message || 'Error'));
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: data.message || 'Gagal memuat data proyek',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                     return;
                 }
                 
                 if (!data.success || !data.project) {
-                    alert('Format response tidak valid');
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: data.message || 'Data proyek tidak ditemukan',
+                        icon: 'error',
+                        confirmButtonColor: '#b01116'
+                    });
                     return;
                 }
                 
@@ -1702,14 +1712,24 @@ function projectDetail(projectId) {
                 this.showEditProjectModal = true;
             } catch (e) {
                 console.error('Error loading project:', e);
-                alert('Gagal memuat data proyek: ' + e.message);
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal memuat data proyek',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
         // Update project
         async updateProject() {
             if (!this.canCreateProject()) {
-                alert('Mohon lengkapi semua data yang diperlukan');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Mohon lengkapi semua data yang diperlukan sebelum menyimpan perubahan.',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -1880,7 +1900,12 @@ function projectDetail(projectId) {
         // Create new category
         async createCategory() {
             if (!this.newCategory.name.trim()) {
-                alert('Nama kategori wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama kategori wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -1919,14 +1944,24 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan kategori');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan kategori',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
         // Create new subject
         async createSubject() {
             if (!this.newSubject.name.trim()) {
-                alert('Nama mata kuliah wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama mata kuliah wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -1965,14 +2000,24 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan mata kuliah');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan mata kuliah',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
         // Create new teacher
         async createTeacher() {
             if (!this.newTeacher.name.trim()) {
-                alert('Nama dosen/guru wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama dosen/guru wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -2011,7 +2056,12 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan dosen/guru');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan dosen/guru',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
@@ -2092,7 +2142,12 @@ function projectDetail(projectId) {
         // Create new category
         async createCategory() {
             if (!this.newCategory.name.trim()) {
-                alert('Nama kategori wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama kategori wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -2131,14 +2186,24 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan kategori');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan kategori',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
         // Create new subject
         async createSubject() {
             if (!this.newSubject.name.trim()) {
-                alert('Nama mata kuliah wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama mata kuliah wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -2177,14 +2242,24 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan mata kuliah');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan mata kuliah',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
         
         // Create new teacher
         async createTeacher() {
             if (!this.newTeacher.name.trim()) {
-                alert('Nama dosen/guru wajib diisi');
+                Swal.fire({
+                    title: 'Tidak lengkap!',
+                    text: 'Nama dosen/guru wajib diisi',
+                    icon: 'warning',
+                    confirmButtonColor: '#b01116'
+                });
                 return;
             }
             
@@ -2223,7 +2298,12 @@ function projectDetail(projectId) {
                 });
             } catch (e) {
                 console.error(e);
-                alert(e.message || 'Gagal menambahkan dosen/guru');
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: e.message || 'Gagal menambahkan dosen/guru',
+                    icon: 'error',
+                    confirmButtonColor: '#b01116'
+                });
             }
         },
 
@@ -2460,6 +2540,29 @@ function mediaPreview(inputId) {
             }
         }
     }
+}
+
+// SweetAlert confirm delete function
+async function confirmDelete(event, itemType) {
+    event.preventDefault();
+    
+    const result = await Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: `Apakah Anda yakin ingin menghapus ${itemType} ini?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    });
+    
+    if (result.isConfirmed) {
+        event.target.closest('form').submit();
+    }
+    
+    return false;
 }
 </script>
 
