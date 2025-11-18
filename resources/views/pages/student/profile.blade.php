@@ -250,7 +250,7 @@
                                                             <i class="ri-delete-bin-line mr-1"></i>Hapus
                                                         </button>
                                                     @endcan
-                                                </div>
+                                                </div>,
                                             </div> --}}
                                         </div>
                                     </div>
