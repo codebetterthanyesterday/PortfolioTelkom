@@ -223,7 +223,7 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
                         `}
                         
                         ${isAuth && isInvestor ? `
-                            <form action="/investor/projects/${project.id}/wishlist" 
+                            <form action="{{ url('/investor/projects') }}/${project.id}/wishlist" 
                                   method="POST" 
                                   class="wishlist-form absolute top-3 right-3"
                                   data-project-id="${project.id}">
@@ -334,9 +334,12 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
         },
         
         async toggleWishlist(form, projectId) {
-            const formData = new FormData(form);
             const button = form.querySelector('button');
             const icon = button.querySelector('i');
+            const formData = new FormData(form);
+            
+            // Disable button during request
+            button.disabled = true;
             
             try {
                 const response = await fetch(form.action, {
@@ -344,9 +347,13 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
                     body: formData,
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
                 
                 const data = await response.json();
                 
@@ -382,6 +389,9 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
                     text: 'Terjadi kesalahan. Silakan coba lagi.',
                     confirmButtonColor: '#b01116'
                 });
+            } finally {
+                // Re-enable button
+                button.disabled = false;
             }
         }
     }

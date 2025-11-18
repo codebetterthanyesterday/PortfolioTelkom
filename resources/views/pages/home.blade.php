@@ -283,7 +283,7 @@ function homeFilters() {
                         `}
                         
                         ${isAuth && isInvestor ? `
-                            <form action="/investor/projects/${project.id}/wishlist" 
+                            <form action="{{ url('/investor/projects') }}/${project.id}/wishlist" 
                                   method="POST" 
                                   class="wishlist-form absolute top-3 right-3"
                                   data-project-id="${project.id}">
@@ -337,9 +337,12 @@ function homeFilters() {
         },
         
         async toggleWishlist(form) {
-            const formData = new FormData(form);
             const button = form.querySelector('button');
             const icon = button.querySelector('i');
+            const formData = new FormData(form);
+            
+            // Disable button during request
+            button.disabled = true;
             
             try {
                 const response = await fetch(form.action, {
@@ -347,13 +350,18 @@ function homeFilters() {
                     body: formData,
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
                 
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Update icon based on wishlist status
                     if (data.isWishlisted) {
                         icon.classList.remove('ri-heart-line', 'text-gray-600');
                         icon.classList.add('ri-heart-fill', 'text-[#b01116]');
@@ -362,6 +370,7 @@ function homeFilters() {
                         icon.classList.add('ri-heart-line', 'text-gray-600');
                     }
                     
+                    // Show success message
                     const Toast = Swal.mixin({
                         toast: true,
                         position: 'top-end',
@@ -376,7 +385,15 @@ function homeFilters() {
                     });
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error toggling wishlist:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: 'Something went wrong!'
+                });
+            } finally {
+                // Re-enable button
+                button.disabled = false;
             }
         }
     }

@@ -8,22 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class InvestorController extends Controller
 {
-    // public function dashboard()
-    // {
-    //     $investor = auth()->user()->investor;
-        
-    //     $stats = [
-    //         'total_wishlists' => $investor->wishlists()->count(),
-    //     ];
 
-    //     $recentWishlists = $investor->wishlistProjects()
-    //         ->with(['student.user', 'media', 'categories'])
-    //         ->latest('wishlists.created_at')
-    //         ->limit(6)
-    //         ->get();
-
-    //     return view('investor.dashboard', compact('investor', 'stats', 'recentWishlists'));
-    // }
 
     public function edit()
     {
@@ -50,6 +35,7 @@ class InvestorController extends Controller
             'company_name' => 'nullable|string|max:255',
             'industry' => 'nullable|string|max:255',
             'avatar' => 'nullable|image|max:2048',
+            'remove_avatar' => 'nullable|boolean',
             'short_about' => 'nullable|string|max:500',
             'about' => 'nullable|string',
         ]);
@@ -62,7 +48,15 @@ class InvestorController extends Controller
             'about' => $validated['about'] ?? null,
         ];
 
-        if ($request->hasFile('avatar')) {
+        // Handle avatar removal
+        if ($request->input('remove_avatar') == '1') {
+            if ($investor->user->avatar) {
+                Storage::disk('public')->delete($investor->user->avatar);
+            }
+            $userData['avatar'] = null;
+        }
+        // Handle new avatar upload
+        elseif ($request->hasFile('avatar')) {
             if ($investor->user->avatar) {
                 Storage::disk('public')->delete($investor->user->avatar);
             }

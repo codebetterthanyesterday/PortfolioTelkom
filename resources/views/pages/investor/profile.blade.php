@@ -3,7 +3,7 @@
 @section('title', "Profile Investor")
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8">
+<div class="max-w-7xl mx-auto px-4 py-8" x-data="investorProfileEditor()">
     <!-- Session Messages -->
     @if(session('success'))
         <div x-data="{ show: true }" 
@@ -108,19 +108,28 @@
                                                      alt="{{ $project->title }}" 
                                                      class="w-full h-full object-cover">
                                             @else
-                                                <div class="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                                    <div class="text-center text-white">
-                                                        <i class="ri-image-line text-3xl mb-2"></i>
-                                                        <p class="text-sm font-medium">Tidak ada gambar</p>
+                                                <div class="w-full h-full relative bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                                                    <div class="absolute inset-0 pointer-events-none opacity-60"
+                                                         style="background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.08) 1px, transparent 0); background-size: 16px 16px;">
                                                     </div>
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div class="text-gray-500 text-center">
+                                                            <i class="ri-image-2-line text-4xl mb-2"></i>
+                                                            <p class="text-xs font-medium">Tidak ada gambar</p>
+                                                        </div>
+                                                    </div>
+                                                    <span class="sr-only">Proyek tidak memiliki gambar</span>
                                                 </div>
                                             @endif
                                             <div class="absolute top-3 right-3">
-                                                <form action="{{ route('investor.wishlist.remove', $project) }}" method="POST" class="inline">
+                                                <form action="{{ route('investor.wishlist.remove', $project) }}" 
+                                                      method="POST" 
+                                                      class="wishlist-remove-form inline"
+                                                      data-project-id="{{ $project->id }}"
+                                                      data-project-title="{{ $project->title }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" 
-                                                            onclick="return confirmDelete(event, 'proyek dari wishlist')"
                                                             class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
                                                         <i class="ri-heart-fill text-red-400"></i>
                                                     </button>
@@ -225,85 +234,7 @@
         <!-- Right Column (Fixed Sidebar) -->
         <div class="lg:w-1/3 lg:order-2 order-1">
             <div class="lg:sticky lg:top-24">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" 
-                     x-data="{ 
-                         showEditModal: false,
-                         currentStep: 1,
-                         totalSteps: 2,
-                         avatarPreview: null,
-                         fullName: '{{ old('full_name', auth()->user()->full_name) }}',
-                         phoneNumber: '{{ old('phone_number', auth()->user()->phone_number) }}',
-                         
-                         validateStep1() {
-                             return this.fullName.trim() !== '' && this.phoneNumber.trim() !== '';
-                         },
-                         
-                         canProceedToNext() {
-                             if (this.currentStep === 1) {
-                                 return this.validateStep1();
-                             }
-                             return true;
-                         },
-                         
-                         getValidationMessage() {
-                             if (this.currentStep === 1) {
-                                 return 'Harap isi Nama Lengkap dan Nomor Telepon sebelum melanjutkan.';
-                             }
-                             return '';
-                         },
-                         
-                         nextStep() {
-                             if (!this.canProceedToNext()) {
-                                Swal.fire({
-                                    title: 'Perhatian!',
-                                    text: this.getValidationMessage(),
-                                    icon: 'warning',
-                                    confirmButtonColor: '#b01116'
-                                });
-                                 return;
-                             }
-                             if (this.currentStep < this.totalSteps) {
-                                 this.currentStep++;
-                             }
-                         },
-                         
-                         prevStep() {
-                             if (this.currentStep > 1) {
-                                 this.currentStep--;
-                             }
-                         },
-                         
-                         handleAvatarPreview(event) {
-                             const file = event.target.files[0];
-                             if (file) {
-                                 if (file.size > 2 * 1024 * 1024) {
-                                     Swal.fire({
-                                         title: 'Error!',
-                                         text: 'Ukuran file terlalu besar. Maksimal 2MB.',
-                                         icon: 'error',
-                                         confirmButtonColor: '#b01116'
-                                     });
-                                     event.target.value = '';
-                                     return;
-                                 }
-                                 const reader = new FileReader();
-                                 reader.onload = (e) => {
-                                     this.avatarPreview = e.target.result;
-                                 };
-                                 reader.readAsDataURL(file);
-                             }
-                         },
-                         
-                         resetModal() {
-                             this.currentStep = 1;
-                             this.avatarPreview = null;
-                             this.fullName = '{{ old('full_name', auth()->user()->full_name) }}';
-                             this.phoneNumber = '{{ old('phone_number', auth()->user()->phone_number) }}';
-                             const avatarInput = document.querySelector('input[name=avatar]');
-                             if (avatarInput) avatarInput.value = '';
-                         }
-                     }" 
-                     x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal)">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" >
                     <!-- Profile Picture -->
                     <div class="flex justify-center mb-6">
                         <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
@@ -445,27 +376,55 @@
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-700 mb-3">Foto Profil</label>
                                             <div class="flex items-center gap-4">
-                                                <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200 flex-shrink-0">
-                                                    <template x-if="avatarPreview">
-                                                        <img :src="avatarPreview" alt="Preview" class="w-full h-full object-cover">
+                                                <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200 flex-shrink-0 relative">
+                                                    <template x-if="removeAvatar">
+                                                        <div class="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white text-2xl font-bold">
+                                                            {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                        </div>
                                                     </template>
-                                                    <template x-if="!avatarPreview">
-                                                        @if(auth()->user()->avatar)
-                                                            <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
-                                                        @else
-                                                            <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
-                                                                {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                    <template x-if="!removeAvatar">
+                                                        <div>
+                                                            <!-- Preview Image -->
+                                                            <img x-show="avatarPreview" 
+                                                                 :src="avatarPreview" 
+                                                                 alt="Avatar Preview" 
+                                                                 class="w-full h-full object-cover absolute inset-0">
+                                                            
+                                                            <!-- Current Avatar or Placeholder -->
+                                                            <div x-show="!avatarPreview" class="w-full h-full absolute inset-0">
+                                                                @if(auth()->user()->avatar)
+                                                                    <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                                                                @else
+                                                                    <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
+                                                                        {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                                    </div>
+                                                                @endif
                                                             </div>
-                                                        @endif
+                                                        </div>
                                                     </template>
                                                 </div>
                                                 <div class="flex-1">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <label for="investor_avatar" class="cursor-pointer inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium">
+                                                            <i class="ri-image-add-line mr-2"></i>Pilih Foto
+                                                        </label>
+                                                        @if(auth()->user()->avatar)
+                                                            <button type="button" 
+                                                                    @click="handleRemoveAvatar()"
+                                                                    x-show="!removeAvatar"
+                                                                    class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium">
+                                                                <i class="ri-delete-bin-line mr-2"></i>Hapus
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                     <input type="file" 
+                                                           id="investor_avatar"
                                                            name="avatar" 
                                                            accept="image/*" 
                                                            @change="handleAvatarPreview($event)"
-                                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#b01116] file:text-white hover:file:bg-[#8d0d11] file:cursor-pointer cursor-pointer">
-                                                    <p class="text-xs text-gray-500 mt-1">JPG, PNG atau GIF (Maks. 2MB)</p>
+                                                           class="hidden">
+                                                    <input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'">
+                                                    <p class="text-xs text-gray-500">JPG, PNG atau GIF (Maks. 2MB)</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -479,7 +438,6 @@
                                                    name="full_name" 
                                                    id="full_name" 
                                                    x-model="fullName"
-                                                   value="{{ old('full_name', auth()->user()->full_name) }}" 
                                                    required 
                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                         </div>
@@ -493,7 +451,6 @@
                                                    name="phone_number" 
                                                    id="phone_number" 
                                                    x-model="phoneNumber"
-                                                   value="{{ old('phone_number', auth()->user()->phone_number) }}" 
                                                    required 
                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                         </div>
@@ -519,7 +476,7 @@
                                                 <input type="text" 
                                                        name="company_name" 
                                                        id="company_name" 
-                                                       value="{{ old('company_name', auth()->user()->investor->company_name) }}" 
+                                                       x-model="companyName"
                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                             </div>
 
@@ -529,7 +486,7 @@
                                                 <input type="text" 
                                                        name="industry" 
                                                        id="industry" 
-                                                       value="{{ old('industry', auth()->user()->investor->industry) }}" 
+                                                       x-model="industry"
                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all">
                                             </div>
                                         </div>
@@ -542,9 +499,10 @@
                                             </label>
                                             <textarea name="short_about" 
                                                       id="short_about" 
+                                                      x-model="shortAbout"
                                                       rows="3" 
                                                       maxlength="500" 
-                                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all resize-none">{{ old('short_about', auth()->user()->short_about) }}</textarea>
+                                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all resize-none"></textarea>
                                             <p class="text-xs text-gray-500 mt-1">Deskripsi singkat yang akan ditampilkan di kartu profil Anda</p>
                                         </div>
 
@@ -553,8 +511,9 @@
                                             <label for="about" class="block text-sm font-semibold text-gray-700 mb-2">Tentang Saya</label>
                                             <textarea name="about" 
                                                       id="about" 
+                                                      x-model="about"
                                                       rows="6" 
-                                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all resize-none">{{ old('about', auth()->user()->about) }}</textarea>
+                                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent transition-all resize-none"></textarea>
                                             <p class="text-xs text-gray-500 mt-1">Ceritakan lebih lanjut tentang latar belakang, pengalaman, dan minat investasi Anda</p>
                                         </div>
                                     </div>
@@ -595,6 +554,97 @@
 </div>
 
 <script>
+// Setup wishlist removal forms
+document.addEventListener('DOMContentLoaded', function() {
+    setupWishlistRemovalForms();
+});
+
+function setupWishlistRemovalForms() {
+    document.querySelectorAll('.wishlist-remove-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const projectTitle = this.dataset.projectTitle;
+            
+            const result = await Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: `Apakah Anda yakin ingin menghapus "${projectTitle}" dari wishlist?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            });
+            
+            if (result.isConfirmed) {
+                const formData = new FormData(this);
+                const button = this.querySelector('button');
+                
+                // Disable button
+                button.disabled = true;
+                
+                try {
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        // Remove the project card with animation
+                        const projectCard = this.closest('.bg-gray-50');
+                        projectCard.style.opacity = '0';
+                        projectCard.style.transform = 'scale(0.9)';
+                        projectCard.style.transition = 'all 0.3s ease';
+                        
+                        setTimeout(() => {
+                            projectCard.remove();
+                            
+                            // Check if there are any projects left
+                            const remainingProjects = document.querySelectorAll('.wishlist-remove-form').length;
+                            if (remainingProjects === 0) {
+                                // Reload page to show empty state
+                                location.reload();
+                            }
+                        }, 300);
+                        
+                        // Show success message
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                        
+                        Toast.fire({
+                            icon: 'success',
+                            title: 'Proyek berhasil dihapus dari wishlist!'
+                        });
+                    } else {
+                        throw new Error('Failed to remove from wishlist');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    button.disabled = false;
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Terjadi kesalahan. Silakan coba lagi.',
+                        confirmButtonColor: '#b01116'
+                    });
+                }
+            }
+        });
+    });
+}
+
 // SweetAlert confirm delete function
 async function confirmDelete(event, itemType) {
     event.preventDefault();
@@ -617,5 +667,77 @@ async function confirmDelete(event, itemType) {
     
     return false;
 }
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('investorProfileEditor', () => ({
+        showEditModal: false,
+        currentStep: 1,
+        totalSteps: 2,
+        
+        // Form data
+        fullName: '{{ old('full_name', auth()->user()->full_name) }}',
+        phoneNumber: '{{ old('phone_number', auth()->user()->phone_number) }}',
+        companyName: '{{ old('company_name', auth()->user()->investor->company_name ?? '') }}',
+        industry: '{{ old('industry', auth()->user()->investor->industry ?? '') }}',
+        shortAbout: '{{ old('short_about', auth()->user()->short_about) }}',
+        about: '{{ old('about', auth()->user()->about) }}',
+        avatarPreview: null,
+        removeAvatar: false,
+        
+        // Validation
+        canProceedToNext() {
+            if (this.currentStep === 1) {
+                return this.fullName.trim() !== '' && this.phoneNumber.trim() !== '';
+            }
+            return true;
+        },
+        
+        nextStep() {
+            if (this.canProceedToNext() && this.currentStep < this.totalSteps) {
+                this.currentStep++;
+            }
+        },
+        
+        prevStep() {
+            if (this.currentStep > 1) {
+                this.currentStep--;
+            }
+        },
+        
+        resetModal() {
+            this.currentStep = 1;
+            this.fullName = '{{ old('full_name', auth()->user()->full_name) }}';
+            this.phoneNumber = '{{ old('phone_number', auth()->user()->phone_number) }}';
+            this.companyName = '{{ old('company_name', auth()->user()->investor->company_name ?? '') }}';
+            this.industry = '{{ old('industry', auth()->user()->investor->industry ?? '') }}';
+            this.shortAbout = '{{ old('short_about', auth()->user()->short_about) }}';
+            this.about = '{{ old('about', auth()->user()->about) }}';
+            this.avatarPreview = null;
+            this.removeAvatar = false;
+        },
+        
+        // Avatar preview
+        handleAvatarPreview(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.avatarPreview = e.target.result;
+                    this.removeAvatar = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+        
+        handleRemoveAvatar() {
+            this.removeAvatar = true;
+            this.avatarPreview = null;
+            const fileInput = document.getElementById('investor_avatar');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    }));
+});
 </script>
 @endsection

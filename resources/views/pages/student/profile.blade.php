@@ -3,905 +3,8 @@
 @section('title', "Profil Saya")
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-col lg:flex-row gap-8" 
-        x-data="{
-            activeTab: 'all',
-            showEditModal: false,
-            showIndividualProjectModal: false,
-            showTeamProjectModal: false,
-            showEditProjectModal: false,
-            editingProject: null,
-
-            // Shared step state (used by all modals)
-            currentStep: 1,
-            totalSteps: 3,
-
-            // Profile data
-            selectedExpertises: @js(auth()->user()->student && auth()->user()->student->expertises ? auth()->user()->student->expertises->pluck('id') : []),
-            education: @js(auth()->user()->student && auth()->user()->student->educationInfo ? auth()->user()->student->educationInfo : []),
-            avatarPreview: null,
-
-            // Project creation data
-            projectType: 'individual',
-            projectData: {
-                title: '',
-                description: '',
-                price: '',
-                status: 'draft',
-                categories: [],
-                subjects: [],
-                teachers: [],
-                team_members: [],
-                team_positions: {}
-            },
-            originalProjectData: null,
-            originalTeamPositions: null,
-
-            // Search filters
-            searchCategory: '',
-            searchSubject: '',
-            searchTeacher: '',
-            searchStudent: '',
-            searchExpertise: '',
-
-            // Toggle add forms
-            showAddCategory: false,
-            showAddSubject: false,
-            showAddTeacher: false,
-            showAddExpertise: false,
-
-            // New data forms
-            newCategory: { name: '', description: '' },
-            newSubject: { name: '', code: '', description: '' },
-            newTeacher: { name: '', nip: '', email: '', phone_number: '', institution: '' },
-            newExpertise: { name: '' },
-
-            // Available data
-            availableCategories: @js($categories),
-            availableSubjects: @js($subjects),
-            availableTeachers: @js($teachers),
-            availableStudents: @js($students),
-            availableExpertises: @js($expertises ?? []),
-
-            selectedFiles: [],
-            newEducation: {
-                institution_name: '',
-                degree: '',
-                field_of_study: '',
-                start_date: '',
-                end_date: '',
-                is_current: false,
-                description: ''
-            },
-            
-            // Media handling for edit project modal
-            newMediaPreviews: [],
-            newMediaFiles: [],
-            deletedImages: [], // Track deleted images for undo functionality
-
-            // Computed filters
-            get filteredCategories() {
-                return !this.searchCategory
-                    ? this.availableCategories
-                    : this.availableCategories.filter(c => c.name.toLowerCase().includes(this.searchCategory.toLowerCase()));
-            },
-            get filteredSubjects() {
-                return !this.searchSubject
-                    ? this.availableSubjects
-                    : this.availableSubjects.filter(s =>
-                        s.name.toLowerCase().includes(this.searchSubject.toLowerCase()) ||
-                        (s.code && s.code.toLowerCase().includes(this.searchSubject.toLowerCase()))
-                    );
-            },
-            get filteredTeachers() {
-                return !this.searchTeacher
-                    ? this.availableTeachers
-                    : this.availableTeachers.filter(t =>
-                        t.name.toLowerCase().includes(this.searchTeacher.toLowerCase()) ||
-                        (t.nip && t.nip.toLowerCase().includes(this.searchTeacher.toLowerCase()))
-                    );
-            },
-            get filteredStudents() {
-                return !this.searchStudent
-                    ? this.availableStudents
-                    : this.availableStudents.filter(st =>
-                        (st.user.full_name && st.user.full_name.toLowerCase().includes(this.searchStudent.toLowerCase())) ||
-                        st.user.username.toLowerCase().includes(this.searchStudent.toLowerCase()) ||
-                        (st.student_id && st.student_id.toLowerCase().includes(this.searchStudent.toLowerCase()))
-                    );
-            },
-            get filteredExpertises() {
-                return !this.searchExpertise
-                    ? this.availableExpertises
-                    : this.availableExpertises.filter(e => 
-                        e.name.toLowerCase().includes(this.searchExpertise.toLowerCase())
-                    );
-            },
-
-            // Create new entities
-            async createCategory() {
-                if (!this.newCategory.name.trim()) { 
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Nama kategori harus diisi',
-                    icon: 'error',
-                    confirmButtonColor: '#b01116'
-                });
-                return; 
-                }
-                await this.postJSON('/student/categories', this.newCategory, (data) => {
-                    this.availableCategories.push(data.category);
-                    this.projectData.categories.push(data.category.id);
-                    this.newCategory = { name: '', description: '' };
-                    this.showAddCategory = false;
-                    this.searchCategory = '';
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Kategori berhasil ditambahkan!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }, 'Gagal menambahkan kategori');
-            },
-            async createSubject() {
-                if (!this.newSubject.name.trim()) { 
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Nama mata kuliah harus diisi',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                    return; 
-                }
-                await this.postJSON('/student/subjects', this.newSubject, (data) => {
-                    this.availableSubjects.push(data.subject);
-                    this.projectData.subjects.push(data.subject.id);
-                    this.newSubject = { name: '', code: '', description: '' };
-                    this.showAddSubject = false;
-                    this.searchSubject = '';
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Mata kuliah berhasil ditambahkan!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }, 'Gagal menambahkan mata kuliah');
-            },
-            async createTeacher() {
-                if (!this.newTeacher.name.trim()) { 
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Nama dosen/guru harus diisi',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                    return; 
-                }
-                await this.postJSON('/student/teachers', this.newTeacher, (data) => {
-                    this.availableTeachers.push(data.teacher);
-                    this.projectData.teachers.push(data.teacher.id);
-                    this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
-                    this.showAddTeacher = false;
-                    this.searchTeacher = '';
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Dosen/Guru berhasil ditambahkan!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }, 'Gagal menambahkan dosen/guru');
-            },
-            async createExpertise() {
-                if (!this.newExpertise.name.trim()) { 
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Nama keahlian harus diisi',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                    return; 
-                }
-                await this.postJSON('/student/expertises', this.newExpertise, (data) => {
-                    this.availableExpertises.push(data.expertise);
-                    this.selectedExpertises.push(data.expertise.id);
-                    this.newExpertise = { name: '' };
-                    this.showAddExpertise = false;
-                    this.searchExpertise = '';
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Keahlian berhasil ditambahkan!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }, 'Gagal menambahkan keahlian');
-            },
-            async postJSON(url, payload, onSuccess, failMsg) {
-                try {
-                    const res = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!res.ok) throw new Error('Network');
-                    const data = await res.json();
-                    if (data.success) { onSuccess(data); } else { Swal.fire({
-                        title: 'Error!',
-                        text: failMsg || (data.message || 'Terjadi kesalahan'),
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });  }
-                } catch (e) {
-                    console.error(e);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Terjadi kesalahan.',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                }
-            },
-
-            // Validation functions
-            validateStep1() {
-                return this.projectData.title.trim() !== '' && 
-                       this.projectData.status !== '';
-            },
-            validateStep2() {
-                return this.projectData.categories.length > 0;
-            },
-            validateStep3() {
-                // For team projects, require at least 1 team member (+ leader = 2 total)
-                if (this.showTeamProjectModal) {
-                    return this.projectData.team_members.length >= 1;
-                }
-                // For individual projects, step 3 is always valid
-                return true;
-            },
-            canProceedToNext() {
-                // For edit profile modal, always allow proceeding to next step
-                if (this.showEditModal) {
-                    return true;
-                }
-                // For project modals, use validation
-                switch(this.currentStep) {
-                    case 1: return this.validateStep1();
-                    case 2: return this.validateStep2();
-                    case 3: return this.validateStep3();
-                    default: return false;
-                }
-            },
-            canCreateProject() {
-                // All steps must be valid to create project
-                return this.validateStep1() && this.validateStep2() && this.validateStep3();
-            },
-            getValidationMessage() {
-                // No validation messages for edit profile modal
-                if (this.showEditModal) {
-                    return '';
-                }
-                // For project modals, show validation messages
-                switch(this.currentStep) {
-                    case 1: 
-                        if (!this.projectData.title.trim()) return 'Judul proyek wajib diisi';
-                        if (!this.projectData.status) return 'Status publikasi wajib dipilih';
-                        break;
-                    case 2:
-                        if (this.projectData.categories.length === 0) return 'Pilih minimal 1 kategori proyek';
-                        break;
-                    case 3:
-                        if (this.showTeamProjectModal && this.projectData.team_members.length < 1) 
-                            return 'Pilih minimal 1 anggota tim (selain leader)';
-                        break;
-                    default: return '';
-                }
-                return '';
-            },
-
-            // Steps
-            nextStep() { 
-                if (!this.canProceedToNext()) {
-                    Swal.fire({
-                        title: 'Perhatian!',
-                        text: this.getValidationMessage(),
-                        icon: 'warning',
-                        confirmButtonColor: '#b01116'
-                    });
-                    return;
-                }
-                if (this.currentStep < this.totalSteps) this.currentStep++; 
-            },
-            prevStep() { if (this.currentStep > 1) this.currentStep--; },
-
-            // Reset profile modal
-            resetModal() {
-                this.currentStep = 1;
-                this.selectedExpertises = @js(auth()->user()->student && auth()->user()->student->expertises ? auth()->user()->student->expertises->pluck('id') : []);
-                this.education = @js(auth()->user()->student && auth()->user()->student->educationInfo ? auth()->user()->student->educationInfo : []);
-                this.searchExpertise = '';
-                this.showAddExpertise = false;
-                this.newExpertise = { name: '' };
-                this.avatarPreview = null;
-            },
-            
-            // Handle avatar preview
-            handleAvatarPreview(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    if (file.size > 2 * 1024 * 1024) {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Ukuran file terlalu besar. Maksimal 2MB.',
-                            icon: 'error',
-                            confirmButtonColor: '#b01116'
-                        });
-                        event.target.value = '';
-                        this.avatarPreview = null;
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.avatarPreview = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    this.avatarPreview = null;
-                }
-            },
-
-            // Reset project modals
-            resetProjectModal() {
-                this.currentStep = 1;
-                this.projectData = {
-                    title: '',
-                    description: '',
-                    price: '',
-                    status: 'draft',
-                    categories: [],
-                    subjects: [],
-                    teachers: [],
-                    team_members: [],
-                    team_positions: {}
-                };
-                this.selectedFiles = [];
-                this.editingProject = null;
-                this.originalProjectData = null;
-                this.originalTeamPositions = null;
-                this.searchCategory = '';
-                this.searchSubject = '';
-                this.searchTeacher = '';
-                this.searchStudent = '';
-                this.showAddCategory = false;
-                this.showAddSubject = false;
-                this.showAddTeacher = false;
-                this.newCategory = { name: '', description: '' };
-                this.newSubject = { name: '', code: '', description: '' };
-                this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
-                this.newExpertise = { name: '' };
-                this.newMediaPreviews = [];
-                this.newMediaFiles = [];
-            },
-            
-            // Handle new media files for edit project modal
-            handleNewMediaFiles(fileList) {
-                this.newMediaFiles = Array.from(fileList);
-                this.newMediaPreviews = [];
-                
-                this.newMediaFiles.forEach((file) => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            this.newMediaPreviews.push({
-                                url: e.target.result,
-                                name: file.name,
-                                type: file.type,
-                                size: file.size
-                            });
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            },
-            
-            // Remove new media file
-            removeNewMediaFile(index) {
-                this.newMediaPreviews.splice(index, 1);
-                this.newMediaFiles.splice(index, 1);
-                
-                // Update the file input
-                const fileInput = document.getElementById('edit_media');
-                if (fileInput) {
-                    const dt = new DataTransfer();
-                    this.newMediaFiles.forEach(file => {
-                        dt.items.add(file);
-                    });
-                    fileInput.files = dt.files;
-                }
-            },
-
-            // Change detection helpers
-            hasChanged(field) {
-                if (!this.originalProjectData) return false;
-                if (Array.isArray(this.projectData[field])) {
-                    const original = (this.originalProjectData[field] || []).sort().join(',');
-                    const current = (this.projectData[field] || []).sort().join(',');
-                    return original !== current;
-                }
-                return this.projectData[field] !== this.originalProjectData[field];
-            },
-            getChangedValue(field) {
-                if (!this.originalProjectData) return this.projectData[field];
-                if (Array.isArray(this.projectData[field])) {
-                    return this.projectData[field].length;
-                }
-                return this.projectData[field];
-            },
-            getOriginalValue(field) {
-                if (!this.originalProjectData) return null;
-                if (Array.isArray(this.originalProjectData[field])) {
-                    return this.originalProjectData[field].length;
-                }
-                return this.originalProjectData[field];
-            },
-
-            // Load project data for editing
-            async loadProjectForEdit(projectId) {
-                try {
-                    console.log('Loading project data for ID:', projectId);
-                    
-                    const res = await fetch(`/student/projects/${projectId}/edit-data`, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                        }
-                    });
-                    
-                    console.log('Response status:', res.status);
-                    
-                    const data = await res.json();
-                    console.log('Response data:', data);
-                    
-                    if (!res.ok) {
-                        const errorMsg = data.message || `HTTP Error ${res.status}`;
-                        console.error('Server error:', errorMsg);
-                        Swal.fire({ 
-                            title: 'Error!',
-                            text: 'Gagal memuat data proyek: ' + errorMsg,
-                            icon: 'error',
-                            confirmButtonColor: '#b01116'
-                        });
-                        return;
-                    }
-                    
-                    if (!data.success || !data.project) {
-                        console.error('Invalid response format:', data);
-                        Swal.fire({ 
-                            title: 'Error!',
-                            text: 'Gagal memuat data proyek: Respon tidak valid dari server.',
-                            icon: 'error',
-                            confirmButtonColor: '#b01116'
-                        });
-                        return;
-                    }
-                    
-                    this.editingProject = data.project;
-                    this.projectType = data.project.type;
-                    
-                    // Debug: Log the media data
-                    console.log('Raw media data:', data.project.media);
-                    
-                    this.projectData = {
-                        title: data.project.title || '',
-                        description: data.project.description || '',
-                        price: data.project.price || '',
-                        status: data.project.status || 'draft',
-                        categories: data.project.categories?.map(c => c.id) || [],
-                        subjects: data.project.subjects?.map(s => s.id) || [],
-                        teachers: data.project.teachers?.map(t => t.id) || [],
-                        team_members: data.project.team_members?.filter(m => m.role !== 'leader').map(m => m.student_id) || [],
-                        team_positions: {},
-                        existing_images: data.project.media?.map((m, index) => ({
-                            id: m.id,
-                            url: m.url || (m.file_path ? '/storage/' + m.file_path : ''),
-                            file_path: m.file_path,
-                            alt_text: 'Project Image',
-                            is_main: index === 0
-                        })) || [],
-                        images_to_delete: []
-                    };
-                    
-                    // Debug: Log the processed existing_images
-                    console.log('Processed existing_images:', this.projectData.existing_images);
-                    
-                    // Populate team positions
-                    if (data.project.team_members) {
-                        data.project.team_members.forEach(member => {
-                            if (member.role !== 'leader') {
-                                this.projectData.team_positions[member.student_id] = member.position || '';
-                            }
-                        });
-                    }
-                    
-                    // Store original data for change detection
-                    this.originalProjectData = JSON.parse(JSON.stringify(this.projectData));
-                    this.originalTeamPositions = JSON.parse(JSON.stringify(this.projectData.team_positions));
-                    
-                    // Reset media form states
-                    this.selectedFiles = [];
-                    this.newMediaPreviews = [];
-                    this.newMediaFiles = [];
-                    
-                    this.currentStep = 1;
-                    this.showEditProjectModal = true;
-                    console.log('Modal opened successfully');
-                } catch (e) {
-                    console.error('Error loading project:', e);
-                    Swal.fire({ 
-                        title: 'Error!',
-                        text: 'Gagal memuat data proyek.',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                }
-            },
-
-            // Update project
-            async updateProject() {
-                if (!this.canCreateProject()) {
-                    Swal.fire({
-                        title: 'Perhatian!',
-                        text: this.getValidationMessage(),
-                        icon: 'warning',
-                        confirmButtonColor: '#b01116'
-                    });
-                    return;
-                }
-                
-                const formData = new FormData();
-                formData.append('_method', 'PUT');
-                formData.append('title', this.projectData.title);
-                formData.append('description', this.projectData.description);
-                formData.append('price', this.projectData.price || '');
-                formData.append('status', this.projectData.status);
-                
-                this.projectData.categories.forEach(id => formData.append('categories[]', id));
-                this.projectData.subjects.forEach(id => formData.append('subjects[]', id));
-                this.projectData.teachers.forEach(id => formData.append('teachers[]', id));
-                
-                if (this.projectType === 'team') {
-                    this.projectData.team_members.forEach((id, idx) => {
-                        formData.append('team_members[]', id);
-                        formData.append(`team_positions[${idx}]`, this.projectData.team_positions[id] || '');
-                    });
-                }
-                
-                // Add images to delete
-                if (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0) {
-                    this.projectData.images_to_delete.forEach(id => {
-                        formData.append('images_to_delete[]', id);
-                    });
-                }
-                
-                // Add new media files
-                if (this.newMediaFiles && this.newMediaFiles.length > 0) {
-                    this.newMediaFiles.forEach((file, idx) => {
-                        formData.append(`new_media[${idx}]`, file);
-                    });
-                }
-                
-                try {
-                    const res = await fetch(`/student/projects/${this.editingProject.id}`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                        },
-                        body: formData
-                    });
-                    
-                    if (!res.ok) throw new Error('Update failed');
-                    // use sweetalert for better alert
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Proyek berhasil diperbarui!',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    this.showEditProjectModal = false;
-                    this.resetProjectModal();
-                    window.location.reload();
-                } catch (e) {
-                    console.error(e);
-                    await Swal.fire({
-                        title: 'Error!',
-                        text: 'Gagal memperbarui proyek.',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                }
-            },
-
-            // Delete project with SweetAlert confirmation
-            async deleteProject(projectId, projectTitle) {
-                const result = await Swal.fire({
-                    title: 'Hapus Proyek?',
-                    html: `Apakah Anda yakin ingin menghapus proyek <strong>${projectTitle}</strong>?<br><small class='text-gray-500'>Tindakan ini tidak dapat dibatalkan.</small>`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#b01116',
-                    cancelButtonColor: '#6b7280',
-                    confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal',
-                    reverseButtons: true
-                });
-
-                if (!result.isConfirmed) return;
-
-                try {
-                    const res = await fetch(`/student/projects/${projectId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
-                        },
-                        body: JSON.stringify({ _method: 'DELETE' })
-                    });
-
-                    const data = await res.json();
-
-                    if (!res.ok || !data.success) {
-                        throw new Error(data.message || 'Gagal menghapus proyek');
-                    }
-
-                    await Swal.fire({
-                        title: 'Berhasil!',
-                        text: data.message || 'Proyek berhasil dihapus',
-                        icon: 'success',
-                        confirmButtonColor: '#b01116',
-                        timer: 2000
-                    });
-
-                    window.location.reload();
-                } catch (e) {
-                    console.error('Error deleting project:', e);
-                    await Swal.fire({
-                        title: 'Gagal!',
-                        text: e.message || 'Terjadi kesalahan saat menghapus proyek',
-                        icon: 'error',
-                        confirmButtonColor: '#b01116'
-                    });
-                }
-            },
-
-            // Toggles
-            toggleCategory(id) {
-                const i = this.projectData.categories.indexOf(id);
-                i > -1 ? this.projectData.categories.splice(i, 1) : this.projectData.categories.push(id);
-            },
-            toggleSubject(id) {
-                const i = this.projectData.subjects.indexOf(id);
-                i > -1 ? this.projectData.subjects.splice(i, 1) : this.projectData.subjects.push(id);
-            },
-            toggleTeacher(id) {
-                const i = this.projectData.teachers.indexOf(id);
-                i > -1 ? this.projectData.teachers.splice(i, 1) : this.projectData.teachers.push(id);
-            },
-            toggleTeamMember(id) {
-                const i = this.projectData.team_members.indexOf(id);
-                if (i > -1) {
-                    this.projectData.team_members.splice(i, 1);
-                    delete this.projectData.team_positions[id];
-                } else {
-                    this.projectData.team_members.push(id);
-                    this.projectData.team_positions[id] = '';
-                }
-            },
-            toggleExpertise(id) {
-                const i = this.selectedExpertises.indexOf(id);
-                i > -1 ? this.selectedExpertises.splice(i, 1) : this.selectedExpertises.push(id);
-            },
-
-            // Education
-            addEducation() {
-                this.education.push({
-                    id: 'new_' + Date.now(),
-                    institution_name: this.newEducation.institution_name,
-                    degree: this.newEducation.degree,
-                    field_of_study: this.newEducation.field_of_study,
-                    start_date: this.newEducation.start_date,
-                    end_date: this.newEducation.end_date,
-                    is_current: this.newEducation.is_current,
-                    description: this.newEducation.description
-                });
-                this.newEducation = {
-                    institution_name: '',
-                    degree: '',
-                    field_of_study: '',
-                    start_date: '',
-                    end_date: '',
-                    is_current: false,
-                    description: ''
-                };
-            },
-            removeEducation(i) {
-                this.education.splice(i, 1);
-            },
-
-            // Image management functions
-            setAsMainImage(index, type = 'existing') {
-                if (type === 'existing' && this.projectData.existing_images && this.projectData.existing_images.length > 0) {
-                    // Move the selected image to the first position
-                    const selectedImage = this.projectData.existing_images.splice(index, 1)[0];
-                    this.projectData.existing_images.unshift(selectedImage);
-                }
-            },
-
-            markImageForDeletion(index) {
-                if (!this.projectData.images_to_delete) {
-                    this.projectData.images_to_delete = [];
-                }
-                
-                const imageData = this.projectData.existing_images[index];
-                const imageId = imageData.id || index;
-                
-                if (this.projectData.images_to_delete.includes(imageId)) {
-                    // Remove from deletion list (undo deletion)
-                    const deleteIndex = this.projectData.images_to_delete.indexOf(imageId);
-                    this.projectData.images_to_delete.splice(deleteIndex, 1);
-                    
-                    // Remove from deleted images tracking
-                    const deletedIndex = this.deletedImages.findIndex(img => img.id === imageId);
-                    if (deletedIndex !== -1) {
-                        this.deletedImages.splice(deletedIndex, 1);
-                    }
-                } else {
-                    // Add to deletion list
-                    this.projectData.images_to_delete.push(imageId);
-                    
-                    // Track deleted image for undo functionality
-                    this.deletedImages.push({
-                        id: imageId,
-                        url: imageData.url,
-                        name: imageData.name || `Image ${index + 1}`,
-                        index: index
-                    });
-                }
-            },
-
-            // Undo image deletion
-            undoImageDeletion(imageId) {
-                // Remove from deletion list
-                const deleteIndex = this.projectData.images_to_delete.indexOf(imageId);
-                if (deleteIndex !== -1) {
-                    this.projectData.images_to_delete.splice(deleteIndex, 1);
-                }
-                
-                // Remove from deleted images tracking
-                const deletedIndex = this.deletedImages.findIndex(img => img.id === imageId);
-                if (deletedIndex !== -1) {
-                    this.deletedImages.splice(deletedIndex, 1);
-                }
-            },
-
-            getTotalImagesCount() {
-                const existingCount = this.getExistingImagesCount();
-                const newCount = this.newMediaPreviews ? this.newMediaPreviews.length : 0;
-                return existingCount + newCount;
-            },
-
-            getExistingImagesCount() {
-                if (!this.projectData.existing_images) return 0;
-                const deletedCount = this.getDeletedImagesCount();
-                return this.projectData.existing_images.length - deletedCount;
-            },
-
-            getDeletedImagesCount() {
-                return this.projectData.images_to_delete ? this.projectData.images_to_delete.length : 0;
-            },
-
-            // Change detection functions
-            hasChanged(field) {
-                if (!this.originalProjectData) return false;
-                
-                if (Array.isArray(this.projectData[field])) {
-                    // For arrays, check if they have the same elements
-                    const original = this.originalProjectData[field] || [];
-                    const current = this.projectData[field] || [];
-                    
-                    if (original.length !== current.length) return true;
-                    return original.some(item => !current.includes(item)) || current.some(item => !original.includes(item));
-                }
-                
-                return this.projectData[field] !== this.originalProjectData[field];
-            },
-
-            hasImagesChanged() {
-                // Check if there are new images or deleted images
-                return (this.newMediaPreviews && this.newMediaPreviews.length > 0) || 
-                       (this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0);
-            },
-
-            getOriginalValue(field) {
-                return this.originalProjectData ? this.originalProjectData[field] : null;
-            },
-
-            // Navigation functions
-            nextStep() {
-                if (this.canProceedToNext() && this.currentStep < this.totalSteps) {
-                    this.currentStep++;
-                }
-            },
-
-            prevStep() {
-                if (this.currentStep > 1) {
-                    this.currentStep--;
-                }
-            },
-
-            canProceedToNext() {
-                if (this.currentStep === 1) {
-                    return this.projectData.title.trim() !== '';
-                } else if (this.currentStep === 2) {
-                    return this.projectData.categories.length > 0;
-                }
-                return true;
-            },
-
-            canCreateProject() {
-                const hasTitle = this.projectData.title.trim() !== '';
-                const hasCategories = this.projectData.categories.length > 0;
-                const hasMinImages = this.getTotalImagesCount() >= 1;
-                const hasTeamMembers = this.projectType === 'individual' || this.projectData.team_members.length > 0;
-                
-                return hasTitle && hasCategories && hasMinImages && hasTeamMembers;
-            },
-
-            resetProjectModal() {
-                this.currentStep = 1;
-                this.projectData = {
-                    title: '',
-                    description: '',
-                    price: '',
-                    status: 'draft',
-                    categories: [],
-                    subjects: [],
-                    teachers: [],
-                    team_members: [],
-                    team_positions: {},
-                    existing_images: [],
-                    images_to_delete: []
-                };
-                this.originalProjectData = null;
-                this.originalTeamPositions = null;
-                this.editingProject = null;
-                
-                // Clear search filters
-                this.searchCategory = '';
-                this.searchSubject = '';
-                this.searchTeacher = '';
-                this.searchStudent = '';
-                
-                // Hide add forms
-                this.showAddCategory = false;
-                this.showAddSubject = false;
-                this.showAddTeacher = false;
-                
-                // Clear new data forms
-                this.newCategory = { name: '', description: '' };
-                this.newSubject = { name: '', code: '', description: '' };
-                this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
-                
-                // Clear media data
-                this.newMediaPreviews = [];
-                this.newMediaFiles = [];
-                this.deletedImages = [];
-            }
-        }"
-         x-effect="document.documentElement.classList.toggle('overflow-hidden', showEditModal || showIndividualProjectModal || showTeamProjectModal || showEditProjectModal)">
+<div class="max-w-7xl mx-auto px-4 py-8" x-data="profileEditor()">
+    <div class="flex flex-col lg:flex-row gap-8" >
         {{-- <!-- Left Column (2 columns width) --> --}}
         <div class="flex-1 lg:w-2/3 lg:order-1 order-2">
             <!-- Quick Actions Bar -->
@@ -1457,30 +560,54 @@
                                             <label class="block text-sm font-semibold text-gray-700 mb-2">Foto Profil</label>
                                             <div class="flex items-center gap-4">
                                                 <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-200 shrink-0 relative">
-                                                    <!-- Preview Image -->
-                                                    <img x-show="avatarPreview" 
-                                                         :src="avatarPreview" 
-                                                         alt="Avatar Preview" 
-                                                         class="w-full h-full object-cover absolute inset-0">
-                                                    
-                                                    <!-- Current Avatar or Placeholder -->
-                                                    <div x-show="!avatarPreview" class="w-full h-full absolute inset-0">
-                                                        @if(auth()->user()->avatar)
-                                                            <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
-                                                        @else
-                                                            <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
-                                                                {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                    <template x-if="removeAvatar">
+                                                        <div class="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white text-2xl font-bold">
+                                                            {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!removeAvatar">
+                                                        <div>
+                                                            <!-- Preview Image -->
+                                                            <img x-show="avatarPreview" 
+                                                                 :src="avatarPreview" 
+                                                                 alt="Avatar Preview" 
+                                                                 class="w-full h-full object-cover absolute inset-0">
+                                                            
+                                                            <!-- Current Avatar or Placeholder -->
+                                                            <div x-show="!avatarPreview" class="w-full h-full absolute inset-0">
+                                                                @if(auth()->user()->avatar)
+                                                                    <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                                                                @else
+                                                                    <div class="w-full h-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
+                                                                        {{ strtoupper(substr(auth()->user()->username, 0, 1)) }}
+                                                                    </div>
+                                                                @endif
                                                             </div>
-                                                        @endif
-                                                    </div>
+                                                        </div>
+                                                    </template>
                                                 </div>
                                                 <div class="flex-1">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <label for="avatar" class="cursor-pointer inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium">
+                                                            <i class="ri-image-add-line mr-2"></i>Pilih Foto
+                                                        </label>
+                                                        @if(auth()->user()->avatar)
+                                                            <button type="button" 
+                                                                    @click="handleRemoveAvatar()"
+                                                                    x-show="!removeAvatar"
+                                                                    class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium">
+                                                                <i class="ri-delete-bin-line mr-2"></i>Hapus
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                     <input type="file" 
+                                                           id="avatar"
                                                            name="avatar" 
                                                            accept="image/*" 
                                                            @change="handleAvatarPreview($event)"
-                                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#b01116] file:text-white hover:file:bg-[#8d0d11] cursor-pointer">
-                                                    <p class="text-xs text-gray-500 mt-1">JPG, PNG atau GIF (Maks. 2MB)</p>
+                                                           class="hidden">
+                                                    <input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'">
+                                                    <p class="text-xs text-gray-500">JPG, PNG atau GIF (Maks. 2MB)</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1489,19 +616,19 @@
                                             <!-- Full Name -->
                                             <div>
                                                 <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap *</label>
-                                                <input type="text" name="full_name" id="full_name" value="{{ old('full_name', auth()->user()->full_name) }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                                <input type="text" name="full_name" id="full_name" x-model="fullName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
                                             </div>
 
                                             <!-- Student ID -->
                                             <div>
                                                 <label for="student_id" class="block text-sm font-semibold text-gray-700 mb-2">NIM *</label>
-                                                <input type="text" name="student_id" id="student_id" value="{{ old('student_id', auth()->user()->student->student_id) }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                                <input type="text" name="student_id" id="student_id" x-model="studentId" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
                                             </div>
 
                                             <!-- Phone -->
                                             <div>
                                                 <label for="phone_number" class="block text-sm font-semibold text-gray-700 mb-2">Nomor Telepon *</label>
-                                                <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number', auth()->user()->phone_number) }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
+                                                <input type="tel" name="phone_number" id="phone_number" x-model="phoneNumber" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
                                             </div>
 
                                             <!-- Email (readonly) -->
@@ -1514,13 +641,13 @@
                                         <!-- Short About -->
                                         <div class="mt-4">
                                             <label for="short_about" class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Singkat (Maks. 500 karakter)</label>
-                                            <textarea name="short_about" id="short_about" rows="3" maxlength="500" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">{{ old('short_about', auth()->user()->short_about) }}</textarea>
+                                            <textarea name="short_about" id="short_about" x-model="shortAbout" rows="3" maxlength="500" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent"></textarea>
                                         </div>
 
                                         <!-- About -->
                                         <div class="mt-4">
                                             <label for="about" class="block text-sm font-semibold text-gray-700 mb-2">Tentang Saya</label>
-                                            <textarea name="about" id="about" rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent">{{ old('about', auth()->user()->about) }}</textarea>
+                                            <textarea name="about" id="about" x-model="about" rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-transparent"></textarea>
                                         </div>
                                     </div>
 
@@ -1585,10 +712,10 @@
                                             <div class="space-y-3">
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-700 mb-1">Nama Keahlian</label>
-                                                    <input type="text" x-model="newExpertise.name" placeholder="Contoh: JavaScript, UI/UX Design, Data Analysis" 
+                                                    <input type="text" x-model="newExpertiseName" placeholder="Contoh: JavaScript, UI/UX Design, Data Analysis" 
                                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                                 </div>
-                                                <button type="button" @click="createExpertise()" 
+                                                <button type="button" @click="addExpertise()" 
                                                         class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-blue-700 transition-colors font-medium">
                                                     <i class="ri-save-line mr-2"></i>Simpan Keahlian
                                                 </button>
@@ -1711,7 +838,9 @@
                                             <button type="button" 
                                                     @click="nextStep()" 
                                                     x-show="currentStep < totalSteps"
-                                                    class="px-6 py-2 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-colors">
+                                                    :disabled="!canProceedToNext()"
+                                                    :class="canProceedToNext() ? 'bg-[#b01116] hover:bg-[#8d0d11] cursor-pointer' : 'bg-gray-300 cursor-not-allowed opacity-60'"
+                                                    class="px-6 py-2 text-white rounded-lg font-medium transition-colors">
                                                 Selanjutnya<i class="ri-arrow-right-line ml-2"></i>
                                             </button>
                                             
@@ -2370,7 +1499,7 @@
                 <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 px-6 py-4 shadow-lg">
                     <div class="flex justify-between items-center gap-4">
                         <button type="button" 
-                                @click="prevStep()" 
+                                @click="prevProjectStep()" 
                                 x-show="currentStep > 1"
                                 class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-all flex items-center gap-2">
                             <i class="ri-arrow-left-line"></i>Kembali
@@ -2383,14 +1512,14 @@
                         </button>
                         
                         <button type="button" 
-                                @click="nextStep()" 
+                                @click="nextProjectStep()" 
                                 x-show="currentStep < totalSteps"
-                                :disabled="!canProceedToNext()"
-                                :class="!canProceedToNext() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#b01116] hover:bg-[#8d0d11] shadow-md hover:shadow-lg'"
+                                :disabled="!canProceedToNextStep()"
+                                :class="!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#b01116] hover:bg-[#8d0d11] shadow-md hover:shadow-lg'"
                                 class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2">
-                            <span x-show="canProceedToNext()">Selanjutnya</span>
-                            <span x-show="!canProceedToNext()" x-text="getValidationMessage()"></span>
-                            <i class="ri-arrow-right-line" x-show="canProceedToNext()"></i>
+                            <span x-show="canProceedToNextStep()">Selanjutnya</span>
+                            <span x-show="!canProceedToNextStep()" x-text="getValidationMessage()"></span>
+                            <i class="ri-arrow-right-line" x-show="canProceedToNextStep()"></i>
                         </button>
                         
                         <button type="submit" 
@@ -3169,7 +2298,7 @@
                 <div class="sticky bottom-0 bg-white border-t-2 border-gray-200 px-6 py-4 shadow-lg">
                     <div class="flex justify-between items-center gap-4">
                         <button type="button" 
-                                @click="prevStep()" 
+                                @click="prevProjectStep()" 
                                 x-show="currentStep > 1"
                                 class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-all flex items-center gap-2">
                             <i class="ri-arrow-left-line"></i>Kembali
@@ -3182,14 +2311,14 @@
                         </button>
                         
                         <button type="button" 
-                                @click="nextStep()" 
+                                @click="nextProjectStep()" 
                                 x-show="currentStep < totalSteps"
-                                :disabled="!canProceedToNext()"
-                                :class="!canProceedToNext() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#b01116] hover:bg-[#8d0d11] shadow-md hover:shadow-lg'"
+                                :disabled="!canProceedToNextStep()"
+                                :class="!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-[#b01116] hover:bg-[#8d0d11] shadow-md hover:shadow-lg'"
                                 class="px-8 py-3 text-white rounded-lg font-semibold transition-all flex items-center gap-2">
-                            <span x-show="canProceedToNext()">Selanjutnya</span>
-                            <span x-show="!canProceedToNext()" x-text="getValidationMessage()"></span>
-                            <i class="ri-arrow-right-line" x-show="canProceedToNext()"></i>
+                            <span x-show="canProceedToNextStep()">Selanjutnya</span>
+                            <span x-show="!canProceedToNextStep()" x-text="getValidationMessage()"></span>
+                            <i class="ri-arrow-right-line" x-show="canProceedToNextStep()"></i>
                         </button>
                         
                         <button type="submit" 
@@ -4155,7 +3284,7 @@
                 <div class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
                     <div class="flex justify-between items-center gap-4">
                         <button type="button" 
-                                @click="prevStep()" 
+                                @click="prevProjectStep()" 
                                 x-show="currentStep > 1"
                                 class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
                             <i class="ri-arrow-left-line"></i>Kembali
@@ -4168,10 +3297,10 @@
                         </button>
                         
                         <button type="button" 
-                                @click="nextStep()" 
+                                @click="nextProjectStep()" 
                                 x-show="currentStep < totalSteps"
-                                :disabled="!canProceedToNext()"
-                                :class="!canProceedToNext() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
+                                :disabled="!canProceedToNextStep()"
+                                :class="!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
                                 class="px-6 py-2.5 bg-[#b01116] text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                             Selanjutnya<i class="ri-arrow-right-line"></i>
                         </button>
@@ -4179,8 +3308,8 @@
                         <button type="button" 
                                 @click="updateProject()"
                                 x-show="currentStep === totalSteps"
-                                :disabled="!canCreateProject()"
-                                :class="!canCreateProject() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
+                                :disabled="!canProceedToNextStep()"
+                                :class="!canProceedToNextStep() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#8d0d11]'"
                                 class="px-6 py-2.5 bg-[#b01116] text-white rounded-lg font-medium transition-colors flex items-center gap-2">
                             <i class="ri-save-line"></i>Simpan Perubahan
                         </button>
@@ -4237,5 +3366,523 @@ function mediaPreview(inputId) {
         }
     }
 }
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('profileEditor', () => ({
+        showEditModal: false,
+        currentStep: 1,
+        totalSteps: 3,
+        
+        // Form data
+        fullName: '{{ old('full_name', auth()->user()->full_name) }}',
+        phoneNumber: '{{ old('phone_number', auth()->user()->phone_number) }}',
+        studentId: '{{ old('student_id', auth()->user()->student->student_id ?? '') }}',
+        shortAbout: '{{ old('short_about', auth()->user()->short_about) }}',
+        about: '{{ old('about', auth()->user()->about) }}',
+        
+        // Avatar preview
+        avatarPreview: null,
+        removeAvatar: false,
+        
+        // Expertises
+        selectedExpertises: {!! json_encode(old('expertises', optional(auth()->user()->student)->expertises ? auth()->user()->student->expertises->pluck('id')->toArray() : [])) !!},
+        searchExpertise: '',
+        showAddExpertise: false,
+        newExpertiseName: '',
+        expertises: {!! json_encode($expertises ?? []) !!},
+        
+        // Education
+        education: {!! json_encode(old('education', optional(auth()->user()->student)->educationInfo ? auth()->user()->student->educationInfo->map(function($edu) {
+            return [
+                'id' => $edu->id,
+                'institution_name' => $edu->institution_name,
+                'degree' => $edu->degree,
+                'field_of_study' => $edu->field_of_study,
+                'start_date' => $edu->start_date,
+                'end_date' => $edu->end_date,
+                'is_current' => $edu->is_current,
+                'description' => $edu->description
+            ];
+        })->toArray() : [])) !!},
+        showAddEducation: false,
+        
+        // Computed properties
+        get filteredExpertises() {
+            if (this.searchExpertise === '') {
+                return this.expertises;
+            }
+            return this.expertises.filter(exp => 
+                exp.name.toLowerCase().includes(this.searchExpertise.toLowerCase())
+            );
+        },
+        
+        // Validation
+        canProceedToNext() {
+            if (this.currentStep === 1) {
+                return this.fullName.trim() !== '' && 
+                       this.phoneNumber.trim() !== '' && 
+                       this.studentId.trim() !== '';
+            }
+            return true;
+        },
+        
+        nextStep() {
+            if (this.canProceedToNext() && this.currentStep < this.totalSteps) {
+                this.currentStep++;
+            }
+        },
+        
+        prevStep() {
+            if (this.currentStep > 1) {
+                this.currentStep--;
+            }
+        },
+        
+        resetModal() {
+            this.currentStep = 1;
+            this.fullName = '{{ old('full_name', auth()->user()->full_name) }}';
+            this.phoneNumber = '{{ old('phone_number', auth()->user()->phone_number) }}';
+            this.studentId = '{{ old('student_id', auth()->user()->student->student_id ?? '') }}';
+            this.shortAbout = '{{ old('short_about', auth()->user()->short_about) }}';
+            this.about = '{{ old('about', auth()->user()->about) }}';
+            this.selectedExpertises = {!! json_encode(old('expertises', optional(auth()->user()->student)->expertises ? auth()->user()->student->expertises->pluck('id')->toArray() : [])) !!};
+            this.education = {!! json_encode(old('education', optional(auth()->user()->student)->educationInfo ? auth()->user()->student->educationInfo->map(function($edu) {
+                return [
+                    'id' => $edu->id,
+                    'institution_name' => $edu->institution_name,
+                    'degree' => $edu->degree,
+                    'field_of_study' => $edu->field_of_study,
+                    'start_date' => $edu->start_date,
+                    'end_date' => $edu->end_date,
+                    'is_current' => $edu->is_current,
+                    'description' => $edu->description
+                ];
+            })->toArray() : [])) !!};
+            this.avatarPreview = null;
+            this.removeAvatar = false;
+            this.searchExpertise = '';
+            this.showAddExpertise = false;
+            this.showAddEducation = false;
+        },
+        
+        // Expertise methods
+        toggleExpertise(expertiseId) {
+            const index = this.selectedExpertises.indexOf(expertiseId);
+            if (index > -1) {
+                this.selectedExpertises.splice(index, 1);
+            } else {
+                this.selectedExpertises.push(expertiseId);
+            }
+        },
+        
+        isExpertiseSelected(expertiseId) {
+            return this.selectedExpertises.includes(expertiseId);
+        },
+        
+        async addExpertise() {
+            if (this.newExpertiseName.trim() === '') return;
+            
+            try {
+                const response = await fetch('{{ route("student.expertises.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ name: this.newExpertiseName })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.expertises.push(data.expertise);
+                    this.selectedExpertises.push(data.expertise.id);
+                    this.newExpertiseName = '';
+                    this.showAddExpertise = false;
+                }
+            } catch (error) {
+                console.error('Error adding expertise:', error);
+            }
+        },
+        
+        // Education methods
+        addEducation() {
+            this.education.push({
+                id: 'new_' + Date.now(),
+                institution_name: '',
+                degree: '',
+                field_of_study: '',
+                start_date: '',
+                end_date: '',
+                is_current: false,
+                description: ''
+            });
+            this.showAddEducation = true;
+        },
+        
+        removeEducation(index) {
+            this.education.splice(index, 1);
+        },
+        
+        // Avatar preview
+        handleAvatarPreview(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.avatarPreview = e.target.result;
+                    this.removeAvatar = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+        
+        handleRemoveAvatar() {
+            this.removeAvatar = true;
+            this.avatarPreview = null;
+            const fileInput = document.getElementById('avatar');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        },
+        
+        // ==================== PROJECT CREATION MODALS ====================
+        
+        // Project Modal State
+        showIndividualProjectModal: false,
+        showTeamProjectModal: false,
+        showEditProjectModal: false,
+        projectType: 'individual',
+        
+        // Project Form Data
+        projectData: {
+            title: '',
+            description: '',
+            price: '',
+            status: 'draft',
+            categories: [],
+            subjects: [],
+            teachers: [],
+            team_members: [],
+            team_positions: {},
+            existing_images: [],
+            images_to_delete: []
+        },
+        
+        // Project Modal Data
+        categories: {!! json_encode($categories ?? []) !!},
+        subjects: {!! json_encode($subjects ?? []) !!},
+        teachers: {!! json_encode($teachers ?? []) !!},
+        students: {!! json_encode($students ?? []) !!},
+        
+        // Search filters
+        searchCategory: '',
+        searchSubject: '',
+        searchTeacher: '',
+        searchStudent: '',
+        
+        // Add new item flags
+        showAddCategory: false,
+        showAddSubject: false,
+        showAddTeacher: false,
+        
+        // New item forms - using object notation
+        newCategory: { name: '' },
+        newSubject: { name: '', code: '' },
+        newTeacher: { name: '', nip: '', email: '', phone_number: '', institution: '' },
+        
+        // Computed properties for filtered lists
+        get filteredCategories() {
+            if (this.searchCategory === '') {
+                return this.categories;
+            }
+            return this.categories.filter(cat => 
+                cat.name.toLowerCase().includes(this.searchCategory.toLowerCase())
+            );
+        },
+        
+        get filteredSubjects() {
+            if (this.searchSubject === '') {
+                return this.subjects;
+            }
+            return this.subjects.filter(sub => 
+                sub.name.toLowerCase().includes(this.searchSubject.toLowerCase()) ||
+                (sub.code && sub.code.toLowerCase().includes(this.searchSubject.toLowerCase()))
+            );
+        },
+        
+        get filteredTeachers() {
+            if (this.searchTeacher === '') {
+                return this.teachers;
+            }
+            return this.teachers.filter(teacher => 
+                teacher.name.toLowerCase().includes(this.searchTeacher.toLowerCase()) ||
+                (teacher.nip && teacher.nip.includes(this.searchTeacher)) ||
+                (teacher.institution && teacher.institution.toLowerCase().includes(this.searchTeacher.toLowerCase()))
+            );
+        },
+        
+        get filteredStudents() {
+            if (this.searchStudent === '') {
+                return this.students;
+            }
+            return this.students.filter(student => 
+                (student.user.full_name && student.user.full_name.toLowerCase().includes(this.searchStudent.toLowerCase())) ||
+                (student.user.username && student.user.username.toLowerCase().includes(this.searchStudent.toLowerCase())) ||
+                (student.student_id && student.student_id.includes(this.searchStudent))
+            );
+        },
+        
+        // Project validation
+        canProceedToNextStep() {
+            if (this.currentStep === 1) {
+                return this.projectData.title.trim() !== '';
+            }
+            if (this.currentStep === 2) {
+                return this.projectData.categories.length > 0;
+            }
+            return true;
+        },
+        
+        // Project navigation
+        nextProjectStep() {
+            if (this.canProceedToNextStep() && this.currentStep < this.totalSteps) {
+                this.currentStep++;
+            }
+        },
+        
+        prevProjectStep() {
+            if (this.currentStep > 1) {
+                this.currentStep--;
+            }
+        },
+        
+        // Reset project modal
+        resetProjectModal() {
+            this.currentStep = 1;
+            this.projectData = {
+                title: '',
+                description: '',
+                price: '',
+                status: 'draft',
+                categories: [],
+                subjects: [],
+                teachers: [],
+                team_members: [],
+                team_positions: {},
+                existing_images: [],
+                images_to_delete: []
+            };
+            this.searchCategory = '';
+            this.searchSubject = '';
+            this.searchTeacher = '';
+            this.searchStudent = '';
+            this.showAddCategory = false;
+            this.showAddSubject = false;
+            this.showAddTeacher = false;
+            this.newCategory = { name: '' };
+            this.newSubject = { name: '', code: '' };
+            this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+        },
+        
+        // Toggle selections
+        toggleCategory(categoryId) {
+            const index = this.projectData.categories.indexOf(categoryId);
+            if (index > -1) {
+                this.projectData.categories.splice(index, 1);
+            } else {
+                this.projectData.categories.push(categoryId);
+            }
+        },
+        
+        isCategorySelected(categoryId) {
+            return this.projectData.categories.includes(categoryId);
+        },
+        
+        toggleSubject(subjectId) {
+            const index = this.projectData.subjects.indexOf(subjectId);
+            if (index > -1) {
+                this.projectData.subjects.splice(index, 1);
+            } else {
+                this.projectData.subjects.push(subjectId);
+            }
+        },
+        
+        isSubjectSelected(subjectId) {
+            return this.projectData.subjects.includes(subjectId);
+        },
+        
+        toggleTeacher(teacherId) {
+            const index = this.projectData.teachers.indexOf(teacherId);
+            if (index > -1) {
+                this.projectData.teachers.splice(index, 1);
+            } else {
+                this.projectData.teachers.push(teacherId);
+            }
+        },
+        
+        isTeacherSelected(teacherId) {
+            return this.projectData.teachers.includes(teacherId);
+        },
+        
+        toggleTeamMember(studentId) {
+            const index = this.projectData.team_members.indexOf(studentId);
+            if (index > -1) {
+                this.projectData.team_members.splice(index, 1);
+                delete this.projectData.team_positions[studentId];
+            } else {
+                this.projectData.team_members.push(studentId);
+                this.projectData.team_positions[studentId] = 'Member';
+            }
+        },
+        
+        isTeamMemberSelected(studentId) {
+            return this.projectData.team_members.includes(studentId);
+        },
+        
+        // Add new items via AJAX
+        async createCategory() {
+            if (this.newCategory.name.trim() === '') return;
+            
+            try {
+                const response = await fetch('{{ route("student.categories.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ name: this.newCategory.name })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.categories.push(data.category);
+                    this.projectData.categories.push(data.category.id);
+                    this.newCategory = { name: '' };
+                    this.showAddCategory = false;
+                }
+            } catch (error) {
+                console.error('Error adding category:', error);
+            }
+        },
+        
+        async createSubject() {
+            if (this.newSubject.name.trim() === '') return;
+            
+            try {
+                const response = await fetch('{{ route("student.subjects.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name: this.newSubject.name,
+                        code: this.newSubject.code
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.subjects.push(data.subject);
+                    this.projectData.subjects.push(data.subject.id);
+                    this.newSubject = { name: '', code: '' };
+                    this.showAddSubject = false;
+                }
+            } catch (error) {
+                console.error('Error adding subject:', error);
+            }
+        },
+        
+        async createTeacher() {
+            if (this.newTeacher.name.trim() === '') return;
+            
+            try {
+                const response = await fetch('{{ route("student.teachers.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        name: this.newTeacher.name,
+                        nip: this.newTeacher.nip,
+                        email: this.newTeacher.email,
+                        phone_number: this.newTeacher.phone_number,
+                        institution: this.newTeacher.institution
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.teachers.push(data.teacher);
+                    this.projectData.teachers.push(data.teacher.id);
+                    this.newTeacher = { name: '', nip: '', email: '', phone_number: '', institution: '' };
+                    this.showAddTeacher = false;
+                }
+            } catch (error) {
+                console.error('Error adding teacher:', error);
+            }
+        },
+        
+        // Edit project
+        loadProjectForEdit(project) {
+            this.projectType = project.type;
+            this.projectData = {
+                id: project.id,
+                title: project.title,
+                description: project.description,
+                price: project.price,
+                status: project.status,
+                categories: project.categories ? project.categories.map(c => c.id) : [],
+                subjects: project.subjects ? project.subjects.map(s => s.id) : [],
+                teachers: project.teachers ? project.teachers.map(t => t.id) : [],
+                team_members: project.members ? project.members.map(m => m.id) : [],
+                team_positions: project.members ? project.members.reduce((acc, m) => {
+                    acc[m.id] = m.pivot.position || 'Member';
+                    return acc;
+                }, {}) : {},
+                existing_images: project.media ? project.media.map(m => ({
+                    id: m.id,
+                    path: m.file_path,
+                    url: '/storage/' + m.file_path
+                })) : [],
+                images_to_delete: []
+            };
+            this.currentStep = 1;
+            this.showEditProjectModal = true;
+        },
+        
+        markImageForDeletion(imageId) {
+            if (!this.projectData.images_to_delete.includes(imageId)) {
+                this.projectData.images_to_delete.push(imageId);
+            }
+            this.projectData.existing_images = this.projectData.existing_images.filter(img => img.id !== imageId);
+        },
+        
+        getTotalImageCount() {
+            const existingCount = this.projectData.existing_images.length;
+            const newCount = document.getElementById('edit_media')?.files?.length || 0;
+            return existingCount + newCount;
+        },
+        
+        getValidationMessage() {
+            if (this.currentStep === 1 && this.projectData.title.trim() === '') {
+                return 'Judul proyek wajib diisi';
+            }
+            if (this.currentStep === 2 && this.projectData.categories.length === 0) {
+                return 'Pilih minimal 1 kategori';
+            }
+            return 'Lengkapi data';
+        }
+    }));
+});
 </script>
 @endsection

@@ -101,6 +101,7 @@ class StudentController extends Controller
             'phone_number' => 'required|string|max:20',
             'student_id' => 'required|unique:students,student_id,' . $student->id,
             'avatar' => 'nullable|image|max:2048',
+            'remove_avatar' => 'nullable|boolean',
             'short_about' => 'nullable|string|max:500',
             'about' => 'nullable|string',
             'expertises' => 'nullable|array',
@@ -124,7 +125,15 @@ class StudentController extends Controller
             'about' => $validated['about'] ?? null,
         ];
 
-        if ($request->hasFile('avatar')) {
+        // Handle avatar removal
+        if ($request->input('remove_avatar') == '1') {
+            if ($student->user->avatar) {
+                Storage::disk('public')->delete($student->user->avatar);
+            }
+            $userData['avatar'] = null;
+        }
+        // Handle new avatar upload
+        elseif ($request->hasFile('avatar')) {
             // Delete old avatar
             if ($student->user->avatar) {
                 Storage::disk('public')->delete($student->user->avatar);

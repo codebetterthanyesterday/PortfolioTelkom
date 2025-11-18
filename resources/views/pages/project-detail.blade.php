@@ -2412,7 +2412,7 @@ function deleteProject(projectId) {
                 const formData = new FormData(this);
                 const button = this.querySelector('button[type="submit"]');
                 const icon = button.querySelector('i');
-                const originalText = button.innerHTML;
+                const originalHTML = button.innerHTML;
                 
                 // Disable button and show loading
                 button.disabled = true;
@@ -2422,49 +2422,47 @@ function deleteProject(projectId) {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
-                    // Update button state
-                    const isWishlisted = button.querySelector('i').classList.contains('ri-heart-line');
-                    
-                    if (isWishlisted) {
-                        icon.classList.remove('ri-heart-line');
-                        icon.classList.add('ri-heart-fill');
-                        button.classList.add('bg-pink-100', 'border-pink-300');
-                        button.classList.remove('bg-pink-50', 'border-pink-200');
-                        button.innerHTML = '<i class="ri-heart-fill"></i> Tersimpan';
-                    } else {
-                        icon.classList.remove('ri-heart-fill');
-                        icon.classList.add('ri-heart-line');
-                        button.classList.remove('bg-pink-100', 'border-pink-300');
-                        button.classList.add('bg-pink-50', 'border-pink-200');
-                        button.innerHTML = '<i class="ri-heart-line"></i> Tambah ke Wishlist';
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
                     }
-                    
-                    button.disabled = false;
-                    
-                    // Show toast notification
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                    
-                    Toast.fire({
-                        icon: 'success',
-                        title: isWishlisted ? 'Proyek disimpan!' : 'Proyek dihapus dari wishlist'
-                    });
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update button based on wishlist status
+                        if (data.isWishlisted) {
+                            button.classList.add('bg-pink-100', 'border-pink-300');
+                            button.classList.remove('bg-pink-50', 'border-pink-200');
+                            button.innerHTML = '<i class="ri-heart-fill"></i> Ditambahkan';
+                        } else {
+                            button.classList.remove('bg-pink-100', 'border-pink-300');
+                            button.classList.add('bg-pink-50', 'border-pink-200');
+                            button.innerHTML = '<i class="ri-heart-line"></i> Tambahkan ke Wishlist';
+                        }
+                        
+                        // Show toast notification
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                        
+                        Toast.fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    button.disabled = false;
-                    button.innerHTML = originalText;
+                    button.innerHTML = originalHTML;
                     
                     Swal.fire({
                         icon: 'error',
@@ -2472,6 +2470,9 @@ function deleteProject(projectId) {
                         text: 'Terjadi kesalahan. Silakan coba lagi.',
                         confirmButtonColor: '#b01116'
                     });
+                })
+                .finally(() => {
+                    button.disabled = false;
                 });
             });
         }
