@@ -16,7 +16,7 @@
         <!-- Wishlist Toggle (Investors Only) -->
         @auth
             @if(auth()->user()->isInvestor())
-            <form action="{{ route('investor.wishlists.toggle', $project) }}" 
+            <form action="{{ route('investor.wishlist.toggle', $project) }}" 
                   method="POST" 
                   class="wishlist-form absolute top-3 right-3"
                   data-project-id="{{ $project->id }}">

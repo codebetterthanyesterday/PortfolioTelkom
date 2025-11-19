@@ -61,26 +61,50 @@
                 </button>
             @elseif(auth()->user()->isInvestor())
                 <!-- Investor Actions -->
+                @if($project->student->user->phone_number)
                 <a href="{{ $project->student->getWhatsappLink() }}" 
                    target="_blank"
                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
                     <i class="ri-message-3-line"></i>
                     Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </a>
-                
-                <button type="submit" 
-                        class="w-full {{ $isWishlisted ? 'bg-pink-100 border-pink-300' : 'bg-pink-50 border-pink-200' }} hover:bg-pink-100 text-[#b01116] font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 border">
-                    <i class="{{ $isWishlisted ? 'ri-heart-fill' : 'ri-heart-line' }}"></i>
-                    {{ $isWishlisted ? 'Ditambahkan' : 'Tambahkan ke Wishlist' }}
+                @else
+                <button disabled 
+                        class="w-full bg-gray-100 text-gray-400 font-semibold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200"
+                        title="Pelajar tidak memiliki nomor telepon">
+                    <i class="ri-message-3-line"></i>
+                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </button>
+                @endif
+                
+                <!-- Wishlist Toggle Form -->
+                <form action="{{ route('investor.wishlist.toggle', $project) }}" 
+                      method="POST" 
+                      class="wishlist-form">
+                    @csrf
+                    <button type="submit" 
+                            class="w-full bg-pink-50 hover:bg-pink-100 text-[#b01116] font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 border border-pink-200">
+                        <i class="{{ $isWishlisted ?? false ? 'ri-heart-fill' : 'ri-heart-line' }}"></i>
+                        {{ $isWishlisted ?? false ? 'Hapus dari Wishlist' : 'Tambahkan ke Wishlist' }}
+                    </button>
+                </form>
             @else
                 <!-- Other Student (not owner) -->
+                @if($project->student->user->phone_number)
                 <a href="{{ $project->student->getWhatsappLink() }}" 
                    target="_blank"
                    class="w-full bg-[#b01116] hover:bg-[#8d0d11] text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2">
                     <i class="ri-message-3-line"></i>
                     Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </a>
+                @else
+                <button disabled 
+                        class="w-full bg-gray-100 text-gray-400 font-semibold py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 border border-gray-200"
+                        title="Pelajar tidak memiliki nomor telepon">
+                    <i class="ri-message-3-line"></i>
+                    Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
+                </button>
+                @endif
             @endif
         @else
             <!-- Guest Actions (Disabled) -->

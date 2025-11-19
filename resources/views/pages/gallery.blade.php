@@ -135,6 +135,8 @@
     @endif
 </div>
 
+@include('components.wishlist-handler')
+
 <script>
 function galleryFilters(initialCategory = 'all', isFiltered = false) {
     return {
@@ -145,7 +147,7 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
         
         init() {
             // Setup wishlist form handlers
-            this.setupWishlistForms();
+            setupWishlistForms();
         },
         
         async filterByCategory(categorySlug) {
@@ -199,7 +201,7 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
             grid.innerHTML = projects.map(project => this.createProjectCard(project, wishlistedProjects)).join('');
             
             // Re-setup wishlist forms
-            this.setupWishlistForms();
+            setupWishlistForms();
         },
         
         createProjectCard(project, wishlistedProjects) {
@@ -223,7 +225,7 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
                         `}
                         
                         ${isAuth && isInvestor ? `
-                            <form action="{{ url('/investor/projects') }}/${project.id}/wishlist" 
+                            <form action="/investor/wishlist/${project.id}" 
                                   method="POST" 
                                   class="wishlist-form absolute top-3 right-3"
                                   data-project-id="${project.id}">
@@ -322,78 +324,6 @@ function galleryFilters(initialCategory = 'all', isFiltered = false) {
             paginationHTML += '</div>';
             container.innerHTML = paginationHTML;
         },
-        
-        setupWishlistForms() {
-            document.querySelectorAll('.wishlist-form').forEach(form => {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const projectId = form.dataset.projectId;
-                    await this.toggleWishlist(form, projectId);
-                });
-            });
-        },
-        
-        async toggleWishlist(form, projectId) {
-            const button = form.querySelector('button');
-            const icon = button.querySelector('i');
-            const formData = new FormData(form);
-            
-            // Disable button during request
-            button.disabled = true;
-            
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Toggle icon classes
-                    if (data.isWishlisted) {
-                        icon.classList.remove('ri-heart-line', 'text-gray-600');
-                        icon.classList.add('ri-heart-fill', 'text-[#b01116]');
-                    } else {
-                        icon.classList.remove('ri-heart-fill', 'text-[#b01116]');
-                        icon.classList.add('ri-heart-line', 'text-gray-600');
-                }
-                
-                // Show toast notification
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                        timer: 2000,
-                    timerProgressBar: true
-                });
-                
-                Toast.fire({
-                    icon: 'success',
-                    title: data.message
-                });
-                }
-            } catch (error) {
-                console.error('Error toggling wishlist:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Terjadi kesalahan. Silakan coba lagi.',
-                    confirmButtonColor: '#b01116'
-                });
-            } finally {
-                // Re-enable button
-                button.disabled = false;
-            }
-        }
     }
 }
 </script>

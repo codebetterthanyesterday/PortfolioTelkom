@@ -152,8 +152,7 @@ Route::middleware(['auth', 'role:investor'])->prefix('investor')->name('investor
     Route::put('/profile', [InvestorController::class, 'update'])->name('update');
     
     // Wishlist
-    Route::get('/wishlists', [WishlistController::class, 'index'])->name('wishlists.index');
-    Route::post('/projects/{project}/wishlist', [WishlistController::class, 'toggle'])->name('wishlists.toggle');
+    Route::post('/wishlist/{project}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
     Route::delete('/wishlist/{project}', [WishlistController::class, 'remove'])->name('wishlist.remove');
     
     // Comments

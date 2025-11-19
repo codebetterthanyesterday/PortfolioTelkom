@@ -35,6 +35,7 @@ class Notification extends Model
     const TYPE_MEMBER_LEFT = 'member_left';
     const TYPE_PROJECT_STATUS_CHANGED = 'project_status_changed';
     const TYPE_MENTION_IN_COMMENT = 'mention_in_comment';
+    const TYPE_PROJECT_WISHLISTED = 'project_wishlisted';
 
     // Priority levels
     const PRIORITY_LOW = 'low';
@@ -187,6 +188,9 @@ class Notification extends Model
             case self::TYPE_MENTION_IN_COMMENT:
                 return "{$data['commenter_name']} mentioned you in a comment";
             
+            case self::TYPE_PROJECT_WISHLISTED:
+                return "{$data['investor_name']} {$data['message']}";
+            
             default:
                 return $data['message'] ?? 'You have a new notification';
         }
@@ -205,6 +209,9 @@ class Notification extends Model
                 return route('projects.show', ['project' => $data['project_slug']]) . '#comment-' . $data['comment_id'];
             
             case 'team_mention':
+                return route('projects.show', ['project' => $data['project_slug']]);
+            
+            case 'project_wishlisted':
                 return route('projects.show', ['project' => $data['project_slug']]);
             
             default:
@@ -245,6 +252,9 @@ class Notification extends Model
             case self::TYPE_MENTION_IN_COMMENT:
                 return 'fa-at';
             
+            case self::TYPE_PROJECT_WISHLISTED:
+                return 'fa-heart';
+            
             default:
                 return 'fa-bell';
         }
@@ -264,6 +274,9 @@ class Notification extends Model
             
             case 'team_mention':
                 return $data['project_title'] ?? 'Team Project';
+            
+            case 'project_wishlisted':
+                return $data['project_title'] ?? 'Project';
             
             default:
                 return 'Notification';

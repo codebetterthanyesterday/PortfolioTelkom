@@ -29,6 +29,7 @@ class Investor extends Model
     public function wishlistProjects()
     {
         return $this->belongsToMany(Project::class, 'wishlists')
+            ->wherePivotNull('deleted_at')
             ->withTimestamps();
     }
 

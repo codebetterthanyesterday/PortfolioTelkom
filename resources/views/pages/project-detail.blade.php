@@ -1443,6 +1443,8 @@
     @endif
 </div>
 
+@include('components.wishlist-handler')
+
 <script>
 function projectDetail(projectId) {
     return {
@@ -1548,6 +1550,9 @@ function projectDetail(projectId) {
         },
         
         init() {
+            // Setup wishlist forms
+            setupWishlistForms();
+            
             // Check if there's a hash in URL to show comments
             if (window.location.hash === '#comments') {
                 this.activeTab = 'comments';

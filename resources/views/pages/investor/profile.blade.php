@@ -98,9 +98,9 @@
 
                         @if($recentWishlists && $recentWishlists->count() > 0)
                             <!-- Wishlist Projects Grid -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="wishlist-projects">
                                 @foreach($recentWishlists as $project)
-                                <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                                <div class="wishlist-project-card bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                                     <a href="{{ route('projects.show', $project->slug) }}" class="block">
                                         <div class="aspect-video relative overflow-hidden">
                                             @if($project->media && $project->media->isNotEmpty())
@@ -553,97 +553,9 @@
     </div>
 </div>
 
-<script>
-// Setup wishlist removal forms
-document.addEventListener('DOMContentLoaded', function() {
-    setupWishlistRemovalForms();
-});
+@include('components.wishlist-handler')
 
-function setupWishlistRemovalForms() {
-    document.querySelectorAll('.wishlist-remove-form').forEach(form => {
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const projectTitle = this.dataset.projectTitle;
-            
-            const result = await Swal.fire({
-                title: 'Konfirmasi Hapus',
-                text: `Apakah Anda yakin ingin menghapus "${projectTitle}" dari wishlist?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                reverseButtons: true
-            });
-            
-            if (result.isConfirmed) {
-                const formData = new FormData(this);
-                const button = this.querySelector('button');
-                
-                // Disable button
-                button.disabled = true;
-                
-                try {
-                    const response = await fetch(this.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        // Remove the project card with animation
-                        const projectCard = this.closest('.bg-gray-50');
-                        projectCard.style.opacity = '0';
-                        projectCard.style.transform = 'scale(0.9)';
-                        projectCard.style.transition = 'all 0.3s ease';
-                        
-                        setTimeout(() => {
-                            projectCard.remove();
-                            
-                            // Check if there are any projects left
-                            const remainingProjects = document.querySelectorAll('.wishlist-remove-form').length;
-                            if (remainingProjects === 0) {
-                                // Reload page to show empty state
-                                location.reload();
-                            }
-                        }, 300);
-                        
-                        // Show success message
-                        const Toast = Swal.mixin({
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            timer: 3000,
-                            timerProgressBar: true
-                        });
-                        
-                        Toast.fire({
-                            icon: 'success',
-                            title: 'Proyek berhasil dihapus dari wishlist!'
-                        });
-                    } else {
-                        throw new Error('Failed to remove from wishlist');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    button.disabled = false;
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: 'Terjadi kesalahan. Silakan coba lagi.',
-                        confirmButtonColor: '#b01116'
-                    });
-                }
-            }
-        });
-    });
-}
+<script>
 
 // SweetAlert confirm delete function
 async function confirmDelete(event, itemType) {
@@ -673,6 +585,11 @@ document.addEventListener('alpine:init', () => {
         showEditModal: false,
         currentStep: 1,
         totalSteps: 2,
+        
+        // Initialize wishlist remove forms
+        init() {
+            setupWishlistRemoveForms();
+        },
         
         // Form data
         fullName: '{{ old('full_name', auth()->user()->full_name) }}',
