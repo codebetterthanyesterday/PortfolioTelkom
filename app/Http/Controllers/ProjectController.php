@@ -243,7 +243,7 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
             'type' => 'required|in:individual,team',
             'status' => 'required|in:draft,published,archived',
@@ -321,7 +321,7 @@ class ProjectController extends Controller
                         $project->members()->create([
                             'student_id' => $memberId,
                             'role' => 'member',
-                            'position' => $validated['team_positions'][$index] ?? 'Team Member',
+                            'position' => $validated['team_positions'][$memberId] ?? 'Team Member',
                             'joined_at' => now(),
                         ]);
                         
@@ -437,7 +437,7 @@ class ProjectController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
             'status' => 'required|in:draft,published,archived',
             'categories' => 'required|array|min:1',
@@ -528,7 +528,7 @@ class ProjectController extends Controller
                         $project->members()->create([
                             'student_id' => $memberId,
                             'role' => 'member',
-                            'position' => $validated['team_positions'][$index] ?? 'Team Member',
+                            'position' => $validated['team_positions'][$memberId] ?? 'Team Member',
                             'joined_at' => now(),
                         ]);
                         

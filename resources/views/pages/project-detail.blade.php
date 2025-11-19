@@ -166,17 +166,26 @@
             @endphp
             @foreach($sortedMembers as $member)
             <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 pb-4 sm:pb-6 {{ !$loop->last ? 'border-b border-gray-200' : '' }}">
-            @if($member->student->user->avatar)
-            <img src="{{ $member->student->user->avatar_url }}" alt="{{ $member->student->user->full_name }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover shrink-0">
-            @else
-            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold shrink-0">
-                {{ strtoupper(substr($member->student->user->username, 0, 1)) }}
+            <div x-data="{ imgErr:false }" class="w-16 h-16 sm:w-20 sm:h-20 shrink-0">
+                @if($member->student->user->avatar)
+                <img 
+                    x-show="!imgErr"
+                    src="{{ $member->student->user->avatar_url }}" 
+                    alt="{{ $member->student->user->full_name ?? $member->student->user->username }}" 
+                    class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover" 
+                    x-on:error="imgErr = true"
+                >
+                @endif
+                <div 
+                    x-show="imgErr || '{{ $member->student->user->avatar }}' === ''"
+                    class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {{ strtoupper(substr($member->student->user->username, 0, 1)) }}
+                </div>
             </div>
-            @endif
             <div class="flex-1 w-full">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                 <div class="flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                 <h3 class="font-bold text-gray-800 text-base sm:text-lg">{{ $member->student->user->full_name ?? $member->student->user->username }}</h3>
                 @if($member->role === 'leader')
                 <span class="px-2 py-0.5 bg-[#b01116] text-white text-xs font-semibold rounded-full">Leader</span>
@@ -189,12 +198,20 @@
                 {{ "@" . $member->student->user->username }}
                 @endif
                 </p>
+                <!-- Position Badge -->
+                @if($member->position)
+                <div class="flex items-center gap-2 mt-2">
+                <i class="ri-briefcase-line text-[#b01116]"></i>
+                <span class="px-3 py-1 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 text-[#b01116] text-xs sm:text-sm font-semibold rounded-lg">
+                {{ $member->position }}
+                </span>
+                </div>
+                @endif
                 </div>
                 <a href="{{ route('detail.student', $member->student->user->username) }}" class="text-[#b01116] hover:text-[#8d0d11] font-medium text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
                 Lihat Profil <i class="ri-arrow-right-line"></i>
                 </a>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3"><strong>Posisi:</strong> {{ $member->position ?? 'Team Member' }}</p>
             </div>
             </div>
             @endforeach
@@ -538,23 +555,21 @@
 
                         <!-- Project Description -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                                Deskripsi Proyek
-                            </label>
-                            <textarea x-model="projectData.description" rows="6" 
-                                      class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all resize-none" 
-                                      placeholder="Jelaskan detail proyek Anda, tujuan, fitur utama, dan hal menarik lainnya..."></textarea>
-                            <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Proyek <span class="text-xs text-gray-500 font-normal">(Opsional)</span></label>
+                            <textarea x-model="projectData.description" rows="6"
+                                      class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all resize-none"
+                                      placeholder="(Opsional) Jelaskan detail proyek Anda, tujuan, fitur utama, dll..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" x-show="projectData.description.trim() !== ''">
                                 <i class="ri-lightbulb-line"></i>
-                                Tips: Deskripsi yang detail akan menarik lebih banyak investor
+                                Deskripsi yang detail dapat meningkatkan minat investor
                             </p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <!-- Project Price -->
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Estimasi Harga (Rp)
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                                    Estimasi Harga <span class="text-xs font-normal text-gray-500">(Opsional)</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">Rp</span>
@@ -562,6 +577,7 @@
                                            class="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all"
                                            placeholder="0">
                                 </div>
+                                <p class="text-xs text-gray-500 mt-1">Biarkan kosong jika tidak ingin menampilkan estimasi harga.</p>
                             </div>
 
                             <!-- Project Status -->
@@ -1083,13 +1099,13 @@
                             
                             <!-- Image Summary -->
                             <div class="mt-4 p-4 rounded-lg border-2"
-                                 :class="getTotalImagesCount() === 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'">
+                                 :class="getTotalImagesCount() === 0 ? 'bg-gray-50 border-gray-200' : 'bg-green-50 border-green-200'">
                                 <div class="flex items-center gap-3"
-                                     :class="getTotalImagesCount() === 0 ? 'text-red-700' : 'text-green-700'">
-                                    <i :class="getTotalImagesCount() === 0 ? 'ri-error-warning-line text-xl' : 'ri-checkbox-circle-line text-xl'"></i>
+                                     :class="getTotalImagesCount() === 0 ? 'text-gray-600' : 'text-green-700'">
+                                    <i :class="getTotalImagesCount() === 0 ? 'ri-image-line text-xl' : 'ri-checkbox-circle-line text-xl'"></i>
                                     <div class="flex-1">
                                         <div class="font-semibold">
-                                            <span x-show="getTotalImagesCount() === 0">Minimal 1 gambar diperlukan</span>
+                                            <span x-show="getTotalImagesCount() === 0">Media (Opsional)</span>
                                             <span x-show="getTotalImagesCount() > 0">
                                                 Total: <span x-text="getTotalImagesCount()"></span> gambar
                                             </span>
@@ -1570,7 +1586,8 @@ function projectDetail(projectId) {
         // Validation
         canProceedToNext() {
             if (this.currentStep === 1) {
-                return this.projectData.title.trim() !== '' && this.projectData.status !== '';
+                return this.projectData.title.trim() !== '' &&
+                       this.projectData.status !== '';
             }
             if (this.currentStep === 2) {
                 return this.projectData.categories.length > 0;
@@ -1580,9 +1597,8 @@ function projectDetail(projectId) {
         canCreateProject() {
             const hasTitle = this.projectData.title.trim() !== '';
             const hasCategories = this.projectData.categories.length > 0;
-            const hasMinImages = this.getTotalImagesCount() >= 1;
             const hasTeamMembers = this.projectType === 'individual' || this.projectData.team_members.length > 0;
-            return hasTitle && hasCategories && hasMinImages && hasTeamMembers;
+            return hasTitle && hasCategories && hasTeamMembers;
         },
         
         // Reset modal
@@ -1753,7 +1769,7 @@ function projectDetail(projectId) {
                 if (this.projectType === 'team') {
                     this.projectData.team_members.forEach(id => {
                         formData.append('team_members[]', id);
-                        formData.append('team_positions[]', this.projectData.team_positions[id] || '');
+                        formData.append(`team_positions[${id}]`, this.projectData.team_positions[id] || '');
                     });
                 }
                 

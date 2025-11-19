@@ -160,7 +160,7 @@
                                         <form action="{{ route('student.projects.restore', $project->id) }}" 
                                               method="POST" 
                                               class="flex-1"
-                                              onsubmit="return confirm('Apakah Anda yakin ingin mengembalikan proyek ini?')">
+                                              onsubmit="return confirmRestore(event, '{{ $project->title }}')">
                                             @csrf
                                             <button type="submit" 
                                                     class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:scale-105 shadow-lg text-sm sm:text-base">
@@ -170,6 +170,35 @@
                                                 <span class="hidden sm:inline">Proyek</span>
                                             </button>
                                         </form>
+<script>
+function confirmRestore(event, projectTitle) {
+    event.preventDefault();
+
+    Swal.fire({
+        title: 'Pulihkan Proyek?',
+        html: `<p class="mb-2">Apakah Anda yakin ingin memulihkan <strong>"${projectTitle}"</strong>?</p>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#b01116',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Pulihkan!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-xl',
+            cancelButton: 'rounded-xl'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            event.target.submit();
+        }
+    });
+
+    return false;
+}
+</script>
 
                                         <!-- Force Delete Button -->
                                         <form action="{{ route('student.projects.force-delete', $project->id) }}" 

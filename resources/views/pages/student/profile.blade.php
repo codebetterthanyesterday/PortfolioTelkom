@@ -496,7 +496,7 @@
                             <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
                                 
                                 <!-- Modal Header with Progress -->
-                                <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+                                <div class="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
                                     <div class="flex items-center justify-between mb-4">
                                         <h2 class="text-xl font-bold text-gray-800">Edit Profil</h2>
                                         <button @click="showEditModal = false; resetModal()" class="text-gray-400 hover:text-gray-600">
@@ -952,17 +952,17 @@
                         </p>
                     </div>
 
-                    <!-- Project Description -->
+                    <!-- Project Description (Optional) -->
                     <div>
-                        <label for="ind_description" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                            Deskripsi Proyek
+                        <label for="ind_description" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Deskripsi Proyek <span class="text-xs text-gray-500 font-normal">(Opsional)</span>
                         </label>
-                        <textarea name="description" id="ind_description" x-model="projectData.description" rows="6" 
+                        <textarea name="description" id="ind_description" x-model="projectData.description" rows="6"
                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all resize-none" 
-                                  placeholder="Jelaskan detail proyek Anda, tujuan, fitur utama, dan hal menarik lainnya..."></textarea>
-                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  placeholder="(Opsional) Jelaskan detail proyek Anda, tujuan, fitur utama, dll..."></textarea>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" x-show="projectData.description.trim() !== ''">
                             <i class="ri-lightbulb-line"></i>
-                            Tips: Deskripsi yang detail akan menarik lebih banyak investor
+                            Deskripsi yang detail dapat menarik lebih banyak investor
                         </p>
                     </div>
 
@@ -1636,17 +1636,17 @@
                         </p>
                     </div>
 
-                    <!-- Project Description -->
+                    <!-- Project Description (Optional) -->
                     <div>
-                        <label for="team_description" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                            Deskripsi Proyek
+                        <label for="team_description" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Deskripsi Proyek <span class="text-xs text-gray-500 font-normal">(Opsional)</span>
                         </label>
-                        <textarea name="description" id="team_description" x-model="projectData.description" rows="6" 
+                        <textarea name="description" id="team_description" x-model="projectData.description" rows="6"
                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#b01116] focus:border-[#b01116] transition-all resize-none" 
-                                  placeholder="Jelaskan detail proyek tim Anda, peran masing-masing anggota, tujuan, dan fitur utama..."></textarea>
-                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                  placeholder="(Opsional) Jelaskan detail proyek tim Anda, peran anggota, tujuan, dan fitur utama..."></textarea>
+                        <p class="text-xs text-gray-500 mt-1 flex items-center gap-1" x-show="projectData.description.trim() !== ''">
                             <i class="ri-lightbulb-line"></i>
-                            Tips: Jelaskan bagaimana tim Anda bekerja sama untuk menciptakan proyek ini
+                            Deskripsi yang detail membantu menjelaskan kolaborasi tim
                         </p>
                     </div>
 
@@ -1654,7 +1654,7 @@
                         <!-- Project Price -->
                         <div>
                             <label for="team_price" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Estimasi Harga Proyek
+                                Estimasi Harga (Opsional)
                             </label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">Rp</span>
@@ -2042,15 +2042,22 @@
                                         </div>
                                         
                                         <div class="flex items-center gap-3 flex-1">
-                                            <!-- Avatar -->
-                                            <template x-if="student.user.avatar">
-                                                <img :src="student.user.avatar_url" alt="Avatar" class="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200">
-                                            </template>
-                                            <template x-if="!student.user.avatar">
-                                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-lg font-bold ring-2 ring-gray-200">
+                                            <!-- Avatar with graceful fallback -->
+                                            <div x-data="{ imgError: false }" class="relative">
+                                                <img 
+                                                    x-show="student.user.avatar && !imgError"
+                                                    :src="student.user.avatar_url"
+                                                    alt="Avatar"
+                                                    class="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200"
+                                                    x-on:error="imgError = true"
+                                                >
+                                                <div 
+                                                    x-show="!student.user.avatar || imgError"
+                                                    class="w-12 h-12 rounded-full bg-gradient-to-br from-[#b01116] to-pink-600 flex items-center justify-center text-white text-lg font-bold ring-2 ring-gray-200"
+                                                >
                                                     <span x-text="student.user.username.charAt(0).toUpperCase()"></span>
                                                 </div>
-                                            </template>
+                                            </div>
                                             
                                             <!-- Student Details -->
                                             <div class="flex-1">
