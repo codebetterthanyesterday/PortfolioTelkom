@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Project;
 use App\Models\Student;
 use App\Models\Category;
+use App\Models\Investor;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -163,6 +164,24 @@ class HomeController extends Controller
             'featured' => $featured,
             'wishlistedProjects' => $wishlistedProjects
         ]);
+    }
+    
+    public function about()
+    {
+        // Get real statistics from the database
+        $projectsCount = Project::published()->count();
+        $studentsCount = Student::has('projects')->count();
+        $investorsCount = Investor::count();
+        $categoriesCount = Category::has('projects')->count();
+        
+        $stats = [
+            'total_projects' => $projectsCount > 1000 ? '1000+' : $projectsCount,
+            'total_students' => $studentsCount > 1000 ? '1000+' : $studentsCount,
+            'total_investors' => $investorsCount > 1000 ? '1000+' : $investorsCount,
+            'total_categories' => $categoriesCount > 1000 ? '1000+' : $categoriesCount,
+        ];
+        
+        return view('pages.about', compact('stats'));
     }
 }
 

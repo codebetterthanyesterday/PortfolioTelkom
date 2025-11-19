@@ -22,9 +22,7 @@ Route::get('/project', [ProjectController::class, 'gallery'])->name('project');
 Route::get('/project/{category:slug}', [ProjectController::class, 'galleryByCategory'])->name('project.category');
 Route::get('/api/projects/filter', [ProjectController::class, 'filterProjects'])->name('projects.filter');
 
-Route::get('/about', function () {
-    return view('pages.comming');
-})->name('about');
+Route::get('/about', [HomeController::class, 'about'])->name('about');
 
 Route::get('/blog', function () {
     return view('pages.comming');
