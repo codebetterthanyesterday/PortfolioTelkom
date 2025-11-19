@@ -68,14 +68,11 @@
                     Chat Dengan {{ $project->type === 'team' ? 'Team Leader' : 'Pelajar' }}
                 </a>
                 
-                <form action="{{ route('investor.wishlists.toggle', $project) }}" method="POST" id="wishlistForm">
-                    @csrf
-                    <button type="submit" 
-                            class="w-full {{ $isWishlisted ? 'bg-pink-100 border-pink-300' : 'bg-pink-50 border-pink-200' }} hover:bg-pink-100 text-[#b01116] font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 border">
-                        <i class="{{ $isWishlisted ? 'ri-heart-fill' : 'ri-heart-line' }}"></i>
-                        {{ $isWishlisted ? 'Ditambahkan' : 'Tambahkan ke Wishlist' }}
-                    </button>
-                </form>
+                <button type="submit" 
+                        class="w-full {{ $isWishlisted ? 'bg-pink-100 border-pink-300' : 'bg-pink-50 border-pink-200' }} hover:bg-pink-100 text-[#b01116] font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 border">
+                    <i class="{{ $isWishlisted ? 'ri-heart-fill' : 'ri-heart-line' }}"></i>
+                    {{ $isWishlisted ? 'Ditambahkan' : 'Tambahkan ke Wishlist' }}
+                </button>
             @else
                 <!-- Other Student (not owner) -->
                 <a href="{{ $project->student->getWhatsappLink() }}" 
