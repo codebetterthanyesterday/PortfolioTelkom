@@ -559,7 +559,8 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Project updated successfully!',
-                'project' => $project
+                'project' => $project,
+                'redirect_url' => route('projects.show', $project->slug)
             ]);
 
         } catch (\Exception $e) {
@@ -576,11 +577,8 @@ class ProjectController extends Controller
         try {
             $this->authorize('delete', $project);
 
-            // Delete media files
-            foreach ($project->media as $media) {
-                Storage::disk('public')->delete($media->file_path);
-            }
-
+            // Soft delete - DO NOT delete media files yet
+            // Media will only be deleted on force delete
             $project->delete();
 
             // Return JSON response for AJAX

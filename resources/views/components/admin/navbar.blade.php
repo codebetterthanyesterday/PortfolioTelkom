@@ -14,7 +14,7 @@
             <!-- Right Section -->
             <div class="flex items-center gap-3">
                 <!-- Notifications -->
-                <div x-data="{ notifOpen: false }" class="relative">
+                {{-- <div x-data="{ notifOpen: false }" class="relative">
                     <button @click="notifOpen = !notifOpen" class="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         <i class="ri-notification-3-line text-xl"></i>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-[#b01116] rounded-full"></span>
@@ -57,7 +57,7 @@
                             </a>
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
                 <!-- User Menu -->
                 <div x-data="{ userMenuOpen: false }" class="relative">

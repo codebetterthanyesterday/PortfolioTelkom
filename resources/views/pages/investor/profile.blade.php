@@ -282,7 +282,7 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase mb-4">Kontak</h3>
                         
                         <!-- Email -->
-                        <a href="mailto:{{ auth()->user()->email }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
+                        <div class="flex items-center gap-3 text-gray-600 group">
                             <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
                                 <i class="ri-mail-line text-lg"></i>
                             </div>
@@ -290,11 +290,11 @@
                                 <p class="text-xs text-gray-500">Email</p>
                                 <p class="text-sm font-medium">{{ auth()->user()->email }}</p>
                             </div>
-                        </a>
+                        </div>
 
                         @if(auth()->user()->phone_number)
                         <!-- Phone -->
-                        <a href="tel:{{ auth()->user()->phone_number }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
+                        <div class="flex items-center gap-3 text-gray-600 group">
                             <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
                                 <i class="ri-phone-line text-lg"></i>
                             </div>
@@ -302,7 +302,7 @@
                                 <p class="text-xs text-gray-500">Telepon</p>
                                 <p class="text-sm font-medium">{{ auth()->user()->phone_number }}</p>
                             </div>
-                        </a>
+                        </div>
                         @endif
 
                         <!-- Investment Stats -->

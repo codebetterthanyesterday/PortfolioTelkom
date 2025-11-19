@@ -46,26 +46,26 @@
 
     <!-- This Week Popular Carousel -->
     @if($thisWeekPopular->count() > 0)
-        <section id="this-week-popular" class="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#b01116] to-[#8d0d11]">
+        <section id="this-week-popular" class="py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
             <div class="max-w-7xl mx-auto">
                 <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
                     <!-- Left Column - Title and Description -->
                     <div class="lg:w-1/3 space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full">
-                            <i class="ri-fire-fill text-[#b01116] text-2xl"></i>
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-[#b01116] rounded-full">
+                            <i class="ri-fire-fill text-[#fbfbfb] text-2xl"></i>
                         </div>
                         
                         <div class="space-y-4">
-                            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
+                            <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-[#333] leading-tight">
                                 Populer<br>Minggu Ini
                             </h2>
                             
-                            <p class="text-base sm:text-lg text-white/90 leading-relaxed">
+                            <p class="text-base sm:text-lg text-[#a6a6a6] leading-relaxed">
                                 Proyek dengan views terbanyak dalam 7 hari terakhir
                             </p>
                         </div>
                         
-                        <a href="{{ route('project') }}" class="inline-flex items-center gap-2 text-white hover:text-white/80 font-semibold text-base transition-colors duration-200">
+                        <a href="{{ route('project') }}" class="inline-flex items-center justify-center gap-2 font-medium bg-pink-50 hover:bg-pink-100 text-[#b01116] px-3 py-2 rounded-md transition-colors ease-in-out duration-300 w-full text-center">
                             jelajahi lebih lanjut
                             <i class="ri-arrow-right-line text-lg"></i>
                         </a>
@@ -80,7 +80,7 @@
                                      :style="`transform: translateX(-${currentSlide * 100}%)`" 
                                      id="thisWeekCarousel">
                                     @foreach($thisWeekPopular->chunk(3) as $chunkIndex => $chunk)
-                                    <div class="min-w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div class="min-w-full grid grid-cols-1 md:grid-cols-3 gap-6 py-5">
                                         @foreach($chunk as $project)
                                         <div class="animate-fade-in" style="animation-delay: {{ $loop->index * 100 }}ms">
                                             @include('pages.partials.project-card', ['project' => $project, 'wishlistedProjects' => $wishlistedProjects])

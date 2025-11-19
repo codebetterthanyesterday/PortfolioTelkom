@@ -7,8 +7,10 @@ use App\Models\Expertise;
 use App\Models\Category;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
@@ -296,6 +298,88 @@ class StudentController extends Controller
             'expertise' => $expertise,
             'message' => 'Keahlian berhasil ditambahkan'
         ]);
+    }
+    
+    /**
+     * Display trashed projects
+     */
+    public function trash()
+    {
+        $student = auth()->user()->student;
+        
+        // Get soft deleted projects owned by this student
+        $trashedProjects = Project::onlyTrashed()
+            ->where('student_id', $student->id)
+            ->with(['media', 'categories', 'members', 'student.user'])
+            ->latest('deleted_at')
+            ->get();
+        
+        // Also get team projects where student is leader and project is trashed
+        $trashedTeamProjects = Project::onlyTrashed()
+            ->whereHas('members', function($query) use ($student) {
+                $query->where('student_id', $student->id)
+                      ->where('role', 'leader');
+            })
+            ->where('student_id', '!=', $student->id)
+            ->with(['media', 'categories', 'members', 'student.user'])
+            ->latest('deleted_at')
+            ->get();
+        
+        // Merge both collections
+        $allTrashedProjects = $trashedProjects->merge($trashedTeamProjects);
+        
+        return view('pages.student.trash', compact('allTrashedProjects'));
+    }
+    
+    /**
+     * Restore a soft deleted project
+     */
+    public function restore($id)
+    {
+        $project = Project::onlyTrashed()->findOrFail($id);
+        
+        // Authorization check
+        $this->authorize('restore', $project);
+        
+        try {
+            $project->restore();
+            
+            return redirect()->back()->with('success', 'Proyek berhasil dikembalikan');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengembalikan proyek: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Permanently delete a project
+     */
+    public function forceDelete($id)
+    {
+        $project = Project::onlyTrashed()->findOrFail($id);
+        
+        // Authorization check
+        $this->authorize('forceDelete', $project);
+        
+        try {
+            DB::beginTransaction();
+            
+            // Delete all associated media files
+            foreach ($project->media as $media) {
+                if (Storage::disk('public')->exists($media->file_path)) {
+                    Storage::disk('public')->delete($media->file_path);
+                }
+            }
+            
+            // Force delete the project (will cascade delete relations)
+            $project->forceDelete();
+            
+            DB::commit();
+            
+            return redirect()->back()->with('success', 'Proyek berhasil dihapus permanen');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal menghapus proyek: ' . $e->getMessage());
+        }
     }
 }
 

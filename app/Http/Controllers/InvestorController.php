@@ -8,7 +8,20 @@ use Illuminate\Support\Facades\Storage;
 
 class InvestorController extends Controller
 {
+    public function show($username)
+    {
+        $investor = Investor::whereHas('user', function($query) use ($username) {
+            $query->where('username', $username);
+        })->with('user')->firstOrFail();
 
+        $wishlistProjects = $investor->wishlistProjects()
+            ->with(['student.user', 'media', 'categories'])
+            ->published()
+            ->latest('wishlists.created_at')
+            ->get();
+
+        return view('pages.detail-investor', compact('investor', 'wishlistProjects'));
+    }
 
     public function edit()
     {

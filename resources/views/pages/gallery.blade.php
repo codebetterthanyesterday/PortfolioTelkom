@@ -64,14 +64,14 @@
     @endif
 
     <!-- Show category header when filtered -->
-    @if(isset($category))
+    {{-- @if(isset($category))
     <section class="py-8 bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-gray-900">{{ $category->name }}</h2>
             <p class="text-gray-600 mt-2">{{ $featuredProjects->count() + $mostViewedProjects->count() }} proyek ditemukan</p>
         </div>
     </section>
-    @endif
+    @endif --}}
 
     <!-- Featured/Recent Projects Section -->
     @if($featuredProjects->count() > 0)
@@ -79,11 +79,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-bold text-gray-900">
-                        @if(isset($category))
-                            Proyek Terbaru - {{ $category->name }}
-                        @else
-                            Featured Projects
-                        @endif
+                        Featured Projects
                     </h2>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid">
@@ -100,11 +96,7 @@
     <section id="most-viewed" class="py-16 bg-gray-50" @if(isset($category)) style="display: block;" @else x-show="!showFilteredProjects" @endif>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-gray-900 mb-8">
-                @if(isset($category))
-                    Paling Banyak Dilihat - {{ $category->name }}
-                @else
-                    Most Viewed Projects
-                @endif
+                Most Viewed Projects
             </h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($mostViewedProjects as $project)

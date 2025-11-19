@@ -7,27 +7,26 @@
     <div class="flex flex-col lg:flex-row gap-8" >
         {{-- <!-- Left Column (2 columns width) --> --}}
         <div class="flex-1 lg:w-2/3 lg:order-1 order-2">
-            <!-- Quick Actions Bar -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div class="mb-4 sm:mb-0">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-1">Aksi Cepat</h3>
-                        <p class="text-sm text-gray-600">Buat proyek baru atau inisiasi proyek tim</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button @click="showIndividualProjectModal = true; projectType = 'individual'; resetProjectModal()" 
-                                class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                            <i class="ri-user-line"></i>
-                            <span>Proyek Individual</span>
-                        </button>
-                        <button @click="showTeamProjectModal = true; projectType = 'team'; resetProjectModal()" 
-                                class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#b01116] to-[#8d0d11] hover:from-[#8d0d11] hover:to-[#b01116] text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                            <i class="ri-team-line"></i>
-                            <span>Proyek Tim</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <!-- Action Buttons Row -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-8">
+            <button @click="showIndividualProjectModal = true; projectType = 'individual'; resetProjectModal()" 
+                class="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-[#b01116] hover:bg-[#8d0d11] text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg">
+                <i class="ri-add-circle-line text-xl"></i>
+                <span>Buat Proyek Individual</span>
+            </button>
+            
+            <button @click="showTeamProjectModal = true; projectType = 'team'; resetProjectModal()" 
+                class="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-pink-50 hover:bg-pink-100 text-[#b01116] border-2 border-pink-200 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg">
+                <i class="ri-team-fill text-xl"></i>
+                <span>Inisiasi Proyek Tim</span>
+            </button>
+            
+            <a href="{{ route('student.projects.trash') }}" 
+               class="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-orange-50 hover:bg-orange-100 text-orange-700 border-2 border-orange-200 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg">
+                <i class="ri-delete-bin-6-line text-xl"></i>
+                <span>Tempat Sampah</span>
+            </a>
+        </div>
 
             <!-- Navigation Tabs -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8" x-data="{ activeTab: 'all' }">
@@ -462,27 +461,27 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase mb-4">Kontak</h3>
                         
                         <!-- Email -->
-                        <a href="mailto:{{ auth()->user()->email }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
-                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
+                        <div class="flex items-center gap-3 text-gray-600">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                 <i class="ri-mail-line text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Email</p>
                                 <p class="text-sm font-medium">{{ auth()->user()->email }}</p>
                             </div>
-                        </a>
+                        </div>
 
                         @if(auth()->user()->phone_number)
                         <!-- Phone -->
-                        <a href="tel:{{ auth()->user()->phone_number }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
-                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
+                        <div class="flex items-center gap-3 text-gray-600">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                 <i class="ri-phone-line text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Telepon</p>
                                 <p class="text-sm font-medium">{{ auth()->user()->phone_number }}</p>
                             </div>
-                        </a>
+                        </div>
                         @endif
                     </div>
 

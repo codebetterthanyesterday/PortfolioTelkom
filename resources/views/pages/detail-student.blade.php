@@ -186,31 +186,31 @@
                     <!-- Contact Information -->
                     <div class="space-y-3">
                         <h3 class="text-sm font-bold text-gray-800 uppercase mb-4">Kontak Pelajar</h3>
-                        
+
                         <!-- Email -->
                         @if($student->user->email)
-                        <a href="mailto:{{ $student->user->email }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
-                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
+                        <div class="flex items-center gap-3 text-gray-600">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                 <i class="ri-mail-line text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Email</p>
                                 <p class="text-sm font-medium break-all">{{ $student->user->email }}</p>
                             </div>
-                        </a>
+                        </div>
                         @endif
 
                         <!-- Phone -->
                         @if($student->user->phone_number)
-                        <a href="tel:{{ $student->user->phone_number }}" class="flex items-center gap-3 text-gray-600 hover:text-[#b01116] transition-colors group">
-                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#b01116]/10 transition-colors">
+                        <div class="flex items-center gap-3 text-gray-600">
+                            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                                 <i class="ri-phone-line text-lg"></i>
                             </div>
                             <div>
                                 <p class="text-xs text-gray-500">Telepon</p>
                                 <p class="text-sm font-medium">{{ $student->user->phone_number }}</p>
                             </div>
-                        </a>
+                        </div>
                         @endif
 
                         @if(!$student->user->email && !$student->user->phone_number)

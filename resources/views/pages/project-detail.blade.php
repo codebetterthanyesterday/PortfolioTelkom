@@ -1792,7 +1792,12 @@ function projectDetail(projectId) {
                     icon: 'success',
                     confirmButtonColor: '#b01116'
                 }).then(() => {
-                    window.location.reload();
+                    // Redirect to new URL with updated slug
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.reload();
+                    }
                 });
             } catch (e) {
                 console.error(e);

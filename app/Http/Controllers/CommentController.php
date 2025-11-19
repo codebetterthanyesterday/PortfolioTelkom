@@ -29,7 +29,7 @@ class CommentController extends Controller
         // Handle notifications
         $this->createNotifications($comment, $project);
 
-        return back()->with('success', 'Comment posted successfully!');
+        return back();
     }
 
     protected function createNotifications(Comment $comment, Project $project)

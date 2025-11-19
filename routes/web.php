@@ -40,6 +40,9 @@ Route::get('/projects/{project:slug}', [ProjectController::class, 'show'])->name
 // Dynamic student detail page
 Route::get('/students/{student:username}', [StudentController::class, 'show'])->name('detail.student');
 
+// Dynamic investor detail page
+Route::get('/investors/{username}', [InvestorController::class, 'show'])->name('detail.investor');
+
 // Live search API
 Route::get('/api/search', [SearchController::class, 'liveSearch'])->name('api.search');
 Route::post('/api/search/advanced', [SearchController::class, 'advancedSearch'])->name('api.search.advanced');
@@ -128,6 +131,11 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    
+    // Trash Management
+    Route::get('/projects/trash', [StudentController::class, 'trash'])->name('projects.trash');
+    Route::post('/projects/{id}/restore', [StudentController::class, 'restore'])->name('projects.restore');
+    Route::delete('/projects/{id}/force-delete', [StudentController::class, 'forceDelete'])->name('projects.force-delete');
     
     // Comments
     Route::post('/projects/{project}/comments', [CommentController::class, 'store'])->name('comments.store');

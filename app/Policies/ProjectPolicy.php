@@ -58,4 +58,42 @@ class ProjectPolicy
         
         return false;
     }
+    
+    /**
+     * Determine if the user can restore the project.
+     */
+    public function restore(User $user, Project $project): bool
+    {
+        // Project owner can always restore
+        if ($user->student && $user->student->id === $project->student_id) {
+            return true;
+        }
+        
+        // For team projects, only leader can restore
+        if ($project->isTeam()) {
+            $leader = $project->getLeader();
+            return $leader && $user->student && $leader->student_id === $user->student->id;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Determine if the user can force delete the project permanently.
+     */
+    public function forceDelete(User $user, Project $project): bool
+    {
+        // Project owner can always force delete
+        if ($user->student && $user->student->id === $project->student_id) {
+            return true;
+        }
+        
+        // For team projects, only leader can force delete
+        if ($project->isTeam()) {
+            $leader = $project->getLeader();
+            return $leader && $user->student && $leader->student_id === $user->student->id;
+        }
+        
+        return false;
+    }
 }
