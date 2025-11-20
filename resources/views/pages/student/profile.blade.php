@@ -3759,6 +3759,39 @@ document.addEventListener('alpine:init', () => {
                 fileInput.value = '';
             }
         },
+
+        // ================= Change Detection & Media Helpers (Added to fix undefined function errors) =================
+        hasChanged(field) {
+            if (!this.originalProjectData) return false;
+            const current = this.projectData[field];
+            const original = this.originalProjectData[field];
+            if (Array.isArray(current)) {
+                const curSorted = (current || []).slice().sort().join(',');
+                const origSorted = (original || []).slice().sort().join(',');
+                return curSorted !== origSorted;
+            }
+            return current !== original;
+        },
+        getOriginalValue(field) {
+            if (!this.originalProjectData) return null;
+            const original = this.originalProjectData[field];
+            if (Array.isArray(original)) {
+                return original.length;
+            }
+            return original;
+        },
+        // Wrapper to match template expecting plural naming
+        getTotalImagesCount() {
+            return this.getTotalImageCount ? this.getTotalImageCount() : 0;
+        },
+        getDeletedImagesCount() {
+            return this.projectData.images_to_delete ? this.projectData.images_to_delete.length : 0;
+        },
+        hasImagesChanged() {
+            const hasNew = this.newMediaPreviews && this.newMediaPreviews.length > 0;
+            const hasDeleted = this.projectData.images_to_delete && this.projectData.images_to_delete.length > 0;
+            return hasNew || hasDeleted;
+        },
         
         // Toggle selections
         toggleCategory(categoryId) {
