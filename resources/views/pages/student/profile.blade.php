@@ -1344,7 +1344,7 @@
                             <input type="file" 
                                    name="media[]" 
                                    multiple 
-                                   accept="image/*,video/*" 
+                                   accept="image/*" 
                                    class="hidden" 
                                    id="ind_media"
                                    @change="handleFiles($event.target.files)">
@@ -1353,7 +1353,7 @@
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
-                                Max 10 files • Each up to 10MB • Images: JPG, PNG • Videos: MP4, MOV (max 60s)
+                                Max 10 files • Each up to 10MB • JPG, PNG, GIF, WebP
                             </div>
                         </div>
                         
@@ -2138,7 +2138,7 @@
                             <input type="file" 
                                    name="media[]" 
                                    multiple 
-                                   accept="image/*,video/*" 
+                                   accept="image/*" 
                                    class="hidden" 
                                    id="team_media"
                                    @change="handleFiles($event.target.files)">
@@ -2147,7 +2147,7 @@
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
-                                Max 10 files • Each up to 10MB • Images: JPG, PNG • Videos: MP4, MOV (max 60s)
+                                Max 10 files • Each up to 10MB • JPG, PNG, GIF, WebP
                             </div>
                         </div>
                         

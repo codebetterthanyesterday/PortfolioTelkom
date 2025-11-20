@@ -1062,16 +1062,16 @@
                                     <input type="file" 
                                            name="new_media[]" 
                                            multiple 
-                                           accept="image/*,video/*" 
+                                           accept="image/*" 
                                            class="hidden" 
                                            id="edit_media_detail"
                                            @change="handleNewMediaFiles($event.target.files)">
                                     <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                         <i class="ri-folder-open-line"></i>
-                                        Pilih Media
+                                        Pilih Gambar
                                     </label>
                                     <div class="text-xs text-gray-500 mt-3">
-                                        Max 10 files • Each up to 10MB • Images: JPG, PNG, GIF • Videos: MP4, MOV (max 60s)
+                                        Max 10 files • Each up to 10MB • JPG, PNG, GIF, WebP
                                     </div>
                                 </div>
                                 
