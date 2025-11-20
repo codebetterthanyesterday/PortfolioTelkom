@@ -62,7 +62,7 @@
                                 <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-[#b01116] bg-gray-100 border-gray-300 rounded focus:ring-[#b01116] focus:ring-2">
                                 <label for="remember" class="ml-2 text-sm text-gray-900 cursor-pointer">Ingat saya</label>
                             </div>
-                            <a href="{{ route('password.forgot') }}" class="text-sm text-[#b01116] hover:underline">Lupa password?</a>
+                            {{-- <a href="{{ route('password.forgot') }}" class="text-sm text-[#b01116] hover:underline">Lupa password?</a> --}}
                         </div>
                         <button type="submit" disabled class="w-full cursor-not-allowed transition-all duration-200 ease-in-out submit-button-auth px-3 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-medium text-gray-800 bg-gray-300">Masuk</button>
                         <div class="space-y-2">
