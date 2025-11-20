@@ -978,49 +978,55 @@
                         <div>
                             <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2 text-lg">
                                 <i class="ri-image-line text-[#b01116]"></i>
-                                Kelola Gambar Proyek <span class="text-[#b01116]">*</span>
+                                Kelola Media Proyek <span class="text-[#b01116]">*</span>
                             </h4>
-                            <p class="text-sm text-gray-600 mb-4">Minimal 1 gambar diperlukan untuk proyek</p>
+                            <p class="text-sm text-gray-600 mb-4">Minimal 1 media (gambar/video) diperlukan untuk proyek</p>
                             
                             
-                            <!-- Existing Images Section -->
+                            <!-- Existing Media Section -->
                             <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="mb-6">
                                 <h5 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                     <i class="ri-gallery-line text-[#b01116]"></i>
-                                    Gambar Saat Ini (<span x-text="projectData.existing_images.length"></span>)
+                                    Media Saat Ini (<span x-text="projectData.existing_images.length"></span>)
                                 </h5>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
                                     <template x-for="(image, index) in projectData.existing_images" :key="'existing-' + index">
                                         <div class="relative group">
                                             <div class="aspect-square rounded-lg overflow-hidden border-2"
                                                  :class="index === 0 ? 'border-[#b01116] ring-2 ring-red-100' : 'border-gray-300'">
-                                                <img :src="image.url || image.file_path" 
-                                                     :alt="image.alt_text || 'Project Image'" 
-                                                     class="w-full h-full object-cover">
+                                                <template x-if="image.type === 'image' || !image.type">
+                                                    <img :src="image.url || image.file_path" 
+                                                         :alt="image.alt_text || 'Project Media'" 
+                                                         class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="image.type === 'video'">
+                                                    <video :src="image.url || image.file_path" 
+                                                           class="w-full h-full object-cover"
+                                                           controls></video>
+                                                </template>
                                             </div>
                                             
-                                            <!-- Action Buttons -->
-                                            <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <!-- Action Buttons - Always Visible for Mobile UX -->
+                                            <div class="absolute top-2 right-2 flex gap-1 z-[5]">
                                                 <button type="button"
                                                         @click="setAsMainImage(index, 'existing')"
-                                                        :disabled="index === 0"
-                                                        :class="index === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'"
-                                                        class="bg-blue-500 text-white rounded-full p-1.5 text-xs transition-colors"
-                                                        title="Set as main image">
-                                                    <i class="ri-star-line"></i>
+                                                        x-show="index !== 0"
+                                                        class="bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition-colors"
+                                                        title="Set as main media">
+                                                    <i class="ri-star-line text-sm"></i>
                                                 </button>
                                                 <button type="button"
                                                         @click="markImageForDeletion(index)"
-                                                        class="bg-red-600 text-white rounded-full p-1.5 transition-colors hover:bg-red-700"
-                                                        title="Delete image">
-                                                    <i class="ri-close-line text-xs"></i>
+                                                        class="bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-colors"
+                                                        title="Delete media">
+                                                    <i class="ri-close-line text-sm"></i>
                                                 </button>
                                             </div>
                                             
-                                            <!-- Main Image Badge -->
+                                            <!-- Main Media Badge -->
                                             <div x-show="index === 0" 
                                                  class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
-                                                <i class="ri-star-fill mr-1"></i>Gambar Utama
+                                                <i class="ri-star-fill mr-1"></i>Media Utama
                                             </div>
                                             
                                             <!-- Deletion Overlay -->
@@ -1042,11 +1048,11 @@
                                 </div>
                             </div>
                             
-                            <!-- Add New Images Section -->
+                            <!-- Add New Media Section -->
                             <div>
                                 <h5 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                     <i class="ri-add-circle-line text-[#b01116]"></i>
-                                    Tambah Gambar Baru
+                                    Tambah Media Baru
                                 </h5>
                                 <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#b01116] hover:bg-red-50 transition-all">
                                     <i class="ri-upload-cloud-2-line text-4xl text-gray-400 mb-3"></i>
@@ -1056,40 +1062,47 @@
                                     <input type="file" 
                                            name="new_media[]" 
                                            multiple 
-                                           accept="image/*" 
+                                           accept="image/*,video/*" 
                                            class="hidden" 
                                            id="edit_media_detail"
                                            @change="handleNewMediaFiles($event.target.files)">
                                     <label for="edit_media_detail" class="inline-flex items-center gap-2 cursor-pointer bg-[#b01116] text-white px-4 py-2.5 rounded-lg hover:bg-[#8d0d11] transition-colors font-medium shadow-md hover:shadow-lg">
                                         <i class="ri-folder-open-line"></i>
-                                        Pilih Gambar
+                                        Pilih Media
                                     </label>
                                     <div class="text-xs text-gray-500 mt-3">
-                                        Max 10 files • Each up to 10MB • JPG, PNG, GIF
+                                        Max 10 files • Each up to 10MB • Images: JPG, PNG, GIF • Videos: MP4, MOV (max 60s)
                                     </div>
                                 </div>
                                 
-                                <!-- New Images Preview -->
+                                <!-- New Media Preview -->
                                 <div x-show="newMediaPreviews.length > 0" class="mt-4">
                                     <p class="text-sm font-medium text-gray-700 mb-3">
-                                        Gambar Baru (<span x-text="newMediaPreviews.length"></span>)
-                                        <span class="text-xs text-gray-500 ml-2">• Akan ditambahkan setelah gambar yang ada</span>
+                                        Media Baru (<span x-text="newMediaPreviews.length"></span>)
+                                        <span class="text-xs text-gray-500 ml-2">• Akan ditambahkan setelah media yang ada</span>
                                     </p>
                                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                                         <template x-for="(preview, index) in newMediaPreviews" :key="'new-' + index">
                                             <div class="relative group">
                                                 <div class="aspect-square rounded-lg overflow-hidden border-2 border-green-300">
-                                                    <img :src="preview.url" 
-                                                         :alt="preview.name" 
-                                                         class="w-full h-full object-cover">
+                                                    <template x-if="preview.type === 'image'">
+                                                        <img :src="preview.url" 
+                                                             :alt="preview.name" 
+                                                             class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="preview.type === 'video'">
+                                                        <video :src="preview.url" 
+                                                               class="w-full h-full object-cover"
+                                                               controls></video>
+                                                    </template>
                                                 </div>
                                                 <button type="button"
                                                         @click="removeNewMediaFile(index)"
-                                                        class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
-                                                    <i class="ri-close-line text-xs"></i>
+                                                        class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-colors z-[5]">
+                                                    <i class="ri-close-line text-sm"></i>
                                                 </button>
                                                 <div class="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 text-center font-medium">
-                                                    <i class="ri-add-line mr-1"></i>Baru
+                                                    <i class="ri-add-line mr-1"></i>Baru <span x-show="preview.type === 'video' && preview.duration" x-text="'(' + preview.duration + 's)'"></span>
                                                 </div>
                                             </div>
                                         </template>
@@ -1097,7 +1110,7 @@
                                 </div>
                             </div>
                             
-                            <!-- Image Summary -->
+                            <!-- Media Summary -->
                             <div class="mt-4 p-4 rounded-lg border-2"
                                  :class="getTotalImagesCount() === 0 ? 'bg-gray-50 border-gray-200' : 'bg-green-50 border-green-200'">
                                 <div class="flex items-center gap-3"
@@ -1107,12 +1120,12 @@
                                         <div class="font-semibold">
                                             <span x-show="getTotalImagesCount() === 0">Media (Opsional)</span>
                                             <span x-show="getTotalImagesCount() > 0">
-                                                Total: <span x-text="getTotalImagesCount()"></span> gambar
+                                                Total: <span x-text="getTotalImagesCount()"></span> media
                                             </span>
                                         </div>
                                         <div class="text-sm mt-1" x-show="getTotalImagesCount() > 0">
-                                            <span x-text="getExistingImagesCount() + ' gambar saat ini'"></span>
-                                            <span x-show="newMediaPreviews.length > 0"> • <span x-text="newMediaPreviews.length + ' gambar baru'"></span></span>
+                                            <span x-text="getExistingImagesCount() + ' media saat ini'"></span>
+                                            <span x-show="newMediaPreviews.length > 0"> • <span x-text="newMediaPreviews.length + ' media baru'"></span></span>
                                             <span x-show="getDeletedImagesCount() > 0"> • <span x-text="getDeletedImagesCount() + ' akan dihapus'"></span></span>
                                         </div>
                                     </div>
@@ -1334,9 +1347,14 @@
                                             </p>
                                             <div x-show="projectData.existing_images && projectData.existing_images.length > 0" class="grid grid-cols-4 md:grid-cols-6 gap-2">
                                                 <template x-for="(image, index) in (projectData.existing_images || [])" :key="'review-existing-' + index">
-                                                    <div class="aspect-square rounded-lg border-2 overflow-hidden shadow-sm hover:shadow-md transition-all"
+                                                    <div class="aspect-square rounded-lg border-2 overflow-hidden shadow-sm hover:shadow-md transition-all relative"
                                                          :class="index === 0 ? 'border-[#b01116] ring-2 ring-red-200' : 'border-gray-300'">
-                                                        <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        <template x-if="image.type === 'image' || !image.type">
+                                                            <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        </template>
+                                                        <template x-if="image.type === 'video'">
+                                                            <video :src="image.url || image.file_path" class="w-full h-full object-cover" controls></video>
+                                                        </template>
                                                         <div x-show="index === 0" class="absolute top-0 right-0 bg-[#b01116] text-white text-xs px-1.5 py-0.5 rounded-bl-lg font-semibold">
                                                             <i class="ri-star-fill"></i>
                                                         </div>
@@ -1385,7 +1403,12 @@
                                                     <div x-show="!projectData.images_to_delete || !projectData.images_to_delete.includes(image.id || index)" 
                                                          class="aspect-square rounded-lg border-2 border-blue-300 overflow-hidden shadow-sm hover:shadow-md transition-all relative group"
                                                          :class="index === 0 ? 'ring-2 ring-[#b01116]' : ''">
-                                                        <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        <template x-if="image.type === 'image' || !image.type">
+                                                            <img :src="image.url || image.file_path" class="w-full h-full object-cover" :alt="'Image ' + (index + 1)">
+                                                        </template>
+                                                        <template x-if="image.type === 'video'">
+                                                            <video :src="image.url || image.file_path" class="w-full h-full object-cover" controls></video>
+                                                        </template>
                                                         <div class="absolute inset-0 bg-gradient-to-t from-blue-900/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-1">
                                                             <span class="text-white text-xs font-semibold">Tetap</span>
                                                         </div>
@@ -1398,9 +1421,16 @@
                                                 <!-- New Images -->
                                                 <template x-for="(preview, index) in newMediaPreviews" :key="'review-after-new-' + index">
                                                     <div class="aspect-square rounded-lg border-2 border-green-400 overflow-hidden shadow-sm hover:shadow-md transition-all relative group">
-                                                        <img :src="preview.url" class="w-full h-full object-cover" :alt="preview.name">
+                                                        <template x-if="preview.type === 'image'">
+                                                            <img :src="preview.url" class="w-full h-full object-cover" :alt="preview.name">
+                                                        </template>
+                                                        <template x-if="preview.type === 'video'">
+                                                            <video :src="preview.url" class="w-full h-full object-cover" controls></video>
+                                                        </template>
                                                         <div class="absolute inset-0 bg-gradient-to-t from-green-900/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-1">
-                                                            <span class="text-white text-xs font-semibold">Baru</span>
+                                                            <span class="text-white text-xs font-semibold">
+                                                                Baru <span x-show="preview.type === 'video' && preview.duration" x-text="'(' + preview.duration + 's)'"></span>
+                                                            </span>
                                                         </div>
                                                         <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-bl-lg font-semibold">
                                                             <i class="ri-add-line"></i>
@@ -2140,11 +2170,44 @@ function projectDetail(projectId) {
                         this.newMediaPreviews.push({
                             url: e.target.result,
                             name: file.name,
-                            type: file.type,
+                            type: 'image',
                             size: file.size
                         });
                     };
                     reader.readAsDataURL(file);
+                } else if (file.type.startsWith('video/')) {
+                    // Validate video duration
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = () => {
+                        window.URL.revokeObjectURL(video.src);
+                        if (video.duration > 60) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Video Terlalu Panjang',
+                                text: `Video "${file.name}" berdurasi ${Math.round(video.duration)}s. Maksimal durasi video adalah 60 detik (1 menit).`,
+                                confirmButtonColor: '#b01116'
+                            });
+                            // Remove this file from the list
+                            const fileIndex = this.newMediaFiles.indexOf(file);
+                            if (fileIndex > -1) {
+                                this.newMediaFiles.splice(fileIndex, 1);
+                            }
+                        } else {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.newMediaPreviews.push({
+                                    url: e.target.result,
+                                    name: file.name,
+                                    type: 'video',
+                                    size: file.size,
+                                    duration: Math.round(video.duration)
+                                });
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                    video.src = URL.createObjectURL(file);
                 }
             });
         },

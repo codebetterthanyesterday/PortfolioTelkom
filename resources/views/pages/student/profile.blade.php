@@ -1353,7 +1353,7 @@
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
-                                Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
+                                Max 10 files • Each up to 10MB • Images: JPG, PNG • Videos: MP4, MOV (max 60s)
                             </div>
                         </div>
                         
@@ -1361,25 +1361,33 @@
                         <div x-show="previews.length > 0" class="mt-4">
                             <p class="text-sm font-medium text-gray-700 mb-3">
                                 Selected Files (<span x-text="previews.length"></span>)
-                                <span class="text-xs text-gray-500 ml-2">• First image will be the main image</span>
+                                <span class="text-xs text-gray-500 ml-2">• First media will be the main media</span>
                             </p>
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                                 <template x-for="(preview, index) in previews" :key="index">
                                     <div class="relative group">
                                         <div class="aspect-square rounded-lg overflow-hidden border-2"
                                              :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
-                                            <img :src="preview.url" 
-                                                 :alt="preview.name" 
-                                                 class="w-full h-full object-cover">
+                                            <template x-if="preview.type && preview.type.startsWith('image')">
+                                                <img :src="preview.url" 
+                                                     :alt="preview.name" 
+                                                     class="w-full h-full object-cover">
+                                            </template>
+                                            <template x-if="preview.type && preview.type.startsWith('video')">
+                                                <video :src="preview.url" 
+                                                       class="w-full h-full object-cover" 
+                                                       controls></video>
+                                            </template>
                                         </div>
                                         <button type="button"
                                                 @click="removeFile(index)"
-                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-colors z-[5]">
                                             <i class="ri-close-line text-sm"></i>
                                         </button>
                                         <div x-show="index === 0" 
                                              class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
-                                            Main Image
+                                            <span x-show="preview.type && preview.type.startsWith('image')">Main Image</span>
+                                            <span x-show="preview.type && preview.type.startsWith('video')">Main Video <span x-show="preview.duration" x-text="'(' + preview.duration + 's)'"></span></span>
                                         </div>
                                     </div>
                                 </template>
@@ -2139,7 +2147,7 @@
                                 Choose Files
                             </label>
                             <div class="text-xs text-gray-500 mt-3">
-                                Max 10 files • Each up to 10MB • JPG, PNG, MP4, MOV
+                                Max 10 files • Each up to 10MB • Images: JPG, PNG • Videos: MP4, MOV (max 60s)
                             </div>
                         </div>
                         
@@ -2154,18 +2162,26 @@
                                     <div class="relative group">
                                         <div class="aspect-square rounded-lg overflow-hidden border-2"
                                              :class="index === 0 ? 'border-[#b01116]' : 'border-gray-300'">
-                                            <img :src="preview.url" 
-                                                 :alt="preview.name" 
-                                                 class="w-full h-full object-cover">
+                                            <template x-if="preview.type && preview.type.startsWith('image')">
+                                                <img :src="preview.url" 
+                                                     :alt="preview.name" 
+                                                     class="w-full h-full object-cover">
+                                            </template>
+                                            <template x-if="preview.type && preview.type.startsWith('video')">
+                                                <video :src="preview.url" 
+                                                       class="w-full h-full object-cover" 
+                                                       controls></video>
+                                            </template>
                                         </div>
                                         <button type="button"
                                                 @click="removeFile(index)"
-                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
+                                                class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-colors z-[5]">
                                             <i class="ri-close-line text-sm"></i>
                                         </button>
                                         <div x-show="index === 0" 
                                              class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
-                                            Main Image
+                                            <span x-show="preview.type && preview.type.startsWith('image')">Main Image</span>
+                                            <span x-show="preview.type && preview.type.startsWith('video')">Main Video <span x-show="preview.duration" x-text="'(' + preview.duration + 's)'"></span></span>
                                         </div>
                                     </div>
                                 </template>
@@ -2863,26 +2879,33 @@
                                     <div class="relative group">
                                         <div class="aspect-square rounded-lg overflow-hidden border-2"
                                              :class="isImageMarkedForDeletion(image.id) ? 'border-red-300 opacity-50' : index === 0 ? 'border-[#b01116] ring-2 ring-red-100' : 'border-gray-300'">
-                                            <img :src="image.url" 
-                                                 :alt="'Project Image ' + (index + 1)" 
-                                                 class="w-full h-full object-cover">
+                                            <template x-if="image.type === 'image'">
+                                                <img :src="image.url" 
+                                                     :alt="'Project Image ' + (index + 1)" 
+                                                     class="w-full h-full object-cover">
+                                            </template>
+                                            <template x-if="image.type === 'video'">
+                                                <video :src="image.url" 
+                                                       class="w-full h-full object-cover" 
+                                                       controls></video>
+                                            </template>
                                         </div>
                                         
-                                        <!-- Action Buttons -->
-                                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <!-- Action Buttons - Always Visible for Mobile UX -->
+                                        <div class="absolute top-2 right-2 flex gap-1 z-[5]">
                                             <button type="button"
                                                     @click="markImageForDeletion(image.id)"
                                                     :class="isImageMarkedForDeletion(image.id) ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
-                                                    class="text-white rounded-full p-1.5 transition-colors"
+                                                    class="text-white rounded-full p-2 shadow-lg transition-colors"
                                                     :title="isImageMarkedForDeletion(image.id) ? 'Undo Delete' : 'Mark for Deletion'">
-                                                <i :class="isImageMarkedForDeletion(image.id) ? 'ri-arrow-go-back-line' : 'ri-delete-bin-line'" class="text-xs"></i>
+                                                <i :class="isImageMarkedForDeletion(image.id) ? 'ri-arrow-go-back-line' : 'ri-delete-bin-line'" class="text-sm"></i>
                                             </button>
                                         </div>
                                         
-                                        <!-- Main Image Badge -->
+                                        <!-- Main Media Badge -->
                                         <div x-show="index === 0 && !isImageMarkedForDeletion(image.id)" 
                                              class="absolute bottom-0 left-0 right-0 bg-[#b01116] text-white text-xs py-1 text-center font-medium">
-                                            <i class="ri-star-fill mr-1"></i>Gambar Utama
+                                            <i class="ri-star-fill mr-1"></i><span x-show="image.type === 'image'">Gambar Utama</span><span x-show="image.type === 'video'">Video Utama</span>
                                         </div>
                                         
                                         <!-- Deletion Overlay -->
@@ -2935,17 +2958,24 @@
                                     <template x-for="(preview, index) in newMediaPreviews" :key="'new-' + index">
                                         <div class="relative group">
                                             <div class="aspect-square rounded-lg overflow-hidden border-2 border-green-300">
-                                                <img :src="preview.url" 
-                                                     :alt="preview.name" 
-                                                     class="w-full h-full object-cover">
+                                                <template x-if="preview.type === 'image'">
+                                                    <img :src="preview.url" 
+                                                         :alt="preview.name" 
+                                                         class="w-full h-full object-cover">
+                                                </template>
+                                                <template x-if="preview.type === 'video'">
+                                                    <video :src="preview.url" 
+                                                           class="w-full h-full object-cover" 
+                                                           controls></video>
+                                                </template>
                                             </div>
                                             <button type="button"
                                                     @click="removeNewMediaFile(index)"
-                                                    class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700">
-                                                <i class="ri-close-line text-xs"></i>
+                                                    class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-colors z-[5]">
+                                                <i class="ri-close-line text-sm"></i>
                                             </button>
                                             <div class="absolute bottom-0 left-0 right-0 bg-green-600 text-white text-xs py-1 text-center font-medium">
-                                                <i class="ri-add-line mr-1"></i>Baru
+                                                <i class="ri-add-line mr-1"></i>Baru <span x-show="preview.type === 'video' && preview.duration" x-text="'(' + preview.duration + 's)'"></span>
                                             </div>
                                         </div>
                                     </template>
@@ -3339,6 +3369,39 @@ function mediaPreview(inputId) {
                         });
                     };
                     reader.readAsDataURL(file);
+                } else if (file.type.startsWith('video/')) {
+                    // Validate video duration
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = () => {
+                        window.URL.revokeObjectURL(video.src);
+                        if (video.duration > 60) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Video Terlalu Panjang',
+                                text: `Video "${file.name}" berdurasi ${Math.round(video.duration)}s. Maksimal durasi video adalah 60 detik (1 menit).`,
+                                confirmButtonColor: '#b01116'
+                            });
+                            // Remove this file from the list
+                            const fileIndex = this.files.indexOf(file);
+                            if (fileIndex > -1) {
+                                this.files.splice(fileIndex, 1);
+                            }
+                        } else {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.previews.push({
+                                    url: e.target.result,
+                                    name: file.name,
+                                    type: file.type,
+                                    size: file.size,
+                                    duration: Math.round(video.duration)
+                                });
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                    video.src = URL.createObjectURL(file);
                 }
             });
         },
@@ -3893,6 +3956,7 @@ document.addEventListener('alpine:init', () => {
                         id: m.id,
                         path: m.file_path,
                         url: '/storage/' + m.file_path,
+                        type: m.type || 'image',
                         is_main: m.order === 0
                     })) : [],
                     images_to_delete: []
@@ -4096,11 +4160,33 @@ document.addEventListener('alpine:init', () => {
                     };
                     reader.readAsDataURL(file);
                 } else if (file.type.startsWith('video/')) {
-                    this.newMediaPreviews.push({
-                        url: URL.createObjectURL(file),
-                        name: file.name,
-                        type: 'video'
-                    });
+                    // Validate video duration
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.onloadedmetadata = () => {
+                        window.URL.revokeObjectURL(video.src);
+                        if (video.duration > 60) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Video Terlalu Panjang',
+                                text: `Video "${file.name}" berdurasi ${Math.round(video.duration)}s. Maksimal durasi video adalah 60 detik (1 menit).`,
+                                confirmButtonColor: '#b01116'
+                            });
+                            // Remove this file from the list
+                            const fileIndex = this.newMediaFiles.indexOf(file);
+                            if (fileIndex > -1) {
+                                this.newMediaFiles.splice(fileIndex, 1);
+                            }
+                        } else {
+                            this.newMediaPreviews.push({
+                                url: URL.createObjectURL(file),
+                                name: file.name,
+                                type: 'video',
+                                duration: Math.round(video.duration)
+                            });
+                        }
+                    };
+                    video.src = URL.createObjectURL(file);
                 }
             });
         },
