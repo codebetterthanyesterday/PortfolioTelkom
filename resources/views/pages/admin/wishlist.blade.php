@@ -37,7 +37,7 @@
                 <select x-model="filters.show_deleted" @change="loadWishlists()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b01116] focus:border-transparent">
                     <option value="">Aktif Saja</option>
                     <option value="true">Terhapus Saja</option>
-                    <option value="all">Semua (Aktif & Terhapus)</option>
+                    <option value="all">Semua</option>
                 </select>
             </div>
 
