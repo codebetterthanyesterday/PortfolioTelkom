@@ -14,18 +14,22 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         // Create default admin user
-        User::create([
-            'email' => 'admin@telkom.ac.id',
-            'username' => 'admin',
-            'phone_number' => '081234567890',
-            'full_name' => 'Administrator',
-            'password' => Hash::make('Admin123'),
-            'role' => 'admin',
-            'avatar' => null,
-            'short_about' => 'System Administrator',
-            'about' => 'Administrator of Telkom Project Gallery',
-            'email_verified_at' => now(),
-        ]);
+        for ($i=1; $i <= 6 ; $i++) { 
+            User::create([
+                'email' => 'admin'.$i.'@telkom.ac.id',
+                'username' => 'admin'.$i,
+                'phone_number' => null,
+                'full_name' => null,
+                'password' => Hash::make('Admin123'),
+                'role' => 'admin',
+                'avatar' => null,
+                'short_about' => 'System Administrator',
+                'about' => 'Administrator of Telkom Project Gallery',
+                'email_verified_at' => now(),
+            ]);
+        }
+
+
 
         $this->command->info('Admin user created successfully!');
         $this->command->info('Email: admin@telkom.ac.id');
