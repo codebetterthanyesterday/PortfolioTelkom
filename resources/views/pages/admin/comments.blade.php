@@ -13,6 +13,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <button 
+                    x-show="filters.show_deleted === 'true' || filters.show_deleted === 'all'"
                     @click="restoreAllComments()" 
                     class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
                     title="Pulihkan Semua Komentar">
