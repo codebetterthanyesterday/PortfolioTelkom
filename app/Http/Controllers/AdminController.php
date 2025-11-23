@@ -335,6 +335,42 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Wishlist permanently deleted.']);
     }
 
+    public function deleteAllWishlists()
+    {
+        try {
+            $deletedCount = Wishlist::whereNull('deleted_at')->count();
+            Wishlist::whereNull('deleted_at')->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'All wishlists moved to trash successfully.',
+                'deleted_count' => $deletedCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete all wishlists: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restoreAllWishlists()
+    {
+        try {
+            $restoredCount = Wishlist::onlyTrashed()->count();
+            Wishlist::onlyTrashed()->restore();
+            return response()->json([
+                'success' => true,
+                'message' => 'All wishlists restored successfully.',
+                'restored_count' => $restoredCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore all wishlists: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function deleteUser(User $user)
     {
         if ($user->isAdmin()) {

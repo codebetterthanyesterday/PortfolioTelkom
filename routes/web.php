@@ -106,6 +106,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Wishlist Management
     Route::get('/wishlist', [AdminController::class, 'wishlists'])->name('wishlist');
     Route::get('/api/wishlist/filter', [AdminController::class, 'filterWishlists'])->name('wishlist.filter');
+    Route::delete('/wishlist/delete-all', [AdminController::class, 'deleteAllWishlists'])->name('wishlist.delete-all');
+    Route::post('/wishlist/restore-all', [AdminController::class, 'restoreAllWishlists'])->name('wishlist.restore-all');
     Route::delete('/wishlist/{wishlist}', [AdminController::class, 'deleteWishlist'])->name('wishlist.delete');
     Route::post('/wishlist/{id}/restore', [AdminController::class, 'restoreWishlist'])->name('wishlist.restore');
     Route::delete('/wishlist/{id}/force-delete', [AdminController::class, 'forceDeleteWishlist'])->name('wishlist.force-delete');

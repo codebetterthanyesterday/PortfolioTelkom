@@ -11,6 +11,23 @@
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Wishlist</h1>
                 <p class="text-gray-600 mt-1">Kelola semua wishlist investor pada proyek pelajar</p>
             </div>
+            <div class="flex items-center gap-3">
+                <button
+                    x-show="(filters.show_deleted === 'true' || filters.show_deleted === 'all') && hasDeletedWishlists"
+                    @click="restoreAllWishlists()"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Pulihkan Semua Wishlist">
+                    <i class="ri-refresh-line"></i>
+                    <span class="hidden sm:inline">Pulihkan Semua</span>
+                </button>
+                <button
+                    @click="deleteAllWishlists()"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Hapus Semua Wishlist">
+                    <i class="ri-delete-bin-line"></i>
+                    <span class="hidden sm:inline">Hapus Semua</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -407,6 +424,10 @@
                 this.loadWishlists();
             },
 
+            get hasDeletedWishlists() {
+                return this.wishlists.some(w => w.deleted_at !== null);
+            },
+
             async loadWishlists() {
                 this.loading = true;
                 try {
@@ -470,6 +491,114 @@
             viewWishlist(wishlist) {
                 this.selectedWishlist = wishlist;
                 this.modalOpen = true;
+            },
+
+            deleteAllWishlists() {
+                Swal.fire({
+                    title: 'Hapus Semua Wishlist?',
+                    html: `<div class=\"text-left\">\n                        <p class=\"mb-3\">Apakah Anda yakin ingin menghapus <strong>SEMUA WISHLIST</strong>?</p>\n                        <div class=\"bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3\">\n                            <p class=\"text-yellow-800 text-sm font-semibold mb-2\">ℹ️ INFORMASI:</p>\n                            <ul class=\"text-yellow-700 text-sm space-y-1 ml-4\">\n                                <li>• Total <strong>${this.pagination.total}</strong> wishlist akan dipindahkan ke trash</li>\n                                <li>• Anda masih bisa memulihkan wishlist yang terhapus</li>\n                            </ul>\n                        </div>\n                    </div>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Menghapus...',
+                            html: 'Sedang menghapus semua wishlist, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                        try {
+                            const response = await fetch('/admin/wishlist/delete-all', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+                            const data = await response.json();
+                            if (response.ok) {
+                                await this.loadWishlists();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.deleted_count}</strong> wishlist dipindahkan ke trash`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#b01116',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to delete all wishlists');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting all wishlists:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal menghapus semua wishlist: ' + error.message,
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
+            },
+
+            restoreAllWishlists() {
+                Swal.fire({
+                    title: 'Pulihkan Semua Wishlist?',
+                    html: `<div class=\"text-left\">\n                        <p class=\"mb-3\">Apakah Anda yakin ingin memulihkan <strong>SEMUA WISHLIST</strong> yang terhapus?</p>\n                        <div class=\"bg-green-50 border border-green-200 rounded-lg p-3 mb-3\">\n                            <p class=\"text-green-800 text-sm font-semibold mb-2\">ℹ️ INFORMASI:</p>\n                            <ul class=\"text-green-700 text-sm space-y-1 ml-4\">\n                                <li>• Semua wishlist di trash akan dipulihkan</li>\n                                <li>• Wishlist akan kembali aktif</li>\n                            </ul>\n                        </div>\n                    </div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#16a34a',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Pulihkan Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Memulihkan...',
+                            html: 'Sedang memulihkan semua wishlist, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                        try {
+                            const response = await fetch('/admin/wishlist/restore-all', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+                            const data = await response.json();
+                            if (response.ok) {
+                                await this.loadWishlists();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.restored_count}</strong> wishlist berhasil dipulihkan`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#16a34a',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to restore all wishlists');
+                            }
+                        } catch (error) {
+                            console.error('Error restoring all wishlists:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal memulihkan semua wishlist: ' + error.message,
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
             },
 
             deleteWishlist(wishlist) {
