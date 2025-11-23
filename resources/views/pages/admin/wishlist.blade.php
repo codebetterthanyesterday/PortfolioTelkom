@@ -21,9 +21,12 @@
                     <span class="hidden sm:inline">Pulihkan Semua</span>
                 </button>
                 <button
+                    x-show="hasActiveWishlists"
                     @click="deleteAllWishlists()"
                     class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-                    title="Hapus Semua Wishlist">
+                    title="Hapus Semua Wishlist"
+                    :aria-hidden="!hasActiveWishlists"
+                    :class="!hasActiveWishlists ? 'hidden' : ''">
                     <i class="ri-delete-bin-line"></i>
                     <span class="hidden sm:inline">Hapus Semua</span>
                 </button>
@@ -426,6 +429,9 @@
 
             get hasDeletedWishlists() {
                 return this.wishlists.some(w => w.deleted_at !== null);
+            },
+            get hasActiveWishlists() {
+                return this.wishlists.some(w => w.deleted_at === null);
             },
 
             async loadWishlists() {

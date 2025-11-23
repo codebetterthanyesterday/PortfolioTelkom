@@ -21,9 +21,12 @@
                     <span class="hidden sm:inline">Pulihkan Semua</span>
                 </button>
                 <button 
+                    x-show="hasActiveProjects"
                     @click="deleteAllProjects()" 
                     class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-                    title="Hapus Semua Proyek">
+                    title="Hapus Semua Proyek"
+                    :aria-hidden="!hasActiveProjects"
+                    :class="!hasActiveProjects ? 'hidden' : ''">
                     <i class="ri-delete-bin-line"></i>
                     <span class="hidden sm:inline">Hapus Semua</span>
                 </button>
@@ -513,6 +516,9 @@
 
             get hasDeletedProjects() {
                 return this.projects.some(project => project.deleted_at !== null);
+            },
+            get hasActiveProjects() {
+                return this.projects.some(project => project.deleted_at === null);
             },
 
             async loadProjects() {
