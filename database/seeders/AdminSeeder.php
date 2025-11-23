@@ -27,12 +27,10 @@ class AdminSeeder extends Seeder
                 'about' => 'Administrator of Telkom Project Gallery',
                 'email_verified_at' => now(),
             ]);
+            $this->command->info('Admin user created successfully!');
+            $this->command->info('Email: admin'.$i.'@telkom.ac.id');
+            $this->command->info('Password: Admin123');
         }
 
-
-
-        $this->command->info('Admin user created successfully!');
-        $this->command->info('Email: admin@telkom.ac.id');
-        $this->command->info('Password: Admin123');
     }
 }
