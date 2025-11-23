@@ -5,9 +5,21 @@
 @section('content')
 <div class="p-4 lg:p-8 bg-gray-50">
     <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p class="text-gray-600 mt-1">Selamat datang, {{ auth()->user()->full_name ?? 'Admin' }}! Berikut ringkasan Telkom Project Gallery.</p>
+    <div class="mb-8 flex flex-col gap-4">
+        <div>
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-600 mt-1">Selamat datang, {{ auth()->user()->full_name ?? 'Admin' }}! Berikut ringkasan Telkom Project Gallery.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <button onclick="resetDatabase()" class="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm transition-colors">
+                <i class="ri-database-2-line text-xl"></i>
+                <span>Reset Database (Migrate Fresh)</span>
+            </button>
+            <div class="text-xs text-gray-500 flex items-center gap-2">
+                <i class="ri-information-line"></i>
+                <span>Aksi berbahaya: menghapus seluruh data kecuali admin.</span>
+            </div>
+        </div>
     </div>
 
     <!-- Stats Cards -->
@@ -94,7 +106,7 @@
             <div class="space-y-4">
                 @foreach($recent_projects as $project)
                 <div class="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors group cursor-pointer">
-                    <div class="w-16 h-16 bg-gradient-to-br from-[#b01116] to-[#8d0d11] rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    <div class="w-16 h-16 bg-linear-to-br from-[#b01116] to-[#8d0d11] rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
                         @if($project->media->first())
                             <img src="{{ asset('storage/' . $project->media->first()->file_path) }}" alt="{{ $project->title }}" class="w-full h-full object-cover">
                         @else
@@ -184,7 +196,7 @@
             <div class="space-y-4">
                 @foreach($recent_users as $user)
                 <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#b01116] to-[#8d0d11]">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-linear-to-br from-[#b01116] to-[#8d0d11]">
                         @if($user->avatar)
                             <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->username }}" class="w-full h-full object-cover">
                         @else
@@ -273,6 +285,84 @@ async function confirmDelete(event, itemType) {
     }
     
     return false;
+}
+
+async function resetDatabase() {
+    const phrase = 'HAPUS SEMUA DATA APLIKASI';
+    const { value: inputValue, isConfirmed } = await Swal.fire({
+        title: 'Reset Database? ',
+        html: `<div class='text-left space-y-3'>
+            <p class='text-sm'>Tindakan ini akan melakukan <code class='font-mono bg-gray-100 px-1 py-0.5 rounded'>migrate:fresh</code> dan <strong>MENGHAPUS SEMUA DATA</strong> kecuali akun admin.</p>
+            <div class='bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800'>
+                <p class='font-semibold mb-1'>Konsekuensi:</p>
+                <ul class='list-disc list-inside space-y-1'>
+                    <li>Semua proyek, komentar, wishlist, pengguna non-admin hilang permanen.</li>
+                    <li>Tidak dapat dibatalkan.</li>
+                    <li>Sesi admin tetap aktif.</li>
+                </ul>
+            </div>
+            <p class='text-sm'>Ketik kalimat konfirmasi berikut untuk melanjutkan:</p>
+            <p class='text-center font-semibold text-red-600'>"${phrase}"</p>
+        </div>`,
+        input: 'text',
+        inputPlaceholder: phrase,
+        inputAttributes: { 'aria-label': 'Konfirmasi frasa' },
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Saya Mengerti, Reset! ',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        preConfirm: (val) => {
+            if (val !== phrase) {
+                Swal.showValidationMessage('Frasa tidak cocok. Ketik persis: ' + phrase);
+                return false;
+            }
+            return val;
+        }
+    });
+
+    if (!isConfirmed) return;
+
+    // Perform request
+    const loading = Swal.fire({
+        title: 'Memproses...',
+        html: 'Menjalankan migrate:fresh dan memulihkan admin. Mohon tunggu...',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const response = await fetch("{{ route('admin.reset-database') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ phrase })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Gagal mereset database');
+
+        Swal.fire({
+            title: 'Berhasil!',
+            icon: 'success',
+            html: `<p class='text-sm'>Database telah di-reset.</p><p class='text-sm mt-2'><strong>${data.admin_preserved}</strong> akun admin dipertahankan.</p>`,
+            confirmButtonColor: '#b01116'
+        }).then(() => {
+            // Reload page to show fresh stats
+            window.location.reload();
+        });
+    } catch (e) {
+        console.error(e);
+        Swal.fire({
+            title: 'Gagal!',
+            icon: 'error',
+            text: e.message,
+            confirmButtonColor: '#b01116'
+        });
+    }
 }
 </script>
 @endsection
