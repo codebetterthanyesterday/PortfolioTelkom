@@ -11,6 +11,15 @@
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Komentar</h1>
                 <p class="text-gray-600 mt-1">Kelola semua komentar pada proyek pelajar</p>
             </div>
+            <div class="flex items-center gap-3">
+                <button 
+                    @click="deleteAllComments()" 
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Hapus Semua Komentar">
+                    <i class="ri-delete-bin-line"></i>
+                    <span class="hidden sm:inline">Hapus Semua</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -613,6 +622,86 @@
                             Swal.fire({
                                 title: 'Gagal!',
                                 text: 'Gagal menghapus komentar secara permanen',
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
+            },
+
+            deleteAllComments() {
+                Swal.fire({
+                    title: 'Hapus Semua Komentar?',
+                    html: `<div class="text-left">
+                        <p class="mb-3">Apakah Anda yakin ingin menghapus <strong>SEMUA KOMENTAR</strong>?</p>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                            <p class="text-yellow-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                            <ul class="text-yellow-700 text-sm space-y-1 ml-4">
+                                <li>• Total <strong>${this.pagination.total}</strong> komentar akan dihapus</li>
+                                <li>• Komentar akan dipindahkan ke trash</li>
+                                <li>• Anda masih bisa memulihkan komentar yang terhapus</li>
+                                <li>• Untuk menghapus permanen, gunakan fitur "Hapus Permanen"</li>
+                            </ul>
+                        </div>
+                        <p class="text-sm text-gray-600">Ketik <strong class="text-red-600">HAPUS SEMUA</strong> untuk konfirmasi:</p>
+                    </div>`,
+                    icon: 'warning',
+                    input: 'text',
+                    inputPlaceholder: 'Ketik HAPUS SEMUA',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    preConfirm: (value) => {
+                        if (value !== 'HAPUS SEMUA') {
+                            Swal.showValidationMessage('Ketik HAPUS SEMUA untuk konfirmasi');
+                            return false;
+                        }
+                        return true;
+                    }
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const loadingAlert = Swal.fire({
+                            title: 'Menghapus...',
+                            html: 'Sedang menghapus semua komentar, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/admin/comments/delete-all', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                await this.loadComments();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.deleted_count}</strong> komentar berhasil dihapus`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#b01116',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to delete all comments');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting all comments:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal menghapus semua komentar: ' + error.message,
                                 icon: 'error',
                                 confirmButtonColor: '#b01116'
                             });

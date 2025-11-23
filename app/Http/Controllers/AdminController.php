@@ -409,6 +409,28 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Comment permanently deleted.']);
     }
 
+    public function deleteAllComments()
+    {
+        try {
+            // Get all active (non-deleted) comments
+            $deletedCount = Comment::whereNull('deleted_at')->count();
+            
+            // Soft delete all active comments
+            Comment::whereNull('deleted_at')->delete();
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'All comments have been deleted successfully.',
+                'deleted_count' => $deletedCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Failed to delete all comments: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function toggleUserStatus($id)
     {
         $user = User::withTrashed()->findOrFail($id);
