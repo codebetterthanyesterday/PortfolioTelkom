@@ -644,24 +644,14 @@
                                 <li>• Untuk menghapus permanen, gunakan fitur "Hapus Permanen"</li>
                             </ul>
                         </div>
-                        <p class="text-sm text-gray-600">Ketik <strong class="text-red-600">HAPUS SEMUA</strong> untuk konfirmasi:</p>
                     </div>`,
                     icon: 'warning',
-                    input: 'text',
-                    inputPlaceholder: 'Ketik HAPUS SEMUA',
                     showCancelButton: true,
                     confirmButtonColor: '#dc2626',
                     cancelButtonColor: '#6b7280',
                     confirmButtonText: 'Ya, Hapus Semua!',
                     cancelButtonText: 'Batal',
-                    reverseButtons: true,
-                    preConfirm: (value) => {
-                        if (value !== 'HAPUS SEMUA') {
-                            Swal.showValidationMessage('Ketik HAPUS SEMUA untuk konfirmasi');
-                            return false;
-                        }
-                        return true;
-                    }
+                    reverseButtons: true
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         const loadingAlert = Swal.fire({
