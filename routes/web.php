@@ -93,10 +93,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Comment Management
     Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
     Route::get('/api/comments/filter', [AdminController::class, 'filterComments'])->name('comments.filter');
+    Route::delete('/comments/delete-all', [AdminController::class, 'deleteAllComments'])->name('comments.delete-all');
     Route::delete('/comments/{comment}', [AdminController::class, 'deleteComment'])->name('comments.delete');
     Route::post('/comments/{id}/restore', [AdminController::class, 'restoreComment'])->name('comments.restore');
     Route::delete('/comments/{id}/force-delete', [AdminController::class, 'forceDeleteComment'])->name('comments.force-delete');
-    Route::delete('/comments/delete-all', [AdminController::class, 'deleteAllComments'])->name('comments.delete-all');
     
     // Wishlist Management
     Route::get('/wishlist', [AdminController::class, 'wishlists'])->name('wishlist');
