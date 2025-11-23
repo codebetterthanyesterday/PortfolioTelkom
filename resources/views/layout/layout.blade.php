@@ -10,6 +10,7 @@
     href="https://cdn.jsdelivr.net/npm/remixicon@4.7.0/fonts/remixicon.css"
     rel="stylesheet"
     />
+    <link rel="icon" type="image/png" href="{{ asset('storage/image.png') }}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     @vite('resources/css/app.css')
