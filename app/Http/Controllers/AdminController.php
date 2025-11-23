@@ -10,8 +10,6 @@ use App\Models\Student;
 use App\Models\Investor;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
 
 class AdminController extends Controller
 {
@@ -605,72 +603,6 @@ class AdminController extends Controller
         } else {
             $project->delete();
             return back()->with('success', 'Project archived successfully.');
-        }
-    }
-
-    /**
-     * Reset the entire application database similar to `php artisan migrate:fresh`.
-     * Preserves existing admin users and keeps current admin session valid.
-     */
-    public function resetDatabase(Request $request)
-    {
-        if (!auth()->user() || !auth()->user()->isAdmin()) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-        }
-
-        $phrase = $request->input('phrase');
-        $requiredPhrase = 'HAPUS SEMUA DATA APLIKASI';
-        if ($phrase !== $requiredPhrase) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Konfirmasi tidak cocok. Ketik tepat: ' . $requiredPhrase
-            ], 422);
-        }
-
-        // Collect all current admin users to preserve (including soft-deleted ones if any)
-        $admins = User::withTrashed()->where('role', 'admin')->get();
-        if ($admins->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ditemukan akun admin untuk dipertahankan.'
-            ], 500);
-        }
-
-        $adminData = $admins->map(function ($admin) {
-            return [
-                'id' => $admin->id, // preserve ID so existing session remains valid
-                'full_name' => $admin->full_name,
-                'username' => $admin->username,
-                'email' => $admin->email,
-                'password' => $admin->password, // already hashed
-                'role' => $admin->role,
-                'bio' => $admin->bio,
-                'email_verified_at' => $admin->email_verified_at,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        });
-
-        try {
-            // Perform migrate:fresh (drops all tables & re-runs migrations)
-            Artisan::call('migrate:fresh', ['--force' => true]);
-
-            // Reinsert admin users (bypass model events for speed & to preserve IDs)
-            DB::table('users')->insert($adminData->toArray());
-
-            // Optionally you could run seeders EXCEPT admin seeder if it would duplicate.
-            // Artisan::call('db:seed', ['--force' => true]); // (commented out intentionally)
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Database berhasil di-reset. Semua data non-admin dihapus. Admin dipertahankan.',
-                'admin_preserved' => $admins->count(),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mereset database: ' . $e->getMessage(),
-            ], 500);
         }
     }
 }

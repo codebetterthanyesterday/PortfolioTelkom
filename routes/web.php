@@ -73,8 +73,6 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    // Dangerous maintenance action: reset database (migrate:fresh) preserving admin users
-    Route::post('/reset-database', [AdminController::class, 'resetDatabase'])->name('reset-database');
     
     // User Management
     Route::get('/users', [AdminController::class, 'users'])->name('users');
