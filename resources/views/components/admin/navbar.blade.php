@@ -76,10 +76,13 @@
                             <p class="text-xs text-gray-500">admin@example.com</p>
                         </div>
                         <div class="py-2">
-                            <a href="{{route('logout')}}" class="flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50">
-                                <i class="ri-logout-box-line"></i>
-                                <span>Logout</span>
-                            </a>
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full text-left flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50">
+                                    <i class="ri-logout-box-line"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
