@@ -11,6 +11,23 @@
                     <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Pengguna</h1>
                     <p class="text-gray-600 mt-1">Kelola semua pengguna yang terdaftar di sistem</p>
                 </div>
+                <div class="flex items-center gap-3">
+                    <button 
+                        x-show="(filters.show_deleted === 'true' || filters.show_deleted === 'all') && hasDeletedUsers"
+                        @click="restoreAllUsers()" 
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                        title="Pulihkan Semua Pengguna">
+                        <i class="ri-refresh-line"></i>
+                        <span class="hidden sm:inline">Pulihkan Semua</span>
+                    </button>
+                    <button 
+                        @click="deleteAllUsers()" 
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                        title="Hapus Semua Pengguna">
+                        <i class="ri-delete-bin-line"></i>
+                        <span class="hidden sm:inline">Hapus Semua</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -455,6 +472,10 @@
                     this.loadUsers();
                 },
 
+                get hasDeletedUsers() {
+                    return this.users.some(user => user.deleted_at !== null);
+                },
+
                 async loadUsers() {
                     this.loading = true;
                     try {
@@ -531,6 +552,133 @@
                     this.selectedUser = user;
                     this.modalMode = 'view';
                     this.modalOpen = true;
+                },
+
+                deleteAllUsers() {
+                    Swal.fire({
+                        title: 'Hapus Semua Pengguna?',
+                        html: `<div class="text-left">
+                            <p class="mb-3">Apakah Anda yakin ingin menghapus <strong>SEMUA PENGGUNA</strong> (kecuali Admin)?</p>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                                <p class="text-yellow-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                                <ul class="text-yellow-700 text-sm space-y-1 ml-4">
+                                    <li>• Total <strong>${this.pagination.total}</strong> pengguna akan dipindahkan ke trash</li>
+                                    <li>• Akun Admin tidak akan terpengaruh</li>
+                                    <li>• Anda masih bisa memulihkan pengguna yang terhapus</li>
+                                </ul>
+                            </div>
+                        </div>`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Ya, Hapus Semua!',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Menghapus...',
+                                html: 'Sedang menghapus semua pengguna, mohon tunggu...',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => Swal.showLoading()
+                            });
+                            try {
+                                const response = await fetch('/admin/users/delete-all', {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                    }
+                                });
+                                const data = await response.json();
+                                if (response.ok) {
+                                    await this.loadUsers();
+                                    Swal.fire({
+                                        title: 'Berhasil!',
+                                        html: `<strong>${data.deleted_count}</strong> pengguna dipindahkan ke trash`,
+                                        icon: 'success',
+                                        confirmButtonColor: '#b01116',
+                                        timer: 3000
+                                    });
+                                } else {
+                                    throw new Error(data.message || 'Failed to delete all users');
+                                }
+                            } catch (error) {
+                                console.error('Error deleting all users:', error);
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: 'Gagal menghapus semua pengguna: ' + error.message,
+                                    icon: 'error',
+                                    confirmButtonColor: '#b01116'
+                                });
+                            }
+                        }
+                    });
+                },
+
+                restoreAllUsers() {
+                    Swal.fire({
+                        title: 'Pulihkan Semua Pengguna?',
+                        html: `<div class="text-left">
+                            <p class="mb-3">Apakah Anda yakin ingin memulihkan <strong>SEMUA PENGGUNA</strong> yang ada di trash?</p>
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                <p class="text-green-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                                <ul class="text-green-700 text-sm space-y-1 ml-4">
+                                    <li>• Semua pengguna yang terhapus akan dipulihkan</li>
+                                    <li>• Pengguna akan kembali aktif</li>
+                                </ul>
+                            </div>
+                        </div>`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#16a34a',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Ya, Pulihkan Semua!',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Memulihkan...',
+                                html: 'Sedang memulihkan semua pengguna, mohon tunggu...',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                didOpen: () => Swal.showLoading()
+                            });
+                            try {
+                                const response = await fetch('/admin/users/restore-all', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                    }
+                                });
+                                const data = await response.json();
+                                if (response.ok) {
+                                    await this.loadUsers();
+                                    Swal.fire({
+                                        title: 'Berhasil!',
+                                        html: `<strong>${data.restored_count}</strong> pengguna berhasil dipulihkan`,
+                                        icon: 'success',
+                                        confirmButtonColor: '#16a34a',
+                                        timer: 3000
+                                    });
+                                } else {
+                                    throw new Error(data.message || 'Failed to restore all users');
+                                }
+                            } catch (error) {
+                                console.error('Error restoring all users:', error);
+                                Swal.fire({
+                                    title: 'Gagal!',
+                                    text: 'Gagal memulihkan semua pengguna: ' + error.message,
+                                    icon: 'error',
+                                    confirmButtonColor: '#b01116'
+                                });
+                            }
+                        }
+                    });
                 },
 
                 deleteUser(user) {

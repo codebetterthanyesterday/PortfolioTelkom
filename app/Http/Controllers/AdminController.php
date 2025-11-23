@@ -369,6 +369,50 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'User permanently deleted.']);
     }
 
+    public function deleteAllUsers()
+    {
+        try {
+            // Exclude admins from bulk deletion
+            $deletedCount = User::whereNull('deleted_at')
+                ->where('role', '!=', 'admin')
+                ->count();
+
+            User::whereNull('deleted_at')
+                ->where('role', '!=', 'admin')
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All non-admin users moved to trash successfully.',
+                'deleted_count' => $deletedCount,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete all users: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function restoreAllUsers()
+    {
+        try {
+            $restoredCount = User::onlyTrashed()->count();
+            User::onlyTrashed()->restore();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All users restored successfully.',
+                'restored_count' => $restoredCount,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore all users: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function deleteProject(Project $project)
     {
         $project->delete();

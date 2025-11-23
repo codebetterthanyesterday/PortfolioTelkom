@@ -77,6 +77,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // User Management
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/api/users/filter', [AdminController::class, 'filterUsers'])->name('users.filter');
+    Route::delete('/users/delete-all', [AdminController::class, 'deleteAllUsers'])->name('users.delete-all');
+    Route::post('/users/restore-all', [AdminController::class, 'restoreAllUsers'])->name('users.restore-all');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('users.delete');
     Route::post('/users/{id}/restore', [AdminController::class, 'restoreUser'])->name('users.restore');
     Route::delete('/users/{id}/force-delete', [AdminController::class, 'forceDeleteUser'])->name('users.force-delete');
