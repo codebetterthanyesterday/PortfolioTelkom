@@ -21,12 +21,12 @@
                         <span class="hidden sm:inline">Pulihkan Semua</span>
                     </button>
                     <button 
-                        x-show="hasActiveUsers"
+                        x-show="hasActiveNonAdminUsers"
                         @click="deleteAllUsers()" 
                         class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-                        title="Hapus Semua Pengguna"
-                        :aria-hidden="!hasActiveUsers"
-                        :class="!hasActiveUsers ? 'hidden' : ''">
+                        title="Hapus Semua Pengguna Non-Admin"
+                        :aria-hidden="!hasActiveNonAdminUsers"
+                        :class="!hasActiveNonAdminUsers ? 'hidden' : ''">
                         <i class="ri-delete-bin-line"></i>
                         <span class="hidden sm:inline">Hapus Semua</span>
                     </button>
@@ -478,8 +478,8 @@
                 get hasDeletedUsers() {
                     return this.users.some(user => user.deleted_at !== null);
                 },
-                get hasActiveUsers() {
-                    return this.users.some(user => user.deleted_at === null);
+                get hasActiveNonAdminUsers() {
+                    return this.users.some(user => user.deleted_at === null && user.role !== 'admin');
                 },
 
                 async loadUsers() {
