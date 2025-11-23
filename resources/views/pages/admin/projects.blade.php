@@ -11,6 +11,23 @@
                 <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Kelola Proyek</h1>
                 <p class="text-gray-600 mt-1">Kelola semua proyek pelajar di sistem</p>
             </div>
+            <div class="flex items-center gap-3">
+                <button 
+                    x-show="(filters.show_deleted === 'true' || filters.show_deleted === 'all') && hasDeletedProjects"
+                    @click="restoreAllProjects()" 
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Pulihkan Semua Proyek">
+                    <i class="ri-refresh-line"></i>
+                    <span class="hidden sm:inline">Pulihkan Semua</span>
+                </button>
+                <button 
+                    @click="deleteAllProjects()" 
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Hapus Semua Proyek">
+                    <i class="ri-delete-bin-line"></i>
+                    <span class="hidden sm:inline">Hapus Semua</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -494,6 +511,10 @@
                 this.loadProjects();
             },
 
+            get hasDeletedProjects() {
+                return this.projects.some(project => project.deleted_at !== null);
+            },
+
             async loadProjects() {
                 this.loading = true;
                 try {
@@ -768,6 +789,145 @@
                         this.deleteProject(project);
                     }
                 }, 300);
+            },
+
+            deleteAllProjects() {
+                Swal.fire({
+                    title: 'Hapus Semua Proyek?',
+                    html: `<div class="text-left">
+                        <p class="mb-3">Apakah Anda yakin ingin menghapus <strong>SEMUA PROYEK</strong>?</p>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                            <p class="text-yellow-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                            <ul class="text-yellow-700 text-sm space-y-1 ml-4">
+                                <li>• Total <strong>${this.pagination.total}</strong> proyek akan dihapus</li>
+                                <li>• Proyek akan dipindahkan ke trash</li>
+                                <li>• Anda masih bisa memulihkan proyek yang terhapus</li>
+                                <li>• Untuk menghapus permanen, gunakan fitur "Hapus Permanen"</li>
+                            </ul>
+                        </div>
+                    </div>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const loadingAlert = Swal.fire({
+                            title: 'Menghapus...',
+                            html: 'Sedang menghapus semua proyek, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/admin/projects/delete-all', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                await this.loadProjects();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.deleted_count}</strong> proyek berhasil dihapus`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#b01116',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to delete all projects');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting all projects:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal menghapus semua proyek: ' + error.message,
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
+            },
+
+            restoreAllProjects() {
+                Swal.fire({
+                    title: 'Pulihkan Semua Proyek?',
+                    html: `<div class="text-left">
+                        <p class="mb-3">Apakah Anda yakin ingin memulihkan <strong>SEMUA PROYEK</strong> yang terhapus?</p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                            <p class="text-green-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                            <ul class="text-green-700 text-sm space-y-1 ml-4">
+                                <li>• Semua proyek yang ada di trash akan dipulihkan</li>
+                                <li>• Proyek akan kembali muncul di halaman utama</li>
+                                <li>• Aksi ini dapat dibatalkan dengan menghapus kembali</li>
+                            </ul>
+                        </div>
+                    </div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#16a34a',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Pulihkan Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const loadingAlert = Swal.fire({
+                            title: 'Memulihkan...',
+                            html: 'Sedang memulihkan semua proyek, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/admin/projects/restore-all', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                await this.loadProjects();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.restored_count}</strong> proyek berhasil dipulihkan`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#16a34a',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to restore all projects');
+                            }
+                        } catch (error) {
+                            console.error('Error restoring all projects:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal memulihkan semua proyek: ' + error.message,
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
             },
 
             async confirmDelete() {

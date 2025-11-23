@@ -389,6 +389,50 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Project permanently deleted.']);
     }
 
+    public function deleteAllProjects()
+    {
+            try {
+                // Get all active (non-deleted) projects
+                $deletedCount = Project::whereNull('deleted_at')->count();
+            
+                // Soft delete all active projects
+                Project::whereNull('deleted_at')->delete();
+            
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'All projects have been deleted successfully.',
+                    'deleted_count' => $deletedCount
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Failed to delete all projects: ' . $e->getMessage()
+                ], 500);
+            }
+        }
+
+        public function restoreAllProjects()
+        {
+            try {
+                // Get all soft-deleted projects
+                $restoredCount = Project::onlyTrashed()->count();
+            
+                // Restore all soft-deleted projects
+                Project::onlyTrashed()->restore();
+            
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'All projects have been restored successfully.',
+                    'restored_count' => $restoredCount
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Failed to restore all projects: ' . $e->getMessage()
+                ], 500);
+            }
+    }
+
     public function deleteComment(Comment $comment)
     {
         $comment->delete();

@@ -85,6 +85,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Project Management
     Route::get('/projects', [AdminController::class, 'projects'])->name('projects');
     Route::get('/api/projects/filter', [AdminController::class, 'filterProjects'])->name('projects.filter');
+    Route::delete('/projects/delete-all', [AdminController::class, 'deleteAllProjects'])->name('projects.delete-all');
+    Route::post('/projects/restore-all', [AdminController::class, 'restoreAllProjects'])->name('projects.restore-all');
     Route::delete('/projects/{project}', [AdminController::class, 'deleteProject'])->name('projects.delete');
     Route::post('/projects/{id}/restore', [AdminController::class, 'restoreProject'])->name('projects.restore');
     Route::delete('/projects/{id}/force-delete', [AdminController::class, 'forceDeleteProject'])->name('projects.force-delete');
