@@ -431,6 +431,28 @@ class AdminController extends Controller
         }
     }
 
+    public function restoreAllComments()
+    {
+        try {
+            // Get all soft-deleted comments
+            $restoredCount = Comment::onlyTrashed()->count();
+            
+            // Restore all soft-deleted comments
+            Comment::onlyTrashed()->restore();
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'All comments have been restored successfully.',
+                'restored_count' => $restoredCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Failed to restore all comments: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function toggleUserStatus($id)
     {
         $user = User::withTrashed()->findOrFail($id);

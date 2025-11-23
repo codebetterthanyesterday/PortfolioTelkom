@@ -13,6 +13,13 @@
             </div>
             <div class="flex items-center gap-3">
                 <button 
+                    @click="restoreAllComments()" 
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    title="Pulihkan Semua Komentar">
+                    <i class="ri-refresh-line"></i>
+                    <span class="hidden sm:inline">Pulihkan Semua</span>
+                </button>
+                <button 
                     @click="deleteAllComments()" 
                     class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
                     title="Hapus Semua Komentar">
@@ -692,6 +699,75 @@
                             Swal.fire({
                                 title: 'Gagal!',
                                 text: 'Gagal menghapus semua komentar: ' + error.message,
+                                icon: 'error',
+                                confirmButtonColor: '#b01116'
+                            });
+                        }
+                    }
+                });
+            },
+
+            restoreAllComments() {
+                Swal.fire({
+                    title: 'Pulihkan Semua Komentar?',
+                    html: `<div class="text-left">
+                        <p class="mb-3">Apakah Anda yakin ingin memulihkan <strong>SEMUA KOMENTAR</strong> yang terhapus?</p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                            <p class="text-green-800 text-sm font-semibold mb-2">ℹ️ INFORMASI:</p>
+                            <ul class="text-green-700 text-sm space-y-1 ml-4">
+                                <li>• Semua komentar yang ada di trash akan dipulihkan</li>
+                                <li>• Komentar akan kembali muncul di halaman proyek</li>
+                                <li>• Aksi ini dapat dibatalkan dengan menghapus kembali</li>
+                            </ul>
+                        </div>
+                    </div>`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#16a34a',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Pulihkan Semua!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const loadingAlert = Swal.fire({
+                            title: 'Memulihkan...',
+                            html: 'Sedang memulihkan semua komentar, mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/admin/comments/restore-all', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                }
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                await this.loadComments();
+                                Swal.fire({
+                                    title: 'Berhasil!',
+                                    html: `<strong>${data.restored_count}</strong> komentar berhasil dipulihkan`,
+                                    icon: 'success',
+                                    confirmButtonColor: '#16a34a',
+                                    timer: 3000
+                                });
+                            } else {
+                                throw new Error(data.message || 'Failed to restore all comments');
+                            }
+                        } catch (error) {
+                            console.error('Error restoring all comments:', error);
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: 'Gagal memulihkan semua komentar: ' + error.message,
                                 icon: 'error',
                                 confirmButtonColor: '#b01116'
                             });

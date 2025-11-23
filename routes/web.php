@@ -94,6 +94,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/comments', [AdminController::class, 'comments'])->name('comments');
     Route::get('/api/comments/filter', [AdminController::class, 'filterComments'])->name('comments.filter');
     Route::delete('/comments/delete-all', [AdminController::class, 'deleteAllComments'])->name('comments.delete-all');
+    Route::post('/comments/restore-all', [AdminController::class, 'restoreAllComments'])->name('comments.restore-all');
     Route::delete('/comments/{comment}', [AdminController::class, 'deleteComment'])->name('comments.delete');
     Route::post('/comments/{id}/restore', [AdminController::class, 'restoreComment'])->name('comments.restore');
     Route::delete('/comments/{id}/force-delete', [AdminController::class, 'forceDeleteComment'])->name('comments.force-delete');
